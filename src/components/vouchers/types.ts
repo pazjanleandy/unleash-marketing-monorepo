@@ -1,0 +1,26 @@
+export type VoucherStatus = 'Upcoming' | 'Ongoing' | 'Expired'
+
+export type VoucherIcon = 'money' | 'percent'
+
+export type VoucherAction = {
+  label: string
+  danger?: boolean
+}
+
+export type VoucherItem = {
+  code: string
+  name: string
+  type: string
+  discountAmount: string
+  quantity: number
+  usageLimit: string
+  claimed: number
+  usage: number
+  status: VoucherStatus
+  claimingPeriod: {
+    start: string
+    end: string
+  }
+  actions: VoucherAction[]
+  icon: VoucherIcon
+}
