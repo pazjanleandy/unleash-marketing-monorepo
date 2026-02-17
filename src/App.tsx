@@ -9,6 +9,10 @@ type AppView = 'marketing' | 'vouchers'
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>('marketing')
+  const appBackground =
+    activeView === 'vouchers'
+      ? 'bg-[linear-gradient(180deg,_#F0F9FF_0%,_#FFFFFF_70%)]'
+      : 'bg-[radial-gradient(circle_at_top,_#ffe7db_0%,_#f9fbff_42%,_#edf3fb_100%)]'
 
   const handleToolSelect = (tool: ToolCard) => {
     if (tool.id === 'vouchers') {
@@ -17,7 +21,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffe7db_0%,_#f9fbff_42%,_#edf3fb_100%)] pb-16 pt-10 text-slate-900">
+    <div className={`min-h-screen ${appBackground} pb-16 pt-10 text-slate-900`}>
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         {activeView === 'marketing' ? (
           <>
