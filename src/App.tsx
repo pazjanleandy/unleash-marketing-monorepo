@@ -4,13 +4,14 @@ import MarketingToolsPanel from './components/marketing/MarketingToolsPanel'
 import { toolSections } from './components/marketing/data'
 import type { ToolCard } from './components/marketing/types'
 import VouchersPage from './components/vouchers/VouchersPage'
+import CreateVoucherPage from './components/vouchers/create/CreateVoucherPage'
 
-type AppView = 'marketing' | 'vouchers'
+type AppView = 'marketing' | 'vouchers' | 'create-voucher'
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>('marketing')
   const appBackground =
-    activeView === 'vouchers'
+    activeView === 'vouchers' || activeView === 'create-voucher'
       ? 'bg-[linear-gradient(180deg,_#F0F9FF_0%,_#FFFFFF_70%)]'
       : 'bg-[radial-gradient(circle_at_top,_#ffe7db_0%,_#f9fbff_42%,_#edf3fb_100%)]'
 
@@ -32,7 +33,16 @@ function App() {
             />
           </>
         ) : (
-          <VouchersPage onBack={() => setActiveView('marketing')} />
+          <>
+            {activeView === 'vouchers' ? (
+              <VouchersPage
+                onBack={() => setActiveView('marketing')}
+                onCreate={() => setActiveView('create-voucher')}
+              />
+            ) : (
+              <CreateVoucherPage onBack={() => setActiveView('vouchers')} />
+            )}
+          </>
         )}
       </main>
     </div>

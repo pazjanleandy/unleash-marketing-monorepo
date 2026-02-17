@@ -10,6 +10,7 @@ import type {
 
 type VouchersPageProps = {
   onBack: () => void
+  onCreate: () => void
 }
 
 type MobileTab = (typeof voucherTabs)[number]
@@ -48,8 +49,112 @@ const mobileCarouselTabs: MobileCarouselTab[] = [
 
 const quickFilters = ['All Products', 'Specific Products'] as const
 
+const monthLabels = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const
+
+type ParsedVoucherDate = {
+  day: number
+  month: number
+  year: number
+  time: string
+}
+
+function toCompactCurrency(value: string) {
+  const numeric = value.replace(/[^0-9.]/g, '')
+  const parsed = Number.parseFloat(numeric)
+
+  if (!Number.isFinite(parsed)) {
+    return '$0'
+  }
+
+  return `$${parsed.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+}
+
+function parseVoucherDate(value: string): ParsedVoucherDate | null {
+  const [datePart = '', timePart = ''] = value.trim().split(/\s+/)
+  const dateTokens = datePart.split('-')
+
+  if (dateTokens.length !== 3) {
+    return null
+  }
+
+  const [firstToken, secondToken, thirdToken] = dateTokens
+  const first = Number.parseInt(firstToken, 10)
+  const second = Number.parseInt(secondToken, 10)
+  const third = Number.parseInt(thirdToken, 10)
+
+  if ([first, second, third].some((token) => Number.isNaN(token))) {
+    return null
+  }
+
+  let day = first
+  let month = second
+  let year = third
+
+  if (firstToken.length === 4) {
+    year = first
+    month = second
+    day = third
+  }
+
+  if (day < 1 || day > 31 || month < 1 || month > 12) {
+    return null
+  }
+
+  return {
+    day,
+    month,
+    year,
+    time: timePart,
+  }
+}
+
+function formatMobileClaimingLine(claimingPeriod: VoucherItem['claimingPeriod']) {
+  const start = parseVoucherDate(claimingPeriod.start)
+  const end = parseVoucherDate(claimingPeriod.end)
+
+  if (!start || !end) {
+    return `${claimingPeriod.start} - ${claimingPeriod.end}`
+  }
+
+  const startLabel = `${monthLabels[start.month - 1]} ${start.day}`
+  const endLabel = `${monthLabels[end.month - 1]} ${end.day}`
+  const isSameDay =
+    start.day === end.day && start.month === end.month && start.year === end.year
+
+  if (isSameDay && start.time && end.time) {
+    return `${startLabel} | ${start.time}-${end.time}`
+  }
+
+  if (isSameDay && end.time) {
+    return `${startLabel} | Ends ${end.time}`
+  }
+
+  if (end.time) {
+    return `${startLabel}-${endLabel} | Ends ${end.time}`
+  }
+
+  return `${startLabel}-${endLabel}`
+}
+
 function getMobileActions(actions: VoucherAction[]) {
-  const primaryIndex = actions.findIndex((action) => !action.danger)
+  const primaryEditIndex = actions.findIndex(
+    (action) => action.label.toLowerCase() === 'edit',
+  )
+  const primaryIndex =
+    primaryEditIndex >= 0 ? primaryEditIndex : actions.findIndex((action) => !action.danger)
   const dangerIndex = actions.findIndex((action) => action.danger)
 
   const primaryAction =
@@ -69,38 +174,31 @@ function getMobileActions(actions: VoucherAction[]) {
   return {
     primaryAction,
     secondaryAction,
-    primaryOrder: primaryIndex >= 0 ? primaryIndex + 1 : 1,
-    secondaryOrder: dangerIndex >= 0 ? dangerIndex + 1 : actions.length || 2,
   }
 }
 
-function UsageRing({
+function CompactStatChip({
   label,
   value,
-  total,
-  color,
+  emphasized = false,
 }: {
   label: string
   value: number
-  total: number
-  color: string
+  emphasized?: boolean
 }) {
-  const ratio = total > 0 ? Math.min(Math.max(value / total, 0), 1) : 0
-  const degrees = Math.round(ratio * 360)
-  const ringBackground = `conic-gradient(${color} ${degrees}deg, #dbeafe ${degrees}deg)`
-
   return (
-    <div className="flex flex-col items-center gap-1 text-center">
-      <div
-        className="relative flex h-12 w-12 items-center justify-center rounded-full"
-        style={{ background: ringBackground }}
-      >
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[13px] font-semibold text-[#1E40AF]">
-          {value}
-        </div>
-      </div>
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+    <div
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] leading-none ${
+        emphasized
+          ? 'border-[#93c5fd] bg-[#dbeafe] text-[#1e3a8a]'
+          : 'border-slate-200 bg-white text-slate-700'
+      }`}
+    >
+      <span className="font-medium">
         {label}
+      </span>
+      <span className={`font-semibold ${emphasized ? 'text-[#1d4ed8]' : 'text-slate-900'}`}>
+        {value}
       </span>
     </div>
   )
@@ -114,10 +212,10 @@ function MobileVoucherCard({
   delayMs: number
 }) {
   const unusedCount = Math.max(voucher.quantity - voucher.usage, 0)
-  const { primaryAction, secondaryAction, primaryOrder, secondaryOrder } =
-    getMobileActions(voucher.actions)
-  const discountLabel = `${voucher.discountAmount} OFF`
-  const minimumSpend = `$${(voucher.quantity * 10).toFixed(2)}`
+  const { primaryAction, secondaryAction } = getMobileActions(voucher.actions)
+  const discountValue = toCompactCurrency(voucher.discountAmount)
+  const minimumSpend = toCompactCurrency(`${(voucher.quantity * 10).toFixed(2)}`)
+  const claimingLine = formatMobileClaimingLine(voucher.claimingPeriod)
 
   const [swipeOffset, setSwipeOffset] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -131,6 +229,9 @@ function MobileVoucherCard({
       : swipeOffset >= swipeThreshold
         ? secondaryAction.label
         : null
+  const secondaryActionClasses = secondaryAction.danger
+    ? 'border-[#fca5a5] bg-white text-[#b91c1c] hover:bg-[#fef2f2]'
+    : 'border-[#bfdbfe] bg-white text-[#1d4ed8] hover:bg-[#dbeafe]'
 
   const onTouchStart: TouchEventHandler<HTMLDivElement> = (event) => {
     setTouchStartX(event.touches[0]?.clientX ?? null)
@@ -158,7 +259,7 @@ function MobileVoucherCard({
 
   return (
     <article
-      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-2xl border-l-4 bg-white px-4 pb-4 pt-3 shadow-[0_14px_35px_-22px_rgba(30,64,175,0.85)] ${statusBorderClasses[voucher.status]}`}
+      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-2xl border-l-4 bg-white px-4 pb-4 pt-3 shadow-[0_14px_35px_-22px_rgba(30,64,175,0.85)] max-[480px]:px-3.5 max-[480px]:pb-3.5 ${statusBorderClasses[voucher.status]}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#eff6ff] to-transparent" />
@@ -170,91 +271,59 @@ function MobileVoucherCard({
         onTouchEnd={onTouchEnd}
         style={{ transform: `translateX(${swipeOffset}px)` }}
       >
-        <div className="flex items-start gap-3">
-          <div className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#60A5FA] text-[24px] font-bold leading-none text-white">
-            {voucher.icon === 'percent' ? '%' : '$'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold leading-tight text-[#1E40AF]">
-                  {voucher.name}
-                </p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-500">
-                  {voucher.claimingPeriod.start} - {voucher.claimingPeriod.end}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold shadow ${statusPillClasses[voucher.status]}`}
-              >
-                {voucher.status}
+        <div className="flex items-start justify-between gap-3 max-[480px]:gap-2">
+          <div className="min-w-0">
+            <p className="text-[34px] font-bold leading-none tracking-tight text-[#2563EB] max-[480px]:text-[30px]">
+              <span>{discountValue}</span>
+              <span className="ml-1.5 align-middle text-[13px] font-semibold uppercase tracking-wide text-[#1d4ed8]/80">
+                OFF
               </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[32px] font-bold leading-none tracking-tight text-[#2563EB]">
-              {discountLabel}
             </p>
-            <p className="mt-1 text-[12px] text-slate-500">Min. spend {minimumSpend}</p>
-            <p className="text-[12px] text-slate-500">Type: Shop Voucher</p>
-          </div>
-          <code className="inline-flex h-fit rounded-lg bg-[#DBEAFE] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-wide text-[#1D4ED8]">
-            {voucher.code}
-          </code>
-        </div>
 
-        <div className="mt-4 border-y border-[#dbeafe] py-3">
-          <div className="grid grid-cols-3 justify-items-center gap-2">
-            <UsageRing
-              label="Claimed"
-              value={voucher.claimed}
-              total={voucher.quantity}
-              color="#2563EB"
-            />
-            <UsageRing
-              label="Used"
-              value={voucher.usage}
-              total={voucher.quantity}
-              color="#10B981"
-            />
-            <UsageRing
-              label="Unused"
-              value={unusedCount}
-              total={voucher.quantity}
-              color="#60A5FA"
-            />
+            <p className="mt-2 truncate text-[15px] font-semibold leading-tight text-slate-900">
+              {voucher.name}
+            </p>
+
+            <p className="mt-1 text-sm leading-snug text-slate-700">
+              Min. spend {minimumSpend} | Type: Shop Voucher
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span
+              className={`inline-flex min-w-[76px] justify-center rounded-full px-2.5 py-1 text-[12px] font-semibold shadow ${statusPillClasses[voucher.status]}`}
+            >
+              {voucher.status}
+            </span>
+            <code className="inline-flex min-h-[30px] items-center rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 font-mono text-[12px] font-semibold tracking-wide text-[#1d4ed8]">
+              {voucher.code}
+            </code>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <p className="mt-2 text-sm font-medium text-slate-600">{claimingLine}</p>
+
+        <div className="mt-3 flex flex-wrap gap-2 border-y border-[#dbeafe] py-2.5">
+          <CompactStatChip label="Claimed" value={voucher.claimed} />
+          <CompactStatChip label="Used" value={voucher.usage} />
+          <CompactStatChip label="Unused" value={unusedCount} emphasized />
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2.5 min-[481px]:gap-3">
           <a
             href="#"
             onClick={(event) => event.preventDefault()}
-            className="inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] text-[13px] font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe] active:scale-[0.98]"
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-[#1d4ed8] bg-[#2563EB] px-3 text-[14px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
           >
             {primaryAction.label}
-            <span className="rounded-full bg-[#2563EB] px-2 py-0.5 text-[10px] text-white">
-              {primaryOrder}
-            </span>
           </a>
           <a
             href="#"
             onClick={(event) => event.preventDefault()}
-            className="inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-[#fed7aa] bg-[#fff7ed] text-[13px] font-semibold text-[#c2410c] transition hover:bg-[#ffedd5] active:scale-[0.98]"
+            className={`inline-flex h-11 items-center justify-center rounded-xl border px-3 text-[14px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
           >
             {secondaryAction.label}
-            <span className="rounded-full bg-[#ea580c] px-2 py-0.5 text-[10px] text-white">
-              {secondaryOrder}
-            </span>
           </a>
-        </div>
-
-        <div className="pointer-events-none mt-2 text-center text-[10px] font-medium tracking-wide text-slate-400">
-          Swipe left to {primaryAction.label.toLowerCase()} | right to{' '}
-          {secondaryAction.label.toLowerCase()}
         </div>
       </div>
 
@@ -319,7 +388,7 @@ function VoucherRow({ voucher }: { voucher: VoucherItem }) {
   )
 }
 
-function VouchersPage({ onBack }: VouchersPageProps) {
+function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('Upcoming')
   const [quickFilter, setQuickFilter] =
     useState<(typeof quickFilters)[number]>('All Products')
@@ -440,6 +509,7 @@ function VouchersPage({ onBack }: VouchersPageProps) {
         <div className="fixed bottom-5 right-4 z-20">
           <button
             type="button"
+            onClick={onCreate}
             className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#2563EB] text-3xl font-semibold text-white shadow-[0_20px_30px_-18px_rgba(30,64,175,0.95)] transition hover:bg-[#1d4ed8] active:scale-95"
             aria-label="Create new voucher"
           >
@@ -452,20 +522,20 @@ function VouchersPage({ onBack }: VouchersPageProps) {
         <button
           type="button"
           onClick={onBack}
-          className="text-sm font-medium text-[#2f70db] transition hover:text-[#1f57b7]"
+          className="inline-flex items-center rounded-full bg-[#eff6ff] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
         >
           &larr; Back to Marketing Centre
         </button>
 
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-5">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Vouchers</h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <h1 className="text-3xl font-semibold text-[#1E40AF]">Vouchers</h1>
+            <p className="mt-2 text-sm text-[#1d4ed8]">
               Create and manage your own vouchers for your shop and products
               on Unleash.
               <button
                 type="button"
-                className="ml-1 font-semibold text-[#2f70db] hover:underline"
+                className="ml-1 font-semibold text-[#1e3a8a] hover:underline"
               >
                 Learn More
               </button>
@@ -473,21 +543,22 @@ function VouchersPage({ onBack }: VouchersPageProps) {
           </div>
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#f05d2c] px-5 text-sm font-semibold text-white transition hover:bg-[#e24d1d]"
+            onClick={onCreate}
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
           >
             + Create
           </button>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-end gap-2 border-b border-slate-200 pb-3">
+        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl bg-[#eff6ff] p-2">
           {voucherTabs.map((tab, index) => (
             <button
               key={tab}
               type="button"
-              className={`rounded-t-lg border border-b-0 px-4 py-2 text-sm font-medium transition ${
+              className={`h-10 rounded-full px-4 text-sm font-semibold transition ${
                 index === 0
-                  ? 'border-[#f05d2c] bg-[#fff3ee] text-[#f05d2c]'
-                  : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-white'
+                  ? 'bg-[#2563EB] text-white shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)]'
+                  : 'text-[#1d4ed8] hover:bg-[#dbeafe]'
               }`}
             >
               {tab}
@@ -496,9 +567,9 @@ function VouchersPage({ onBack }: VouchersPageProps) {
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[980px] w-full border-separate border-spacing-0 rounded-xl border border-slate-200">
+          <table className="min-w-[980px] w-full border-separate border-spacing-0 rounded-2xl border border-[#dbeafe] bg-white shadow-[0_16px_35px_-28px_rgba(30,64,175,0.65)]">
             <thead>
-              <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
                 <th className="px-4 py-3 font-semibold">
                   Voucher Code | Name
                 </th>
@@ -524,6 +595,7 @@ function VouchersPage({ onBack }: VouchersPageProps) {
           </table>
         </div>
       </div>
+
     </section>
   )
 }
