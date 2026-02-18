@@ -97,6 +97,42 @@ Routing is view-state based in `src/App.tsx`:
 - `src/components/flash-deals/data.ts`
 - `src/components/flash-deals/types.ts`
 
+#### 10) Marketing Home Visual Hierarchy Refresh
+- Updated Marketing Centre home visual hierarchy for clearer scan order.
+- Standardized Marketing Tool icon tones to one blue system.
+- Rebalanced typography contrast (reduced heavy black text across titles/body).
+- Updated hero branding to use `public/unleash_banner.png` above `Marketing-Centre`.
+
+#### 11) Vouchers Page Layout Rework (Desktop) + Mobile Density Tuning
+- Reworked desktop Vouchers into Shopee-style sections:
+  - `Create Voucher` grouped cards
+  - `Voucher Performance` metrics strip
+  - `Vouchers List` with tabs/search/table
+- Added reusable desktop UI blocks inside `VouchersPage` for create-type cards and metric tiles.
+- Added working desktop filtering by tab and search query.
+- Updated voucher sample data for richer statuses and standardized `PHP` display values.
+- Reduced mobile voucher card visual bulk for high-density lists:
+  - smaller card paddings/type scales
+  - compact stats summary line
+  - smaller action buttons
+  - removed extra loading strip above list
+
+#### 12) Flash Deals Mobile UX and Readability Improvements
+- Replaced mobile filter carousel with fixed 4-tab pill filter style (`All/Upcoming/Ongoing/Expired`).
+- Refined mobile flash-deal cards for readability and scanability:
+  - primary focus on time and status
+  - cleaner metric zones (`Enabled`, `Available`)
+  - clearer action row with readable touch targets
+- Added optional mobile date grouping so repeated dates render once as section headers.
+- Improved time-slot parsing so displayed time includes full ranges.
+- Mapped mobile `Expired` status label to `Ended` for clearer user meaning.
+
+#### 13) Flash Deals Action Consistency
+- Updated Flash Deals desktop table `Actions` column to match other pages:
+  - stacked per-action links
+  - blue default action links
+  - orange/red danger styling for destructive actions (`Delete` / `End`)
+
 ### 2026-02-17
 
 #### 1) Create Voucher Flow Added and Componentized

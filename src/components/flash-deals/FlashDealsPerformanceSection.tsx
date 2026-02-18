@@ -11,11 +11,10 @@ const trendClasses: Record<FlashDealsMetric['trend'], string> = {
   neutral: 'bg-slate-100 text-slate-600',
 }
 
-const metricIcons: Record<string, string> = {
-  Sales: '💰',
-  Orders: '📦',
-  Buyers: '👥',
-  'Click-Through Rate (CTR)': '👆',
+const mobileTrendClasses: Record<FlashDealsMetric['trend'], string> = {
+  up: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  down: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+  neutral: 'bg-slate-50 text-slate-600 ring-1 ring-slate-200',
 }
 
 function FlashDealsPerformanceSection({
@@ -40,7 +39,14 @@ function FlashDealsPerformanceSection({
       </div>
 
       <div className="w-full overflow-hidden bg-transparent px-4 py-3 sm:hidden">
-        <div className="scrollbar-hide flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden pb-2">
+        <div className="mb-2.5 flex items-center justify-end px-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#64748B]">
+            Swipe cards
+          </span>
+          <span className="ml-1 text-xs font-semibold text-[#2563EB]">&harr;</span>
+        </div>
+        <div className="relative">
+          <div className="scrollbar-hide flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden pb-2 pr-3">
           {metrics.map((metric) => {
             const valueLength = metric.value.length
             const valueSizeClass =
@@ -53,27 +59,30 @@ function FlashDealsPerformanceSection({
             return (
               <article
                 key={metric.label}
-                className="flex h-[112px] min-w-[160px] max-w-[160px] shrink-0 snap-start flex-col overflow-hidden rounded-xl bg-white p-3.5 shadow-sm"
+                className="flex h-[122px] min-w-[170px] max-w-[170px] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-[#dbeafe] bg-white p-3.5 shadow-sm"
               >
-                <div className="h-5 text-base leading-none text-[#64748B]">
-                  {metricIcons[metric.label] ?? '•'}
+                <div className="flex items-start justify-between gap-2">
+                  <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748B]">
+                    {metric.label}
+                  </p>
+                  <span
+                    className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${mobileTrendClasses[metric.trend]}`}
+                  >
+                    {metric.comparisonValue}
+                  </span>
                 </div>
-                <p className="mt-0.5 w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-[#64748B]">
-                  {metric.label}
-                </p>
                 <p
-                  className={`mt-0.5 w-full whitespace-nowrap font-bold leading-none tracking-tight text-[#1E293B] ${valueSizeClass}`}
+                  className={`mt-3 w-full whitespace-nowrap font-bold leading-none tracking-tight text-[#1E293B] ${valueSizeClass}`}
                 >
                   {metric.value}
                 </p>
-                <span
-                  className={`mt-auto inline-flex w-fit rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${trendClasses[metric.trend]}`}
-                >
-                  {metric.comparisonValue}
-                </span>
+                <p className="mt-auto text-[11px] text-slate-500">{metric.comparisonLabel}</p>
               </article>
             )
           })}
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[#F0F9FF] via-[#F0F9FF]/90 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#F0F9FF] via-[#F0F9FF]/90 to-transparent" />
         </div>
         <div className="mt-1 h-0.5 w-full rounded-full bg-slate-200/80" />
       </div>

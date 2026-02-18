@@ -151,7 +151,7 @@ function App() {
     activeView === 'vouchers' ||
     activeView === 'create-voucher'
       ? 'bg-[linear-gradient(180deg,_#F0F9FF_0%,_#FFFFFF_70%)]'
-      : 'bg-[radial-gradient(circle_at_top,_#ffe7db_0%,_#f9fbff_42%,_#edf3fb_100%)]'
+      : 'bg-[radial-gradient(circle_at_top,_#dbeafe_0%,_#f8fbff_42%,_#edf4ff_100%)]'
 
   const handleToolSelect = (tool: ToolCard) => {
     if (tool.id === 'vouchers') {

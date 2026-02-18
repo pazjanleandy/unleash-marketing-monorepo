@@ -12,7 +12,7 @@ function ToolCardItem({ tool, animationDelay, onToolSelect }: ToolCardItemProps)
   const tone = toneClasses[tool.tone]
   const isClickable = Boolean(tool.id) && typeof onToolSelect === 'function'
   const cardClassName =
-    'motion-rise rounded-2xl border border-slate-200 bg-[#f8fafd]/80 p-4 text-left transition duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-[0_16px_34px_-30px_rgba(15,23,42,0.8)]'
+    'motion-rise rounded-2xl border border-slate-200/90 bg-white p-4 text-left transition duration-300 hover:-translate-y-0.5 hover:border-[#c7dcff] hover:bg-[#f8fbff] hover:shadow-[0_16px_34px_-30px_rgba(37,99,235,0.45)]'
 
   const cardContent = (
     <div className="flex items-start gap-3 text-left">
@@ -33,10 +33,10 @@ function ToolCardItem({ tool, animationDelay, onToolSelect }: ToolCardItemProps)
         </svg>
       </div>
       <div className="min-w-0 text-left">
-        <h4 className="text-lg font-semibold leading-tight text-slate-900">
+        <h4 className="text-lg font-semibold leading-tight text-slate-800">
           {tool.title}
         </h4>
-        <p className="mt-1 text-sm leading-snug text-slate-600">
+        <p className="mt-1 text-sm leading-snug text-slate-500">
           {tool.description}
         </p>
       </div>

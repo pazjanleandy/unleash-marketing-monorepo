@@ -11,6 +11,21 @@ const tabs: FlashDealsTab[] = ['All', 'Ongoing', 'Upcoming', 'Expired']
 
 type DatePreset = 'all' | 'today' | 'tomorrow' | 'next7' | 'custom'
 
+const monthLabels = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const
+
 const statusClasses: Record<FlashDealStatus, string> = {
   Upcoming: 'bg-[#DBEAFE] text-[#1D4ED8]',
   Ongoing: 'bg-[#DCFCE7] text-[#15803D]',
@@ -24,7 +39,8 @@ const toggleClasses: Record<FlashDealStatus, string> = {
 }
 
 function parseDateParts(timeSlot: string) {
-  const [datePart = '', timePart = ''] = timeSlot.split(' ', 2)
+  const [datePart = '', ...timeParts] = timeSlot.trim().split(/\s+/)
+  const timePart = timeParts.join(' ')
   const [day, month, year] = datePart.split('-')
 
   if (!day || !month || !year) {
@@ -36,6 +52,30 @@ function parseDateParts(timeSlot: string) {
     timePart,
     dateISO: `${year}-${month}-${day}`,
   }
+}
+
+function formatDateHeader(rawDatePart: string) {
+  const [dayToken, monthToken, yearToken] = rawDatePart.split('-')
+  const day = Number.parseInt(dayToken, 10)
+  const month = Number.parseInt(monthToken, 10)
+  const year = Number.parseInt(yearToken, 10)
+
+  if (!day || !month || !year || month < 1 || month > 12) {
+    return rawDatePart || 'Unknown Date'
+  }
+
+  return `${monthLabels[month - 1]} ${day}, ${year}`
+}
+
+function toStatusLabel(status: FlashDealStatus) {
+  return status === 'Expired' ? 'Ended' : status
+}
+
+function getPrimaryActionLabel(row: FlashDealRow) {
+  const preferred = row.status === 'Expired' ? 'view' : 'edit'
+  const match = row.actions.find((action) => action.trim().toLowerCase() === preferred)
+
+  return match ?? (row.status === 'Expired' ? 'View' : 'Edit')
 }
 
 function isDateMatch(dateISO: string, preset: DatePreset, customDate: string) {
@@ -86,15 +126,15 @@ function Toggle({
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
+      className={`relative inline-flex h-11 w-[68px] items-center rounded-full transition ${
         enabled ? toggleClasses[status] : 'bg-slate-300'
       } ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
       aria-pressed={enabled}
       aria-label={enabled ? 'Disable promotion' : 'Enable promotion'}
     >
       <span
-        className={`inline-flex h-6 w-6 rounded-full bg-white shadow transition ${
-          enabled ? 'translate-x-7' : 'translate-x-1'
+        className={`inline-flex h-8 w-8 rounded-full bg-white shadow transition ${
+          enabled ? 'translate-x-7' : 'translate-x-1.5'
         }`}
       />
     </button>
@@ -105,15 +145,22 @@ function SwipeablePromotionCard({
   row,
   enabled,
   onToggle,
+  showDateInCard = false,
 }: {
   row: FlashDealRow
   enabled: boolean
   onToggle: () => void
+  showDateInCard?: boolean
 }) {
   const [offsetX, setOffsetX] = useState(0)
   const [startX, setStartX] = useState<number | null>(null)
 
   const { datePart, timePart } = parseDateParts(row.timeSlot)
+  const primaryActionLabel = getPrimaryActionLabel(row)
+  const secondaryActionLabel = row.status === 'Expired' ? 'Delete' : enabled ? 'Disable' : 'Enable'
+  const secondaryDanger = row.status === 'Expired'
+  const previewCount = Math.min(Math.max(row.enabledProducts, 1), 3)
+  const extraProducts = Math.max(row.enabledProducts - previewCount, 0)
 
   const onTouchStart: TouchEventHandler<HTMLDivElement> = (event) => {
     setStartX(event.touches[0]?.clientX ?? null)
@@ -140,38 +187,126 @@ function SwipeablePromotionCard({
     setStartX(null)
   }
 
+  const handlePrimaryAction = () => {
+    if (primaryActionLabel.toLowerCase() === 'edit') {
+      return
+    }
+  }
+
+  const handleSecondaryAction = () => {
+    if (row.status !== 'Expired') {
+      onToggle()
+    }
+  }
+
   return (
-    <article className="relative mx-4 mb-3 overflow-hidden rounded-2xl bg-white shadow-sm">
+    <article className="relative mx-4 overflow-hidden rounded-2xl border border-[#dbeafe]/80 bg-white shadow-sm">
       <div className="pointer-events-none absolute inset-y-0 left-0 flex w-16 items-center justify-center bg-slate-100 text-xs font-semibold text-slate-600">
         Duplicate
       </div>
       <div className="pointer-events-none absolute inset-y-0 right-0 flex w-24 items-center justify-evenly bg-[#eff6ff]">
-        <span className="rounded-lg bg-[#DBEAFE] px-2 py-1 text-xs font-semibold text-[#1D4ED8]">Edit</span>
-        <span className="rounded-lg bg-[#FEE2E2] px-2 py-1 text-xs font-semibold text-[#B91C1C]">Delete</span>
+        <span className="rounded-lg bg-[#DBEAFE] px-2 py-1 text-xs font-semibold text-[#1D4ED8]">
+          {primaryActionLabel}
+        </span>
+        <span
+          className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+            secondaryDanger
+              ? 'bg-[#FEE2E2] text-[#B91C1C]'
+              : 'bg-[#dbeafe] text-[#1d4ed8]'
+          }`}
+        >
+          {secondaryActionLabel}
+        </span>
       </div>
 
       <div
-        className="relative rounded-2xl bg-white p-4 transition-transform duration-200"
+        className="relative rounded-2xl bg-white p-5 transition-transform duration-200"
         style={{ transform: `translateX(${offsetX}px)` }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <p className="text-sm text-[#64748B]">{datePart}</p>
-        <p className="mt-0.5 text-base font-medium text-[#1E293B]">{timePart}</p>
-
-        <div className="mt-3 space-y-1">
-          <p className="text-sm text-[#475569]">Enabled for Flash Deals: {row.enabledProducts}</p>
-          <p className="text-sm text-[#475569]">Total available: {row.totalAvailable}</p>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+            {showDateInCard ? datePart : 'Time Slot'}
+          </p>
           <span
             className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[row.status]}`}
           >
-            {row.status}
+            {toStatusLabel(row.status)}
           </span>
-          <Toggle enabled={enabled} status={row.status} onToggle={onToggle} />
+        </div>
+
+        <div className="mt-3">
+          <p className="text-3xl font-bold leading-none tracking-tight text-[#0f172a]">
+            {timePart || '--:--'}
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-[#f8fbff] px-3 py-2.5">
+          <div className="flex items-center -space-x-2">
+            {Array.from({ length: previewCount }).map((_, index) => (
+              <span
+                key={`${row.id}-preview-${index}`}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-white bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] text-[10px] font-semibold text-[#1d4ed8]"
+              >
+                P{index + 1}
+              </span>
+            ))}
+            {extraProducts > 0 ? (
+              <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border-2 border-white bg-slate-200 px-1.5 text-[10px] font-semibold text-slate-600">
+                +{extraProducts}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+            <div className="rounded-lg bg-white px-2.5 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+                Enabled
+              </p>
+              <p className="mt-1 text-xl font-bold leading-none text-[#1E293B]">{row.enabledProducts}</p>
+            </div>
+            <div className="rounded-lg bg-white px-2.5 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+                Available
+              </p>
+              <p className="mt-1 text-xl font-bold leading-none text-[#1E293B]">{row.totalAvailable}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={handlePrimaryAction}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-[#bfdbfe] bg-white px-3 text-sm font-semibold text-[#1d4ed8] transition active:scale-[0.98]"
+          >
+            {primaryActionLabel}
+          </button>
+          <button
+            type="button"
+            onClick={handleSecondaryAction}
+            className={`inline-flex h-11 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition active:scale-[0.98] ${
+              secondaryDanger
+                ? 'border-[#fca5a5] bg-white text-[#b91c1c]'
+                : 'border-[#bfdbfe] bg-white text-[#1d4ed8]'
+            }`}
+          >
+            {secondaryActionLabel}
+          </button>
+        </div>
+
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-[11px] text-slate-400">Swipe for more actions</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-medium text-slate-500">
+              {enabled ? 'Active' : 'Paused'}
+            </p>
+            <div className="scale-90">
+              <Toggle enabled={enabled} status={row.status} onToggle={onToggle} />
+            </div>
+          </div>
         </div>
       </div>
     </article>
@@ -201,16 +336,6 @@ function FlashDealsPromotionListSection({
     return () => window.clearTimeout(timer)
   }, [refreshNonce])
 
-  const counts = useMemo(
-    () => ({
-      All: rows.length,
-      Ongoing: rows.filter((row) => row.status === 'Ongoing').length,
-      Upcoming: rows.filter((row) => row.status === 'Upcoming').length,
-      Expired: rows.filter((row) => row.status === 'Expired').length,
-    }),
-    [rows],
-  )
-
   const filteredRows = useMemo(() => {
     const byStatus = rows.filter((row) => activeTab === 'All' || row.status === activeTab)
 
@@ -220,6 +345,31 @@ function FlashDealsPromotionListSection({
     })
   }, [activeTab, customDate, datePreset, rows])
 
+  const groupedMobileRows = useMemo(() => {
+    const groups: Array<{ key: string; dateLabel: string; rows: FlashDealRow[] }> = []
+    const byKey = new Map<string, { key: string; dateLabel: string; rows: FlashDealRow[] }>()
+
+    filteredRows.forEach((row) => {
+      const { datePart, dateISO } = parseDateParts(row.timeSlot)
+      const key = dateISO || datePart || row.id
+
+      if (!byKey.has(key)) {
+        const group = {
+          key,
+          dateLabel: formatDateHeader(datePart),
+          rows: [row],
+        }
+        byKey.set(key, group)
+        groups.push(group)
+        return
+      }
+
+      byKey.get(key)?.rows.push(row)
+    })
+
+    return groups
+  }, [filteredRows])
+
   const handleToggle = (rowId: string) => {
     setEnabledById((previous) => ({
       ...previous,
@@ -227,8 +377,16 @@ function FlashDealsPromotionListSection({
     }))
   }
 
+  const getActionClassName = (action: string) => {
+    const normalized = action.trim().toLowerCase()
+
+    return normalized === 'delete' || normalized === 'end'
+      ? 'text-[#dc4f1f] hover:text-[#c2410c]'
+      : 'text-[#2563EB] hover:text-[#1d4ed8]'
+  }
+
   return (
-    <article className="bg-transparent pb-24 sm:rounded-2xl sm:border sm:border-[#dbeafe] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(37,99,235,0.8)]">
+    <article className="bg-transparent pb-28 sm:rounded-2xl sm:border sm:border-[#dbeafe] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(37,99,235,0.8)]">
       <div className="hidden sm:block">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -299,7 +457,20 @@ function FlashDealsPromotionListSection({
                       onToggle={() => handleToggle(row.id)}
                     />
                   </td>
-                  <td className="px-3 py-3.5">{row.actions.join(', ')}</td>
+                  <td className="px-3 py-3.5">
+                    <ul className="min-w-[110px] space-y-1.5">
+                      {row.actions.map((action) => (
+                        <li key={`${row.id}-${action}`}>
+                          <button
+                            type="button"
+                            className={`text-sm font-medium transition ${getActionClassName(action)}`}
+                          >
+                            {action}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -308,8 +479,8 @@ function FlashDealsPromotionListSection({
       </div>
 
       <div className="sm:hidden">
-        <div className="sticky top-14 z-20 bg-gradient-to-b from-[#F0F9FF] to-[#F0F9FF]/90 pb-2 pt-1 backdrop-blur">
-          <div className="flex gap-2 overflow-x-auto px-4">
+        <div className="bg-gradient-to-b from-[#F0F9FF] to-[#F0F9FF]/90 px-4 pb-3 pt-2">
+          <div className="grid grid-cols-4 rounded-full bg-[#dbeafe] p-1 shadow-inner">
             {tabs.map((tab) => {
               const active = tab === activeTab
               return (
@@ -317,31 +488,24 @@ function FlashDealsPromotionListSection({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition ${
+                  className={`inline-flex h-10 items-center justify-center rounded-full px-2 text-[15px] font-semibold transition-colors ${
                     active
-                      ? 'border-[#2563EB] bg-[#2563EB] text-white'
-                      : 'border-slate-300 bg-white text-[#2563EB]'
+                      ? 'bg-[#2563EB] text-white shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)]'
+                      : 'text-[#1d4ed8]'
                   }`}
                 >
                   {tab}
-                  <span
-                    className={`ml-1.5 text-xs font-semibold opacity-90 ${
-                      active ? 'text-white' : 'text-[#1d4ed8]'
-                    }`}
-                  >
-                    {counts[tab as keyof typeof counts]}
-                  </span>
                 </button>
               )
             })}
           </div>
         </div>
 
-        <div className="mt-2 px-4">
+        <div className="mt-4 px-4">
           <button
             type="button"
             onClick={() => setDateOpen((value) => !value)}
-            className="flex h-11 w-full items-center justify-between rounded-xl border border-[#cfe0f3] bg-white px-3 text-sm font-medium text-[#1E293B] shadow-[0_1px_0_rgba(15,23,42,0.02)]"
+            className="flex h-12 w-full items-center justify-between rounded-xl border border-[#cfe0f3] bg-white px-3.5 text-sm font-medium text-[#1E293B] shadow-[0_1px_0_rgba(15,23,42,0.02)]"
           >
             <span className="truncate">
               Date:{' '}
@@ -377,7 +541,7 @@ function FlashDealsPromotionListSection({
           </button>
 
           {dateOpen ? (
-            <div className="mt-2 space-y-2 rounded-xl border border-[#dbeafe] bg-white p-3">
+            <div className="mt-3 space-y-3 rounded-xl border border-[#dbeafe] bg-white p-4">
               {[
                 { id: 'all', label: 'All Dates' },
                 { id: 'today', label: 'Today' },
@@ -415,25 +579,37 @@ function FlashDealsPromotionListSection({
           ) : null}
         </div>
 
-        <div className="mt-3">
+        <div className="mt-5">
           {loading ? (
-            <div className="space-y-3 px-4">
+            <div className="space-y-5 px-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={`flash-skeleton-${index}`}
-                  className="h-40 animate-pulse rounded-2xl bg-slate-200"
+                  className="h-44 animate-pulse rounded-2xl bg-slate-200"
                 />
               ))}
             </div>
-          ) : filteredRows.length > 0 ? (
-            filteredRows.map((row) => (
-              <SwipeablePromotionCard
-                key={row.id}
-                row={row}
-                enabled={enabledById[row.id]}
-                onToggle={() => handleToggle(row.id)}
-              />
-            ))
+          ) : groupedMobileRows.length > 0 ? (
+            <div className="space-y-5">
+              {groupedMobileRows.map((group) => (
+                <section key={group.key}>
+                  <h3 className="px-4 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
+                    {group.dateLabel}
+                  </h3>
+                  <div className="mt-2.5 space-y-3">
+                    {group.rows.map((row) => (
+                      <SwipeablePromotionCard
+                        key={row.id}
+                        row={row}
+                        enabled={enabledById[row.id]}
+                        onToggle={() => handleToggle(row.id)}
+                        showDateInCard={false}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           ) : (
             <div className="px-4 pt-6 text-center">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-4xl text-slate-300">

@@ -39,10 +39,10 @@ function ToolTile({ item, onToolSelect }: ToolTileProps) {
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex min-h-11 w-full flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-3 text-center shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      className="inline-flex min-h-11 w-full flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-3.5 text-center shadow-sm transition duration-150 hover:border-[#c7dcff] hover:bg-[#f8fbff] active:scale-[0.98] active:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
       aria-label={item.label}
     >
-      <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-full border border-[#dbeafe] bg-[#eff6ff] text-[#2563EB]">
+      <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-full border border-[#c7dcff] bg-[#eff6ff] text-[#2563EB]">
         <svg
           viewBox="0 0 24 24"
           className="h-6 w-6"
@@ -57,7 +57,7 @@ function ToolTile({ item, onToolSelect }: ToolTileProps) {
         </svg>
       </span>
 
-      <span className="min-h-[2.5rem] w-full text-[13px] font-medium leading-snug text-slate-800 line-clamp-2">
+      <span className="min-h-[2.5rem] w-full text-[13px] font-semibold leading-snug text-slate-700 line-clamp-2">
         {item.label}
       </span>
     </button>
@@ -167,18 +167,18 @@ function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProp
 
   return (
     <section
-      className="motion-rise mt-6 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
+      className="motion-rise mt-6 rounded-3xl border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
       style={{ animationDelay: '120ms' }}
     >
       <div className="sm:hidden">
         <header className="px-1">
-          <h2 className="text-2xl font-semibold text-slate-900">Marketing Tools</h2>
-          <p className="mt-1.5 text-sm leading-snug text-slate-600">
+          <h2 className="text-2xl font-semibold text-slate-800">Marketing Tools</h2>
+          <p className="mt-1.5 text-sm leading-snug text-slate-500">
             Create and manage promotions to boost sales.
           </p>
           <a
             href="#"
-            className="mt-2 inline-flex items-center text-sm font-medium text-[#2f70db] transition hover:text-[#1f57b7]"
+            className="mt-2 inline-flex items-center text-sm font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
           >
             View Products under Promotion
             <span aria-hidden="true" className="ml-1">
@@ -195,7 +195,7 @@ function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProp
               </p>
               <button
                 type="button"
-                className="text-xs font-medium text-[#2f70db] transition hover:text-[#1f57b7]"
+                className="text-xs font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
               >
                 See all
               </button>
@@ -227,10 +227,10 @@ function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProp
 
       <div className="hidden sm:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-semibold text-slate-900">Marketing Tools</h2>
+          <h2 className="text-2xl font-semibold text-slate-800">Marketing Tools</h2>
           <a
             href="#"
-            className="group inline-flex items-center gap-2 text-sm font-medium text-[#2f70db] transition hover:text-[#1f57b7]"
+            className="group inline-flex items-center gap-2 text-sm font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
           >
             View Products under Promotion
             <span

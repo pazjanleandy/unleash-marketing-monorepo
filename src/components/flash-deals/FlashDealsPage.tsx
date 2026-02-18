@@ -77,8 +77,8 @@ function FlashDealsPage({ onBack }: FlashDealsPageProps) {
           {refreshing ? 'Refreshing...' : 'Pull to refresh'}
         </div>
 
-        <header className="rounded-2xl bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-3 shadow-[0_14px_30px_-26px_rgba(37,99,235,0.9)]">
-          <div className="flex items-center gap-2">
+        <header className="rounded-2xl bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4 shadow-[0_14px_30px_-26px_rgba(37,99,235,0.9)]">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={onBack}
@@ -87,14 +87,14 @@ function FlashDealsPage({ onBack }: FlashDealsPageProps) {
             >
               &larr;
             </button>
-            <h1 className="text-[36px] font-bold leading-none text-[#1E40AF]">Flash Deals</h1>
+            <h1 className="text-[34px] font-bold leading-none text-[#1E40AF]">Flash Deals</h1>
           </div>
-          <p className="mt-1.5 text-[12px] text-[#1d4ed8]">
+          <p className="mt-2 text-[12px] text-[#1d4ed8]">
             Pull to refresh, tap cards, or swipe for quick actions.
           </p>
         </header>
 
-        <div className="space-y-4 pt-4">
+        <div className="space-y-5 pt-5">
           <FlashDealsPerformanceSection
             dateLabel={flashDealsPerformanceDateLabel}
             metrics={flashDealsPerformanceMetrics}

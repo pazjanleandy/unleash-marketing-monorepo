@@ -14,7 +14,7 @@ function ToolSectionBlock({
 }: ToolSectionBlockProps) {
   return (
     <div>
-      <h3 className="text-xl font-semibold text-slate-900">{section.title}</h3>
+      <h3 className="text-xl font-semibold text-slate-800">{section.title}</h3>
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {section.tools.map((tool, toolIndex) => (
           <ToolCardItem

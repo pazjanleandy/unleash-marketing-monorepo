@@ -84,7 +84,7 @@ export const toolSections: ToolSection[] = [
 ]
 
 export const toneClasses: Record<ToolTone, string> = {
-  blue: 'bg-[#e9f0ff] text-[#2f70db] ring-[#d2e2ff]',
-  mint: 'bg-[#e5f8f1] text-[#1f9a76] ring-[#c6eddc]',
-  amber: 'bg-[#fff4de] text-[#c7850c] ring-[#f7e6b9]',
+  blue: 'bg-[#eaf2ff] text-[#2563EB] ring-[#c7dcff]',
+  mint: 'bg-[#eaf2ff] text-[#2563EB] ring-[#c7dcff]',
+  amber: 'bg-[#eaf2ff] text-[#2563EB] ring-[#c7dcff]',
 }

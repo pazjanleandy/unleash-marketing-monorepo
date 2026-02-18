@@ -16,12 +16,6 @@ type VouchersPageProps = {
 
 type MobileTab = (typeof voucherTabs)[number]
 
-const statusClasses: Record<VoucherStatus, string> = {
-  Upcoming: 'bg-[#fff0e8] text-[#ea6430]',
-  Ongoing: 'bg-[#e8f7ef] text-[#239c70]',
-  Expired: 'bg-slate-200 text-slate-600',
-}
-
 const statusPillClasses: Record<VoucherStatus, string> = {
   Ongoing: 'bg-[#10B981] text-white',
   Upcoming: 'bg-[#F59E0B] text-white',
@@ -50,6 +44,50 @@ const mobileCarouselTabs: MobileCarouselTab[] = [
 
 const quickFilters = ['All Products', 'Specific Products'] as const
 
+type VoucherCreateTypeCard = {
+  title: string
+  description: string
+}
+
+type VoucherCreateGroup = {
+  title: string
+  cards: VoucherCreateTypeCard[]
+}
+
+const voucherCreateGroups: VoucherCreateGroup[] = [
+  {
+    title: 'Improve general conversion',
+    cards: [
+      {
+        title: 'Shop Voucher',
+        description: 'Vouchers applicable for all your products to boost shopwide sales.',
+      },
+      {
+        title: 'Product Voucher',
+        description: 'Vouchers applicable for selected products to run specific promotions.',
+      },
+    ],
+  },
+  {
+    title: 'Target Specific Distribution Channels',
+    cards: [
+      {
+        title: 'Private Voucher',
+        description: 'Vouchers that are only sharable via code to targeted customers.',
+      },
+      {
+        title: 'Live Voucher',
+        description: 'Exclusive vouchers applicable for your products in Live to improve conversion.',
+      },
+      {
+        title: 'Video Voucher',
+        description:
+          'Exclusive vouchers applicable for your products in Video to increase sales.',
+      },
+    ],
+  },
+]
+
 const monthLabels = [
   'Jan',
   'Feb',
@@ -77,10 +115,10 @@ function toCompactCurrency(value: string) {
   const parsed = Number.parseFloat(numeric)
 
   if (!Number.isFinite(parsed)) {
-    return '₱0'
+    return 'PHP 0'
   }
 
-  return `₱${parsed.toLocaleString('en-PH', { maximumFractionDigits: 2 })}`
+  return `PHP ${parsed.toLocaleString('en-PH', { maximumFractionDigits: 2 })}`
 }
 
 function parseVoucherDate(value: string): ParsedVoucherDate | null {
@@ -178,33 +216,6 @@ function getMobileActions(actions: VoucherAction[]) {
   }
 }
 
-function CompactStatChip({
-  label,
-  value,
-  emphasized = false,
-}: {
-  label: string
-  value: number
-  emphasized?: boolean
-}) {
-  return (
-    <div
-      className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] leading-none ${
-        emphasized
-          ? 'border-[#93c5fd] bg-[#dbeafe] text-[#1e3a8a]'
-          : 'border-slate-200 bg-white text-slate-700'
-      }`}
-    >
-      <span className="font-medium">
-        {label}
-      </span>
-      <span className={`font-semibold ${emphasized ? 'text-[#1d4ed8]' : 'text-slate-900'}`}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
 function MobileVoucherCard({
   voucher,
   delayMs,
@@ -268,10 +279,10 @@ function MobileVoucherCard({
 
   return (
     <article
-      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-2xl border-l-4 bg-white px-4 pb-4 pt-3 shadow-[0_14px_35px_-22px_rgba(30,64,175,0.85)] max-[480px]:px-3.5 max-[480px]:pb-3.5 ${statusBorderClasses[voucher.status]}`}
+      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-xl border-l-[3px] bg-white px-3.5 py-3 shadow-[0_12px_26px_-22px_rgba(30,64,175,0.75)] ${statusBorderClasses[voucher.status]}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#eff6ff] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#eff6ff] to-transparent" />
 
       <div
         className="relative transition-transform duration-200 ease-out"
@@ -280,56 +291,55 @@ function MobileVoucherCard({
         onTouchEnd={onTouchEnd}
         style={{ transform: `translateX(${swipeOffset}px)` }}
       >
-        <div className="flex items-start justify-between gap-3 max-[480px]:gap-2">
+        <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0">
-            <p className="text-[34px] font-bold leading-none tracking-tight text-[#2563EB] max-[480px]:text-[30px]">
+            <p className="text-[20px] font-bold leading-none tracking-tight text-[#2563EB]">
               <span>{discountValue}</span>
-              <span className="ml-1.5 align-middle text-[13px] font-semibold uppercase tracking-wide text-[#1d4ed8]/80">
+              <span className="ml-1 align-middle text-[10px] font-semibold uppercase tracking-wide text-[#1d4ed8]/80">
                 OFF
               </span>
             </p>
 
-            <p className="mt-2 truncate text-[15px] font-semibold leading-tight text-slate-900">
+            <p className="mt-1.5 truncate text-[14px] font-semibold leading-tight text-slate-900">
               {voucher.name}
             </p>
 
-            <p className="mt-1 text-sm leading-snug text-slate-700">
-              Min. spend {minimumSpend} | Type: Shop Voucher
+            <p className="mt-0.5 text-[12px] leading-snug text-slate-600">
+              Shop Voucher | Min spend {minimumSpend}
             </p>
           </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex shrink-0 flex-col items-end gap-1">
             <span
-              className={`inline-flex min-w-[76px] justify-center rounded-full px-2.5 py-1 text-[12px] font-semibold shadow ${statusPillClasses[voucher.status]}`}
+              className={`inline-flex min-w-[70px] justify-center rounded-full px-2 py-1 text-[11px] font-semibold shadow ${statusPillClasses[voucher.status]}`}
             >
               {voucher.status}
             </span>
-            <code className="inline-flex min-h-[30px] items-center rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 font-mono text-[12px] font-semibold tracking-wide text-[#1d4ed8]">
+            <code className="inline-flex min-h-[26px] items-center rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-2.5 font-mono text-[11px] font-semibold tracking-wide text-[#1d4ed8]">
               {voucher.code}
             </code>
           </div>
         </div>
 
-        <p className="mt-2 text-sm font-medium text-slate-600">{claimingLine}</p>
+        <p className="mt-1.5 text-[12px] font-medium text-slate-600">{claimingLine}</p>
 
-        <div className="mt-3 flex flex-wrap gap-2 border-y border-[#dbeafe] py-2.5">
-          <CompactStatChip label="Claimed" value={voucher.claimed} />
-          <CompactStatChip label="Used" value={voucher.usage} />
-          <CompactStatChip label="Unused" value={unusedCount} emphasized />
-        </div>
+        <p className="mt-1.5 border-t border-[#dbeafe] pt-1.5 text-[12px] text-slate-600">
+          Claimed {voucher.claimed} | Used {voucher.usage} | Unused{' '}
+          <span className="font-semibold text-[#1d4ed8]">{unusedCount}</span>
+        </p>
 
-        <div className="mt-3 grid grid-cols-2 gap-2.5 min-[481px]:gap-3">
+        <div className="mt-2 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => handleActionClick(primaryAction)}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-[#1d4ed8] bg-[#2563EB] px-3 text-[14px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#2563EB] px-3 text-[13px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
           >
             {primaryAction.label}
           </button>
           <button
             type="button"
             onClick={() => handleActionClick(secondaryAction)}
-            className={`inline-flex h-11 items-center justify-center rounded-xl border px-3 text-[14px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
+            className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
           >
             {secondaryAction.label}
           </button>
@@ -352,34 +362,36 @@ function VoucherRow({
   voucher: VoucherItem
   onEdit: (voucher: VoucherItem) => void
 }) {
+  const productScope = voucher.type.toLowerCase().includes('all')
+    ? 'All products'
+    : 'Selected products'
+
   return (
-    <tr className="align-top text-sm text-slate-700">
+    <tr className="align-top border-t border-slate-100 text-sm text-slate-700">
       <td className="px-4 py-4">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-12 w-12 flex-none items-center justify-center rounded-sm text-2xl font-semibold text-white ${iconClasses[voucher.icon]}`}
+            className={`flex h-12 w-12 flex-none items-center justify-center rounded-sm text-xl font-semibold text-white ${iconClasses[voucher.icon]}`}
           >
-            {voucher.icon === 'percent' ? '%' : '₱'}
+            {voucher.icon === 'percent' ? '%' : 'P'}
           </div>
-          <div>
-            <p className="font-semibold text-slate-900">{voucher.code}</p>
-            <p className="text-xs text-slate-500">{voucher.name}</p>
+          <div className="min-w-[170px]">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              {voucher.status}
+            </p>
+            <p className="font-semibold text-slate-900">{voucher.name}</p>
+            <p className="text-xs text-slate-500">Code: {voucher.code}</p>
           </div>
         </div>
       </td>
       <td className="px-4 py-4 text-slate-600">{voucher.type}</td>
+      <td className="px-4 py-4 text-slate-600">{productScope}</td>
+      <td className="px-4 py-4 text-slate-600">All Buyers</td>
       <td className="px-4 py-4 font-medium text-slate-900">{voucher.discountAmount}</td>
       <td className="px-4 py-4">{voucher.quantity}</td>
-      <td className="px-4 py-4">{voucher.usageLimit}</td>
-      <td className="px-4 py-4">{voucher.claimed}</td>
       <td className="px-4 py-4">{voucher.usage}</td>
       <td className="px-4 py-4">
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClasses[voucher.status]}`}
-        >
-          {voucher.status}
-        </span>
-        <p className="mt-2 text-xs text-slate-500">{voucher.claimingPeriod.start}</p>
+        <p className="text-xs text-slate-500">{voucher.claimingPeriod.start}</p>
         <p className="text-xs text-slate-500">{voucher.claimingPeriod.end}</p>
       </td>
       <td className="px-4 py-4">
@@ -407,10 +419,54 @@ function VoucherRow({
   )
 }
 
+function DesktopCreateVoucherTypeCard({
+  card,
+  onCreate,
+}: {
+  card: VoucherCreateTypeCard
+  onCreate: () => void
+}) {
+  return (
+    <article className="rounded-lg border border-slate-200 bg-white p-4">
+      <h4 className="text-sm font-semibold text-slate-800">{card.title}</h4>
+      <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{card.description}</p>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={onCreate}
+          className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-4 text-xs font-semibold text-[#2563EB] transition hover:bg-[#eff6ff]"
+        >
+          Create
+        </button>
+      </div>
+    </article>
+  )
+}
+
+function DesktopPerformanceMetricCard({
+  label,
+  value,
+  delta,
+}: {
+  label: string
+  value: string
+  delta: string
+}) {
+  return (
+    <div className="min-h-[92px] border-r border-slate-200 px-4 last:border-r-0">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-2 text-[28px] font-semibold leading-none text-slate-800">{value}</p>
+      <p className="mt-2 text-xs text-slate-400">{delta}</p>
+    </div>
+  )
+}
+
 function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('Upcoming')
   const [quickFilter, setQuickFilter] =
     useState<(typeof quickFilters)[number]>('All Products')
+  const [desktopTab, setDesktopTab] = useState<(typeof voucherTabs)[number]>('All')
+  const [desktopSearch, setDesktopSearch] = useState('')
 
   const mobileVouchers =
     mobileTab === 'All'
@@ -427,6 +483,44 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
 
     return mobileVouchers.filter((voucher) => voucher.type.toLowerCase().includes('shop'))
   }, [mobileVouchers, quickFilter])
+
+  const desktopVouchers = useMemo(() => {
+    const byTab =
+      desktopTab === 'All'
+        ? sampleVouchers
+        : sampleVouchers.filter((voucher) => voucher.status === desktopTab)
+
+    const query = desktopSearch.trim().toLowerCase()
+    if (!query) {
+      return byTab
+    }
+
+    return byTab.filter(
+      (voucher) =>
+        voucher.name.toLowerCase().includes(query) ||
+        voucher.code.toLowerCase().includes(query),
+    )
+  }, [desktopSearch, desktopTab])
+
+  const performanceSummary = useMemo(() => {
+    const totalSales = sampleVouchers.reduce((sum, voucher) => {
+      const amount = Number.parseFloat(voucher.discountAmount.replace(/[^0-9.]/g, ''))
+      return sum + (Number.isFinite(amount) ? amount : 0)
+    }, 0)
+    const totalOrders = sampleVouchers.reduce((sum, voucher) => sum + voucher.usage, 0)
+    const totalUsageBase = sampleVouchers.reduce((sum, voucher) => sum + voucher.quantity, 0)
+    const usageRate = totalUsageBase > 0 ? (totalOrders / totalUsageBase) * 100 : 0
+
+    return {
+      sales: `PHP ${totalSales.toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+      orders: `${totalOrders}`,
+      usageRate: `${usageRate.toFixed(2)}%`,
+      buyers: `${Math.max(totalOrders, 1)}`,
+    }
+  }, [])
 
   return (
     <section
@@ -498,18 +592,7 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
           ))}
         </div>
 
-        <div className="mt-3 flex items-center gap-2 border-b border-[#bfdbfe] pb-2">
-          <button
-            type="button"
-            className="paw-loader inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#dbeafe] text-[#1e40af]"
-            aria-label="Loading"
-          >
-            &#128062;
-          </button>
-          <p className="text-[12px] text-[#1d4ed8]">Blue Sync loading ready</p>
-        </div>
-
-        <div className="mt-3 space-y-3 pb-20">
+        <div className="mt-2 space-y-2 pb-20">
           {cardEntries.length > 0 ? (
             cardEntries.map((voucher, index) => (
               <MobileVoucherCard
@@ -549,77 +632,165 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
           &larr; Back to Marketing Centre
         </button>
 
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-5">
-          <div>
-            <h1 className="text-3xl font-semibold text-[#1E40AF]">Vouchers</h1>
-            <p className="mt-2 text-sm text-[#1d4ed8]">
-              Create and manage your own vouchers for your shop and products
-              on Unleash.
-              <button
-                type="button"
-                className="ml-1 font-semibold text-[#1e3a8a] hover:underline"
-              >
-                Learn More
-              </button>
-            </p>
+        <article className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <h1 className="text-[28px] font-semibold text-slate-800">Create Voucher</h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Create your own vouchers for your shop and products on Unleash.
+            <button type="button" className="ml-1 font-semibold text-[#2563EB] hover:underline">
+              Learn More
+            </button>
+          </p>
+
+          <div className="mt-4 space-y-5">
+            {voucherCreateGroups.map((group) => (
+              <div key={group.title}>
+                <h2 className="text-[17px] font-medium text-slate-700">{group.title}</h2>
+                <div
+                  className={`mt-2.5 grid gap-3 ${
+                    group.cards.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
+                  }`}
+                >
+                  {group.cards.map((card) => (
+                    <DesktopCreateVoucherTypeCard
+                      key={`${group.title}-${card.title}`}
+                      card={card}
+                      onCreate={onCreate}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
+
           <button
             type="button"
-            onClick={onCreate}
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+            className="mt-4 inline-flex w-full items-center justify-center border-t border-dashed border-slate-200 pt-3 text-sm font-medium text-[#2563EB]"
           >
-            + Create
+            More Voucher Types for Specific Buyers
           </button>
-        </div>
+        </article>
 
-        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl bg-[#eff6ff] p-2">
-          {voucherTabs.map((tab, index) => (
-            <button
-              key={tab}
-              type="button"
-              className={`h-10 rounded-full px-4 text-sm font-semibold transition ${
-                index === 0
-                  ? 'bg-[#2563EB] text-white shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)]'
-                  : 'text-[#1d4ed8] hover:bg-[#dbeafe]'
-              }`}
-            >
-              {tab}
+        <article className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[28px] font-semibold leading-none text-slate-800">
+              Voucher Performance
+              <span className="ml-2 text-xs font-normal text-slate-400">
+                Data from 02-11-2026 (Wed) to 18-02-2026 (Wed) GMT+8
+              </span>
+            </h2>
+            <button type="button" className="text-sm font-medium text-[#2563EB]">
+              More &gt;
             </button>
-          ))}
-        </div>
+          </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[980px] w-full border-separate border-spacing-0 rounded-2xl border border-[#dbeafe] bg-white shadow-[0_16px_35px_-28px_rgba(30,64,175,0.65)]">
-            <thead>
-              <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
-                <th className="px-4 py-3 font-semibold">
-                  Voucher Code | Name
-                </th>
-                <th className="px-4 py-3 font-semibold">Voucher Type</th>
-                <th className="px-4 py-3 font-semibold">
-                  Discount Amount (Off)
-                </th>
-                <th className="px-4 py-3 font-semibold">Quantity</th>
-                <th className="px-4 py-3 font-semibold">Usage Limit</th>
-                <th className="px-4 py-3 font-semibold">Claimed</th>
-                <th className="px-4 py-3 font-semibold">Usage</th>
-                <th className="px-4 py-3 font-semibold">
-                  Status | Claiming Period
-                </th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sampleVouchers.map((voucher) => (
-                <VoucherRow key={voucher.code} voucher={voucher} onEdit={onEdit} />
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <div className="mt-4 grid grid-cols-4 rounded-lg border border-slate-200 bg-[#fcfdff] py-3">
+            <DesktopPerformanceMetricCard
+              label="Sales"
+              value={performanceSummary.sales}
+              delta="vs Previous 7 Days"
+            />
+            <DesktopPerformanceMetricCard
+              label="Orders"
+              value={performanceSummary.orders}
+              delta="vs Previous 7 Days"
+            />
+            <DesktopPerformanceMetricCard
+              label="Usage Rate"
+              value={performanceSummary.usageRate}
+              delta="vs Previous 7 Days"
+            />
+            <DesktopPerformanceMetricCard
+              label="Buyers"
+              value={performanceSummary.buyers}
+              delta="vs Previous 7 Days"
+            />
+          </div>
+        </article>
+
+        <article className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-[28px] font-semibold leading-none text-slate-800">Vouchers List</h2>
+
+          <div className="mt-4 flex items-center gap-5 border-b border-slate-200 pb-2">
+            {voucherTabs.map((tab) => {
+              const active = tab === desktopTab
+
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setDesktopTab(tab)}
+                  className={`relative pb-2 text-sm font-medium transition ${
+                    active ? 'text-[#2563EB]' : 'text-slate-500 hover:text-[#2563EB]'
+                  }`}
+                >
+                  {tab}
+                  {active ? (
+                    <span className="absolute -bottom-[9px] left-0 right-0 h-0.5 bg-[#2563EB]" />
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            <span className="text-sm text-slate-500">Search</span>
+            <select
+              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-600 focus:border-[#93c5fd] focus:outline-none"
+              defaultValue="Voucher Name"
+            >
+              <option>Voucher Name</option>
+            </select>
+            <input
+              type="text"
+              value={desktopSearch}
+              onChange={(event) => setDesktopSearch(event.target.value)}
+              placeholder="Input"
+              className="h-9 min-w-[220px] rounded-md border border-slate-200 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+            />
+            <button
+              type="button"
+              className="inline-flex h-9 items-center rounded-md border border-[#2563EB] px-4 text-sm font-medium text-[#2563EB] transition hover:bg-[#eff6ff]"
+            >
+              Search
+            </button>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-[1120px] w-full border-separate border-spacing-0 rounded-lg border border-slate-200 bg-white">
+              <thead>
+                <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="px-4 py-3 font-semibold">Voucher Name | Code</th>
+                  <th className="px-4 py-3 font-semibold">Voucher Type</th>
+                  <th className="px-4 py-3 font-semibold">Product Scope</th>
+                  <th className="px-4 py-3 font-semibold">Target Buyer</th>
+                  <th className="px-4 py-3 font-semibold">Discount Amount</th>
+                  <th className="px-4 py-3 font-semibold">Usage Quantity</th>
+                  <th className="px-4 py-3 font-semibold">Usage</th>
+                  <th className="px-4 py-3 font-semibold">Claiming Period</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {desktopVouchers.length > 0 ? (
+                  desktopVouchers.map((voucher) => (
+                    <VoucherRow key={voucher.code} voucher={voucher} onEdit={onEdit} />
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={9}>
+                      No vouchers found for this filter.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </article>
       </div>
-
     </section>
   )
 }
 
 export default VouchersPage
+
+
