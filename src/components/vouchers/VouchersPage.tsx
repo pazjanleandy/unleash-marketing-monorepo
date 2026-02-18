@@ -11,6 +11,7 @@ import type {
 type VouchersPageProps = {
   onBack: () => void
   onCreate: () => void
+  onEdit: (voucher: VoucherItem) => void
 }
 
 type MobileTab = (typeof voucherTabs)[number]
@@ -76,10 +77,10 @@ function toCompactCurrency(value: string) {
   const parsed = Number.parseFloat(numeric)
 
   if (!Number.isFinite(parsed)) {
-    return '$0'
+    return '₱0'
   }
 
-  return `$${parsed.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+  return `₱${parsed.toLocaleString('en-PH', { maximumFractionDigits: 2 })}`
 }
 
 function parseVoucherDate(value: string): ParsedVoucherDate | null {
@@ -207,9 +208,11 @@ function CompactStatChip({
 function MobileVoucherCard({
   voucher,
   delayMs,
+  onEdit,
 }: {
   voucher: VoucherItem
   delayMs: number
+  onEdit: (voucher: VoucherItem) => void
 }) {
   const unusedCount = Math.max(voucher.quantity - voucher.usage, 0)
   const { primaryAction, secondaryAction } = getMobileActions(voucher.actions)
@@ -232,6 +235,12 @@ function MobileVoucherCard({
   const secondaryActionClasses = secondaryAction.danger
     ? 'border-[#fca5a5] bg-white text-[#b91c1c] hover:bg-[#fef2f2]'
     : 'border-[#bfdbfe] bg-white text-[#1d4ed8] hover:bg-[#dbeafe]'
+
+  const handleActionClick = (action: VoucherAction) => {
+    if (action.label.trim().toLowerCase() === 'edit') {
+      onEdit(voucher)
+    }
+  }
 
   const onTouchStart: TouchEventHandler<HTMLDivElement> = (event) => {
     setTouchStartX(event.touches[0]?.clientX ?? null)
@@ -310,20 +319,20 @@ function MobileVoucherCard({
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2.5 min-[481px]:gap-3">
-          <a
-            href="#"
-            onClick={(event) => event.preventDefault()}
+          <button
+            type="button"
+            onClick={() => handleActionClick(primaryAction)}
             className="inline-flex h-11 items-center justify-center rounded-xl border border-[#1d4ed8] bg-[#2563EB] px-3 text-[14px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
           >
             {primaryAction.label}
-          </a>
-          <a
-            href="#"
-            onClick={(event) => event.preventDefault()}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleActionClick(secondaryAction)}
             className={`inline-flex h-11 items-center justify-center rounded-xl border px-3 text-[14px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
           >
             {secondaryAction.label}
-          </a>
+          </button>
         </div>
       </div>
 
@@ -336,7 +345,13 @@ function MobileVoucherCard({
   )
 }
 
-function VoucherRow({ voucher }: { voucher: VoucherItem }) {
+function VoucherRow({
+  voucher,
+  onEdit,
+}: {
+  voucher: VoucherItem
+  onEdit: (voucher: VoucherItem) => void
+}) {
   return (
     <tr className="align-top text-sm text-slate-700">
       <td className="px-4 py-4">
@@ -344,7 +359,7 @@ function VoucherRow({ voucher }: { voucher: VoucherItem }) {
           <div
             className={`flex h-12 w-12 flex-none items-center justify-center rounded-sm text-2xl font-semibold text-white ${iconClasses[voucher.icon]}`}
           >
-            {voucher.icon === 'percent' ? '%' : '$'}
+            {voucher.icon === 'percent' ? '%' : '₱'}
           </div>
           <div>
             <p className="font-semibold text-slate-900">{voucher.code}</p>
@@ -371,15 +386,19 @@ function VoucherRow({ voucher }: { voucher: VoucherItem }) {
         <ul className="min-w-[120px] space-y-1.5">
           {voucher.actions.map((action) => (
             <li key={`${voucher.code}-${action.label}`}>
-              <a
-                href="#"
-                onClick={(event) => event.preventDefault()}
+              <button
+                type="button"
+                onClick={() => {
+                  if (action.label.trim().toLowerCase() === 'edit') {
+                    onEdit(voucher)
+                  }
+                }}
                 className={`text-sm font-medium transition hover:underline ${
                   action.danger ? 'text-[#dc4f1f]' : 'text-[#2f70db]'
                 }`}
               >
                 {action.label}
-              </a>
+              </button>
             </li>
           ))}
         </ul>
@@ -388,7 +407,7 @@ function VoucherRow({ voucher }: { voucher: VoucherItem }) {
   )
 }
 
-function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
+function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('Upcoming')
   const [quickFilter, setQuickFilter] =
     useState<(typeof quickFilters)[number]>('All Products')
@@ -411,7 +430,7 @@ function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
 
   return (
     <section
-      className="motion-rise rounded-3xl border border-slate-200/80 bg-white/95 p-3 pb-24 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
+      className="motion-rise rounded-3xl border border-slate-200/80 bg-white/95 p-3 pb-28 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
       style={{ animationDelay: '80ms' }}
     >
       <div className="sm:hidden">
@@ -497,6 +516,7 @@ function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
                 key={`mobile-${voucher.code}`}
                 voucher={voucher}
                 delayMs={90 + index * 70}
+                onEdit={onEdit}
               />
             ))
           ) : (
@@ -506,15 +526,17 @@ function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
           )}
         </div>
 
-        <div className="fixed bottom-5 right-4 z-20">
-          <button
-            type="button"
-            onClick={onCreate}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#2563EB] text-3xl font-semibold text-white shadow-[0_20px_30px_-18px_rgba(30,64,175,0.95)] transition hover:bg-[#1d4ed8] active:scale-95"
-            aria-label="Create new voucher"
-          >
-            +
-          </button>
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#dbeafe] bg-white/95 backdrop-blur">
+          <div className="mx-auto w-full max-w-6xl px-4 py-3">
+            <button
+              type="button"
+              onClick={onCreate}
+              className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+              aria-label="Create new voucher"
+            >
+              Create Voucher
+            </button>
+          </div>
         </div>
       </div>
 
@@ -589,7 +611,7 @@ function VouchersPage({ onBack, onCreate }: VouchersPageProps) {
             </thead>
             <tbody>
               {sampleVouchers.map((voucher) => (
-                <VoucherRow key={voucher.code} voucher={voucher} />
+                <VoucherRow key={voucher.code} voucher={voucher} onEdit={onEdit} />
               ))}
             </tbody>
           </table>

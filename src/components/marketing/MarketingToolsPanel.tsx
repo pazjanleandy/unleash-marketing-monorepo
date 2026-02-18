@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import IconMark from './IconMark'
 import ToolSectionBlock from './ToolSectionBlock'
 import type { IconName, ToolCard, ToolSection } from './types'
@@ -25,7 +25,7 @@ type ToolTileProps = {
 }
 
 function ToolTile({ item, onToolSelect }: ToolTileProps) {
-  const isClickable = item.tool.id === 'vouchers' && typeof onToolSelect === 'function'
+  const isClickable = Boolean(item.tool.id) && typeof onToolSelect === 'function'
 
   const handleClick = () => {
     if (!isClickable) {
@@ -72,61 +72,74 @@ function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProp
     [allKnownTools],
   )
 
-  const buildItems = (entries: ToolEntry[]): ToolItem[] =>
-    entries.map((entry) => {
-      const matched = toolByTitle.get(entry.sourceTitle)
+  const buildToolItems = useCallback(
+    (entries: ToolEntry[]) =>
+      entries.map((entry) => {
+        const matched = toolByTitle.get(entry.sourceTitle)
 
-      return {
-        label: entry.label,
-        tool:
-          matched ?? {
-            title: entry.label,
-            description: '',
-            icon: entry.fallbackIcon,
-            tone: 'blue',
-          },
-      }
-    })
+        return {
+          label: entry.label,
+          tool:
+            matched ?? {
+              title: entry.label,
+              description: '',
+              icon: entry.fallbackIcon,
+              tone: 'blue',
+            },
+        }
+      }),
+    [toolByTitle],
+  )
 
   const recommendedTools = useMemo<ToolItem[]>(
     () =>
-      buildItems([
+      buildToolItems([
+        {
+          label: 'Discount',
+          sourceTitle: 'Discount',
+          fallbackIcon: 'discount',
+        },
+        {
+          label: 'Flash Deals',
+          sourceTitle: "My Shop's Flash Deals",
+          fallbackIcon: 'flash-deals',
+        },
+        {
+          label: 'Vouchers',
+          sourceTitle: 'Vouchers',
+          fallbackIcon: 'voucher',
+        },
+      ]),
+    [buildToolItems],
+  )
+
+  const tools = useMemo<ToolItem[]>(
+    () =>
+      buildToolItems([
+        {
+          label: 'Discount',
+          sourceTitle: 'Discount',
+          fallbackIcon: 'discount',
+        },
+        {
+          label: 'Flash Deals',
+          sourceTitle: "My Shop's Flash Deals",
+          fallbackIcon: 'flash-deals',
+        },
         {
           label: 'Vouchers',
           sourceTitle: 'Vouchers',
           fallbackIcon: 'voucher',
         },
         {
-          label: 'Discount Promotions',
-          sourceTitle: 'Discount Promotions',
-          fallbackIcon: 'discount',
-        },
-        {
           label: 'Unleash Ads',
           sourceTitle: 'Unleash Ads',
           fallbackIcon: 'ads',
         },
-      ]),
-    [toolByTitle],
-  )
-
-  const tools = useMemo<ToolItem[]>(
-    () =>
-      buildItems([
         {
-          label: 'Follow Prize',
-          sourceTitle: 'Follow Prize',
-          fallbackIcon: 'follow',
-        },
-        {
-          label: 'Bundle Deal',
-          sourceTitle: 'Bundle Deal',
-          fallbackIcon: 'bundle',
-        },
-        {
-          label: 'Shop Game',
-          sourceTitle: 'Shop Game',
-          fallbackIcon: 'game',
+          label: 'Affiliates',
+          sourceTitle: 'Affiliate Marketing Solution',
+          fallbackIcon: 'affiliate',
         },
         {
           label: 'Live Streaming',
@@ -134,27 +147,22 @@ function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProp
           fallbackIcon: 'live',
         },
         {
-          label: 'Top Picks',
-          sourceTitle: 'Top Picks',
-          fallbackIcon: 'top',
+          label: 'Review Prize',
+          sourceTitle: 'Review Prize',
+          fallbackIcon: 'review-prize',
         },
         {
-          label: 'Campaigns',
-          sourceTitle: 'Discount Promotions',
-          fallbackIcon: 'discount',
+          label: 'Seller Coins',
+          sourceTitle: 'Seller Coins',
+          fallbackIcon: 'seller-coins',
         },
         {
-          label: 'Shipping Fee Promotion',
-          sourceTitle: 'Shipping Fee Promotion',
-          fallbackIcon: 'shipping',
-        },
-        {
-          label: 'Add-on Deal',
-          sourceTitle: 'Add-on Deal',
-          fallbackIcon: 'addon',
+          label: 'Shop Prize',
+          sourceTitle: 'Shop Prize',
+          fallbackIcon: 'shop-prize',
         },
       ]),
-    [toolByTitle],
+    [buildToolItems],
   )
 
   return (

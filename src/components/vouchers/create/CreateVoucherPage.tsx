@@ -5,9 +5,13 @@ import VoucherDisplayCard from './VoucherDisplayCard'
 import VoucherPreviewPanel from './VoucherPreviewPanel'
 import type { CreateVoucherForm } from './types'
 
+type VoucherFormMode = 'create' | 'edit'
+
 type CreateVoucherPageProps = {
   onBack: () => void
   onConfirm?: () => void
+  mode?: VoucherFormMode
+  initialForm?: CreateVoucherForm
 }
 
 const stepTitles = [
@@ -27,19 +31,29 @@ const fieldElementIds: Partial<Record<keyof CreateVoucherForm, string>> = {
   displaySetting: 'create-voucher-display-all-pages',
 }
 
-const initialForm: CreateVoucherForm = {
+const defaultForm: CreateVoucherForm = {
   rewardType: 'discount',
   discountType: 'fixed-amount',
-  discountAmount: '1.00',
-  minimumBasketPrice: '10.00',
-  usageQuantity: '100',
-  maxDistributionPerBuyer: '1',
+  discountAmount: '',
+  minimumBasketPrice: '',
+  usageQuantity: '',
+  maxDistributionPerBuyer: '',
   displaySetting: 'all-pages',
   productScope: 'all-products',
 }
 
-function CreateVoucherPage({ onBack, onConfirm }: CreateVoucherPageProps) {
-  const [form, setForm] = useState<CreateVoucherForm>(initialForm)
+function CreateVoucherPage({
+  onBack,
+  onConfirm,
+  mode = 'create',
+  initialForm,
+}: CreateVoucherPageProps) {
+  const isEditMode = mode === 'edit'
+  const pageLabel = isEditMode ? 'Edit Voucher' : 'Create New Voucher'
+  const desktopConfirmLabel = isEditMode ? 'Save Changes' : 'Confirm'
+  const mobileStepActionLabel = isEditMode ? 'Save Changes' : 'Create Voucher'
+  const startingForm = initialForm ?? defaultForm
+  const [form, setForm] = useState<CreateVoucherForm>(() => ({ ...startingForm }))
   const [currentStep, setCurrentStep] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<FormErrorMap>({})
   const lastStepIndex = stepTitles.length - 1
@@ -163,10 +177,10 @@ function CreateVoucherPage({ onBack, onConfirm }: CreateVoucherPageProps) {
       className="motion-rise rounded-3xl border border-slate-200/80 bg-[#f5f6f8] p-3 pb-28 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-6 sm:pb-6"
       style={{ animationDelay: '80ms' }}
     >
-      <CreateVoucherBreadcrumb onBack={onBack} />
+      <CreateVoucherBreadcrumb onBack={onBack} currentLabel={pageLabel} />
       <header className="mt-1.5">
         <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
-          Create New Voucher
+          {pageLabel}
         </h1>
       </header>
 
@@ -248,7 +262,7 @@ function CreateVoucherPage({ onBack, onConfirm }: CreateVoucherPageProps) {
               onClick={handleConfirm}
               className="inline-flex h-10 items-center rounded-md bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
             >
-              Confirm
+              {desktopConfirmLabel}
             </button>
           </div>
         </div>
@@ -273,7 +287,7 @@ function CreateVoucherPage({ onBack, onConfirm }: CreateVoucherPageProps) {
             onClick={handleNextStep}
             className="inline-flex h-11 items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
           >
-            {currentStep === lastStepIndex ? 'Create Voucher' : 'Next'}
+            {currentStep === lastStepIndex ? mobileStepActionLabel : 'Next'}
           </button>
         </div>
       </div>

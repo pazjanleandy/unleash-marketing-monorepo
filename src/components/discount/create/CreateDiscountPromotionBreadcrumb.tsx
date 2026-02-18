@@ -1,12 +1,14 @@
-type CreateVoucherBreadcrumbProps = {
+type CreateDiscountPromotionBreadcrumbProps = {
   onBack: () => void
-  currentLabel: string
+  mode?: 'create' | 'edit'
 }
 
-function CreateVoucherBreadcrumb({
+function CreateDiscountPromotionBreadcrumb({
   onBack,
-  currentLabel,
-}: CreateVoucherBreadcrumbProps) {
+  mode = 'create',
+}: CreateDiscountPromotionBreadcrumbProps) {
+  const title = mode === 'edit' ? 'Edit Discount' : 'Create New Discount Promotion'
+
   return (
     <nav
       className="hidden items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-slate-500 sm:flex"
@@ -31,14 +33,16 @@ function CreateVoucherBreadcrumb({
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[120px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[170px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
       >
-        Vouchers
+        Discount Promotions
       </button>
       <span className="text-slate-400">&gt;</span>
-      <span className="truncate font-semibold text-slate-700">{currentLabel}</span>
+      <span className="truncate font-semibold text-slate-700">
+        {title}
+      </span>
     </nav>
   )
 }
 
-export default CreateVoucherBreadcrumb
+export default CreateDiscountPromotionBreadcrumb

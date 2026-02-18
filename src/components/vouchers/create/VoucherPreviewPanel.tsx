@@ -12,10 +12,11 @@ function formatDiscountLabel(value: CreateVoucherForm) {
     return `${amount}% OFF`
   }
 
-  return `$${amount} OFF`
+  return `₱${amount} OFF`
 }
 
 function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
+  const minimumBasketPrice = value.minimumBasketPrice.trim() || '0.00'
   const productScopeText =
     value.productScope === 'specific-products'
       ? 'Buyers can use this voucher on selected products only.'
@@ -31,7 +32,7 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
               <p className="text-[10px] font-semibold text-[#2563EB]">
                 {formatDiscountLabel(value)}
               </p>
-              <p className="text-[9px] text-slate-500">Min. spend ${value.minimumBasketPrice}</p>
+              <p className="text-[9px] text-slate-500">Min. spend ₱{minimumBasketPrice}</p>
               <button
                 type="button"
                 className="mt-2 inline-flex h-5 items-center rounded bg-[#2563EB] px-2 text-[9px] font-semibold text-white"

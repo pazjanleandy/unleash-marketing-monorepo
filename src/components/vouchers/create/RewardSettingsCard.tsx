@@ -60,6 +60,7 @@ type CurrencyInputProps = {
   value: string
   onChange: (value: string) => void
   ariaLabel: string
+  placeholder?: string
   invalid?: boolean
 }
 
@@ -68,19 +69,20 @@ function CurrencyInput({
   value,
   onChange,
   ariaLabel,
+  placeholder,
   invalid = false,
 }: CurrencyInputProps) {
   return (
     <div
-      className={`flex h-11 w-full items-center rounded-md border bg-white px-3 focus-within:border-[#93c5fd] ${
-        invalid ? 'border-[#fca5a5]' : 'border-[#d6dbe3]'
+      className={`flex h-11 w-full items-center rounded-md border bg-white px-3 focus-within:border-[#64748b] ${
+        invalid ? 'border-[#fca5a5]' : 'border-[#b8c2d3]'
       }`}
     >
       <span
         aria-hidden="true"
-        className="mr-2 select-none text-[14px] font-medium text-slate-500"
+        className="mr-2 select-none text-[14px] font-medium text-slate-600"
       >
-        $
+        ₱
       </span>
       <input
         id={id}
@@ -88,9 +90,10 @@ function CurrencyInput({
         inputMode="decimal"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         aria-label={ariaLabel}
         aria-invalid={invalid}
-        className="w-full border-0 bg-transparent text-[14px] text-slate-800 focus:outline-none"
+        className="w-full border-0 bg-transparent text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
       />
     </div>
   )
@@ -158,7 +161,7 @@ function RewardSettingsCard({
                   handleDiscountTypeChange(event.target.value as DiscountType)
                 }
                 aria-label="Discount type"
-                className="h-11 w-full rounded-md border border-[#d6dbe3] bg-white px-3 text-[14px] text-slate-700 focus:border-[#93c5fd] focus:outline-none"
+                className="h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-800 focus:border-[#64748b] focus:outline-none"
               >
                 <option value="fixed-amount">Fix Amount</option>
                 <option value="percentage">Percentage</option>
@@ -168,6 +171,7 @@ function RewardSettingsCard({
                 value={value.discountAmount}
                 onChange={(nextValue) => setField('discountAmount', nextValue)}
                 ariaLabel="Discount amount"
+                placeholder="20.00"
                 invalid={Boolean(fieldErrors?.discountAmount)}
               />
             </div>
@@ -187,6 +191,7 @@ function RewardSettingsCard({
               value={value.minimumBasketPrice}
               onChange={(nextValue) => setField('minimumBasketPrice', nextValue)}
               ariaLabel="Minimum basket price"
+              placeholder="10.00"
               invalid={Boolean(fieldErrors?.minimumBasketPrice)}
             />
           </FieldRow>
@@ -202,10 +207,11 @@ function RewardSettingsCard({
               inputMode="numeric"
               value={value.usageQuantity}
               onChange={(event) => setField('usageQuantity', event.target.value)}
+              placeholder="10"
               aria-label="Usage quantity"
               aria-invalid={Boolean(fieldErrors?.usageQuantity)}
-              className={`h-11 w-full rounded-md border bg-white px-3 text-[14px] text-slate-800 focus:border-[#93c5fd] focus:outline-none ${
-                fieldErrors?.usageQuantity ? 'border-[#fca5a5]' : 'border-[#d6dbe3]'
+              className={`h-11 w-full rounded-md border bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#64748b] focus:outline-none ${
+                fieldErrors?.usageQuantity ? 'border-[#fca5a5]' : 'border-[#b8c2d3]'
               }`}
             />
           </FieldRow>
@@ -222,12 +228,13 @@ function RewardSettingsCard({
               onChange={(event) =>
                 setField('maxDistributionPerBuyer', event.target.value)
               }
+              placeholder="1"
               aria-label="Maximum distribution per buyer"
               aria-invalid={Boolean(fieldErrors?.maxDistributionPerBuyer)}
-              className={`h-11 w-full rounded-md border bg-white px-3 text-[14px] text-slate-800 focus:border-[#93c5fd] focus:outline-none ${
+              className={`h-11 w-full rounded-md border bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#64748b] focus:outline-none ${
                 fieldErrors?.maxDistributionPerBuyer
                   ? 'border-[#fca5a5]'
-                  : 'border-[#d6dbe3]'
+                  : 'border-[#b8c2d3]'
               }`}
             />
           </FieldRow>

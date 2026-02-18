@@ -2,8 +2,23 @@ import type { ToolSection, ToolTone } from './types'
 
 export const toolSections: ToolSection[] = [
   {
-    title: 'Boost Sales with Promotion',
+    title: 'Boost Sales',
     tools: [
+      {
+        id: 'discount',
+        title: 'Discount',
+        description: 'Set discounts on your products to boost sales.',
+        icon: 'discount',
+        tone: 'blue',
+      },
+      {
+        id: 'flash-deals',
+        title: "My Shop's Flash Deals",
+        description:
+          'Boost product sales by creating limited-time discount offers in your shop.',
+        icon: 'flash-deals',
+        tone: 'blue',
+      },
       {
         id: 'vouchers',
         title: 'Vouchers',
@@ -12,78 +27,57 @@ export const toolSections: ToolSection[] = [
         icon: 'voucher',
         tone: 'blue',
       },
-      {
-        title: 'Discount Promotions',
-        description:
-          'Set discounts on your products to boost sales and speed up conversion.',
-        icon: 'discount',
-        tone: 'blue',
-      },
-      {
-        title: 'Bundle Deal',
-        description:
-          'Increase average spending per order by offering product bundle discounts.',
-        icon: 'bundle',
-        tone: 'blue',
-      },
-      {
-        title: 'Add-on Deal',
-        description:
-          'Sell more products by offering add-ons or free gifts with minimum spend.',
-        icon: 'addon',
-        tone: 'blue',
-      },
-      {
-        title: 'Shipping Fee Promotion',
-        description:
-          'Set shipping fee discounts to attract shoppers and reduce drop-off at checkout.',
-        icon: 'shipping',
-        tone: 'blue',
-      },
     ],
   },
   {
-    title: 'Engage with Your Shoppers',
-    tools: [
-      {
-        title: 'Shop Game',
-        description:
-          'Create your own games to attract buyers to your shop and reward participation.',
-        icon: 'game',
-        tone: 'mint',
-      },
-      {
-        title: 'Follow Prize',
-        description:
-          'Encourage shoppers to follow your shop by rewarding new followers.',
-        icon: 'follow',
-        tone: 'mint',
-      },
-      {
-        title: 'Live Streaming',
-        description:
-          'Connect live with your audience and answer shopper questions in real time.',
-        icon: 'live',
-        tone: 'mint',
-      },
-    ],
-  },
-  {
-    title: 'Increase Your Shop Traffic',
+    title: 'Increase Traffic',
     tools: [
       {
         title: 'Unleash Ads',
         description:
-          'Increase exposure and drive sales in high-traffic areas with promoted listings.',
+          'Increase exposure and drive sales in high traffic areas on Unleash with ads.',
         icon: 'ads',
         tone: 'amber',
       },
       {
-        title: 'Top Picks',
+        title: 'Affiliate Marketing Solution',
         description:
-          'Drive traffic to selected products by featuring them on key product pages.',
-        icon: 'top',
+          "Leverage Unleash's affiliate partner network to boost your store promotion.",
+        icon: 'affiliate',
         tone: 'amber',
+      },
+      {
+        title: 'Live Streaming',
+        description:
+          'Connect live with your audience and answer shopper questions easily.',
+        icon: 'live',
+        tone: 'amber',
+      },
+    ],
+  },
+  {
+    title: 'Improve Engagement',
+    tools: [
+      {
+        title: 'Review Prize',
+        description:
+          'Attract customers to leave better reviews by rewarding coins.',
+        icon: 'review-prize',
+        tone: 'mint',
+      },
+      {
+        title: 'Seller Coins',
+        description:
+          'Top up seller coins as a reward to encourage shoppers to join shop activities.',
+        icon: 'seller-coins',
+        tone: 'mint',
+      },
+      {
+        title: 'Shop Prize',
+        description:
+          'Create your own Shop Prize to attract buyers to your shop and to win prizes.',
+        icon: 'shop-prize',
+        tone: 'mint',
       },
     ],
   },

@@ -23,6 +23,15 @@ function IconMark({ name }: IconMarkProps) {
     )
   }
 
+  if (name === 'flash-deals') {
+    return (
+      <>
+        <path d="M11 3.5 5.25 10H10l-1 6.5L17.75 8H13l1.25-4.5H11Z" />
+        <path d="M5 19.5h14" />
+      </>
+    )
+  }
+
   if (name === 'bundle') {
     return (
       <>
@@ -43,6 +52,17 @@ function IconMark({ name }: IconMarkProps) {
     )
   }
 
+  if (name === 'affiliate') {
+    return (
+      <>
+        <circle cx="7" cy="7.5" r="2" />
+        <circle cx="17" cy="7.5" r="2" />
+        <circle cx="12" cy="16.5" r="2" />
+        <path d="M8.7 8.9 10.6 14.4M15.3 8.9 13.4 14.4M9 7.5h6" />
+      </>
+    )
+  }
+
   if (name === 'shipping') {
     return (
       <>
@@ -50,6 +70,35 @@ function IconMark({ name }: IconMarkProps) {
         <path d="M13.75 11h3.6L20 13.65V16h-6.25v-5Z" />
         <circle cx="7" cy="17.5" r="1.5" />
         <circle cx="16.5" cy="17.5" r="1.5" />
+      </>
+    )
+  }
+
+  if (name === 'review-prize') {
+    return (
+      <>
+        <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H11l-4 3v-3H6.5A2.5 2.5 0 0 1 4 13.5v-6Z" />
+        <path d="m12 8.2 1 2.05 2.25.33-1.62 1.58.38 2.22L12 13.35 9.99 14.4l.38-2.22-1.62-1.58 2.25-.33L12 8.2Z" />
+      </>
+    )
+  }
+
+  if (name === 'seller-coins') {
+    return (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M14.6 9.25H10.8a1.4 1.4 0 1 0 0 2.8h2.4a1.4 1.4 0 1 1 0 2.8H9.3" />
+        <path d="M12 8v8" />
+      </>
+    )
+  }
+
+  if (name === 'shop-prize') {
+    return (
+      <>
+        <path d="M4 9.25h16v8.5A1.25 1.25 0 0 1 18.75 19H5.25A1.25 1.25 0 0 1 4 17.75v-8.5Z" />
+        <path d="M4 9.25h16L18.4 5H5.6L4 9.25Z" />
+        <path d="M12 9.25V19M9 5l3 4.25L15 5" />
       </>
     )
   }

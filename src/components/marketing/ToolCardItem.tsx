@@ -10,7 +10,7 @@ type ToolCardItemProps = {
 
 function ToolCardItem({ tool, animationDelay, onToolSelect }: ToolCardItemProps) {
   const tone = toneClasses[tool.tone]
-  const isClickable = tool.id === 'vouchers' && typeof onToolSelect === 'function'
+  const isClickable = Boolean(tool.id) && typeof onToolSelect === 'function'
   const cardClassName =
     'motion-rise rounded-2xl border border-slate-200 bg-[#f8fafd]/80 p-4 text-left transition duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-[0_16px_34px_-30px_rgba(15,23,42,0.8)]'
 
