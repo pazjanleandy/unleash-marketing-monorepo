@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
+import MobileDateTimePicker from '../common/MobileDateTimePicker'
 import type { FlashDealRow, FlashDealStatus, FlashDealsTab } from './types'
 
 type FlashDealsPromotionListSectionProps = {
   rows: FlashDealRow[]
   refreshNonce?: number
+  onCreate?: () => void
 }
 
 const tabs: FlashDealsTab[] = ['All', 'Ongoing', 'Upcoming', 'Expired']
@@ -52,6 +54,32 @@ function parseDateParts(timeSlot: string) {
     timePart,
     dateISO: `${year}-${month}-${day}`,
   }
+}
+
+function toDateISO(date: Date) {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function fromDateISO(value: string) {
+  if (!value) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+
+  if (!match) {
+    return null
+  }
+
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+
+  return new Date(year, month, day, 12, 0, 0, 0)
 }
 
 function formatDateHeader(rawDatePart: string) {
@@ -316,6 +344,7 @@ function SwipeablePromotionCard({
 function FlashDealsPromotionListSection({
   rows,
   refreshNonce = 0,
+  onCreate,
 }: FlashDealsPromotionListSectionProps) {
   const [activeTab, setActiveTab] = useState<FlashDealsTab>('All')
   const [enabledById, setEnabledById] = useState<Record<string, boolean>>(() =>
@@ -327,8 +356,10 @@ function FlashDealsPromotionListSection({
   const [dateOpen, setDateOpen] = useState(false)
   const [datePreset, setDatePreset] = useState<DatePreset>('all')
   const [customDate, setCustomDate] = useState('')
-  const [fabOpen, setFabOpen] = useState(false)
+  const [customDatePickerOpen, setCustomDatePickerOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  const customPickerValue = useMemo(() => fromDateISO(customDate), [customDate])
 
   useEffect(() => {
     setLoading(true)
@@ -411,6 +442,7 @@ function FlashDealsPromotionListSection({
             </button>
             <button
               type="button"
+              onClick={() => onCreate?.()}
               className="inline-flex h-9 items-center rounded-md bg-[#2563EB] px-3.5 text-xs font-semibold text-white transition hover:bg-[#1d4ed8]"
             >
               + Create
@@ -565,16 +597,17 @@ function FlashDealsPromotionListSection({
               <label className="block text-xs font-medium text-slate-500" htmlFor="custom-date">
                 Custom Range
               </label>
-              <input
+              <button
                 id="custom-date"
-                type="date"
-                value={customDate}
-                onChange={(event) => {
-                  setCustomDate(event.target.value)
-                  setDatePreset('custom')
-                }}
-                className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
-              />
+                type="button"
+                onClick={() => setCustomDatePickerOpen(true)}
+                className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              >
+                <span className="truncate">{customDate || 'Select custom date'}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+                  Pick
+                </span>
+              </button>
             </div>
           ) : null}
         </div>
@@ -621,6 +654,7 @@ function FlashDealsPromotionListSection({
               </p>
               <button
                 type="button"
+                onClick={() => onCreate?.()}
                 className="mx-12 mt-4 inline-flex h-11 w-[calc(100%-6rem)] items-center justify-center rounded-xl bg-[#2563EB] text-sm font-semibold text-white"
               >
                 + Create Flash Deal
@@ -629,41 +663,25 @@ function FlashDealsPromotionListSection({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setFabOpen(true)}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] right-4 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#2563EB] text-3xl font-semibold text-white shadow-lg"
-          aria-label="Open flash deal actions"
-        >
-          +
-        </button>
-
-        {fabOpen ? (
-          <div className="fixed inset-0 z-40 bg-slate-900/40" onClick={() => setFabOpen(false)}>
-            <div
-              className="absolute inset-x-4 bottom-4 rounded-2xl bg-white p-3 shadow-xl"
-              onClick={(event) => event.stopPropagation()}
-            >
-              {['Create Flash Deal', 'Bulk Add', 'Bulk Manage'].map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  className="flex h-11 w-full items-center rounded-lg px-3 text-sm font-medium text-[#1E293B] hover:bg-[#eff6ff]"
-                >
-                  {action}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setFabOpen(false)}
-                className="mt-1 flex h-11 w-full items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-600"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : null}
       </div>
+
+      <MobileDateTimePicker
+        isOpen={customDatePickerOpen}
+        value={customPickerValue}
+        onClose={() => setCustomDatePickerOpen(false)}
+        onChange={(date) => {
+          if (!date) {
+            setCustomDate('')
+            return
+          }
+
+          setCustomDate(toDateISO(date))
+          setDatePreset('custom')
+        }}
+        mode="datetime"
+        title="Select custom date"
+        minuteStep={30}
+      />
     </article>
   )
 }

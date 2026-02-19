@@ -19,6 +19,8 @@ Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
   - Read-only discount promotion detail view.
 - `flash-deals`
   - Flash deals dashboard.
+- `create-flash-deal`
+  - Create flash deal flow (setup, products, set discount).
 - `vouchers`
   - Voucher listing and management UI.
 - `create-voucher`
@@ -26,12 +28,71 @@ Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
 
 Routing is view-state based in `src/App.tsx`:
 - Clicking `Discount`, `Flash Deals`, or `Vouchers` from Marketing Tools opens their pages.
+- Flash Deals `Create` opens the create flow (`create-flash-deal`).
 - Discount `Edit` on Discount Promotion rows opens prefilled edit form (`create-discount-promotion` in edit mode).
 - Discount `View` opens read-only detail page (`view-discount-promotion`).
 - Voucher `Edit` opens prefilled voucher edit form.
 - Back/Cancel actions return to the previous parent view.
 
 ## Daily Update
+### 2026-02-19
+
+#### 1) Create Flash Deal Flow Added (Desktop + Mobile)
+- Added a dedicated `create-flash-deal` route and page wiring from Flash Deals.
+- Implemented 3-step flow:
+  - Step 1: Select Period
+  - Step 2: Add Products
+  - Step 3: Set Discount
+- Fixed mobile step progression so Step 3 can be opened and navigated consistently.
+
+#### 2) Step 1 (Select Period) UX Refresh
+- Updated Step 1 UI to blue-themed mobile-first layout with clearer hierarchy.
+- Added date window navigation (forward/back) and time-slot selection behavior tuned for mobile.
+- Improved unavailable date/time states with stronger disabled styling for scanability.
+- Kept date/time picking on reusable `MobileDateTimePicker` modal.
+
+#### 3) Step 2 (Add Products) Modal and Selection Improvements
+- Updated Flash Deal Add Products modal to match Create Discount modal structure and behavior.
+- Includes:
+  - Select/Upload tabs
+  - category + search filters
+  - available-only toggle
+  - select-all and mass selection flows
+  - mobile card list + desktop table layout
+- Preserved existing confirm/cancel behavior and product selection state mapping.
+
+#### 4) Step 2 Mobile Readability Improvements
+- Improved product row spacing and density for mobile scanning.
+- Kept checkbox selection with better touch targets and cleaner visual grouping.
+
+#### 5) Step 3 (Set Discount) Mobile Refactor + Bulk Apply
+- Refactored Step 3 mobile product cards for readability:
+  - compact header with thumbnail/title/meta
+  - clear per-product input grouping
+  - top-right enabled toggle and remove action
+- Added mobile `Bulk apply` section with:
+  - Discount (%) OR Discounted Price (mutually exclusive)
+  - Campaign Stock
+  - Purchase Limit + No-limit checkbox
+  - optional apply-to-enabled-only targeting
+- Added Enter-to-apply behavior for bulk form submission.
+
+#### 6) Step 3 Desktop Batch Controls Cleanup
+- Improved spacing/layout of desktop batch controls for cleaner visual grouping.
+- Updated batch actions to:
+  - `Update All` (apply inputs)
+  - `Clear` (clears only batch input fields)
+  - `Delete All` (removes selected items)
+- Removed desktop batch `Enable` / `Disable` actions.
+
+#### 7) Flash Deals Mobile Dashboard CTA
+- Added persistent mobile floating create button (`+`) on Flash Deals page so create action remains accessible while scrolling.
+
+#### 8) Flash Deals Create Files (Current)
+- `src/components/flash-deals/create/CreateFlashDealPage.tsx`
+- `src/components/flash-deals/create/CreateFlashDealBreadcrumb.tsx`
+- `src/components/flash-deals/create/FlashDealProductsModal.tsx`
+
 ### 2026-02-18
 
 #### 1) Discount Module Added and Componentized
@@ -234,6 +295,11 @@ Routing is view-state based in `src/App.tsx`:
 - `src/components/flash-deals/FlashDealsPromotionListSection.tsx`
 - `src/components/flash-deals/data.ts`
 - `src/components/flash-deals/types.ts`
+
+### Create Flash Deal Components
+- `src/components/flash-deals/create/CreateFlashDealPage.tsx`
+- `src/components/flash-deals/create/CreateFlashDealBreadcrumb.tsx`
+- `src/components/flash-deals/create/FlashDealProductsModal.tsx`
 
 ### Vouchers Components
 - `src/components/vouchers/VouchersPage.tsx`

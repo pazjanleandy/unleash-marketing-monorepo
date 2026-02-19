@@ -3,7 +3,7 @@ import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
 import DiscountPromotionBasicInformationCard from './DiscountPromotionBasicInformationCard'
 import DiscountPromotionProductsCard from './DiscountPromotionProductsCard'
-import type { CreateDiscountPromotionForm } from './types'
+import type { CreateDiscountPromotionForm, DiscountDateTimeField } from './types'
 
 type CreateDiscountPromotionPageProps = {
   onBack: () => void
@@ -11,8 +11,6 @@ type CreateDiscountPromotionPageProps = {
   mode?: 'create' | 'edit'
   initialForm?: CreateDiscountPromotionForm
 }
-
-type PickerField = 'startDateTime' | 'endDateTime'
 
 function toLocalDateTimeInputValue(date: Date) {
   const year = date.getFullYear()
@@ -105,7 +103,8 @@ function CreateDiscountPromotionPage({
   const [form, setForm] = useState<CreateDiscountPromotionForm>(() =>
     getInitialForm(initialForm),
   )
-  const [activePickerField, setActivePickerField] = useState<PickerField | null>(null)
+  const [activePickerField, setActivePickerField] =
+    useState<DiscountDateTimeField | null>(null)
   const hasSelectedProducts = form.products.length > 0
   const isEditMode = mode === 'edit'
   const mobileTitle = isEditMode ? 'Edit Discount' : 'Create New Discount'
@@ -145,7 +144,7 @@ function CreateDiscountPromotionPage({
     return fromLocalDateTimeInputValue(form[activePickerField])
   }, [activePickerField, form])
 
-  const handleOpenPicker = (field: PickerField) => {
+  const handleOpenPicker = (field: DiscountDateTimeField) => {
     setActivePickerField(field)
   }
 
@@ -360,7 +359,12 @@ function CreateDiscountPromotionPage({
       <div className="mt-4 hidden space-y-4 sm:block">
         <DiscountPromotionProductsCard value={form} onChange={setForm} />
         {hasSelectedProducts ? (
-          <DiscountPromotionBasicInformationCard value={form} onChange={setForm} />
+          <DiscountPromotionBasicInformationCard
+            value={form}
+            onChange={setForm}
+            onOpenPicker={handleOpenPicker}
+            activePickerField={activePickerField}
+          />
         ) : (
           <article className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] p-5 text-sm text-slate-600">
             Select at least 1 product first. Discount promotion name and date range

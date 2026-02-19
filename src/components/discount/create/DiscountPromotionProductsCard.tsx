@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CreateDiscountPromotionForm } from './types'
 
@@ -130,6 +130,7 @@ function DiscountPromotionProductsCard({
   onChange,
   mobileVariant = false,
 }: DiscountPromotionProductsCardProps) {
+  const selectAllRef = useRef<HTMLInputElement>(null)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<PickerTab>('select')
   const [searchField, setSearchField] = useState<SearchField>('Product Name')
@@ -170,6 +171,20 @@ function DiscountPromotionProductsCard({
       return product.name.toLowerCase().includes(normalizedQuery)
     })
   }, [appliedQuery, searchField, selectedCategory, showAvailableOnly])
+
+  const filteredProductNames = useMemo(
+    () => filteredProducts.map((product) => product.name),
+    [filteredProducts],
+  )
+  const selectedInFilteredCount = useMemo(
+    () => filteredProductNames.filter((name) => draftSelection.includes(name)).length,
+    [draftSelection, filteredProductNames],
+  )
+  const allFilteredSelected =
+    filteredProductNames.length > 0 &&
+    selectedInFilteredCount === filteredProductNames.length
+  const someFilteredSelected =
+    selectedInFilteredCount > 0 && !allFilteredSelected
 
   const selectedProducts = useMemo(
     () =>
@@ -218,6 +233,14 @@ function DiscountPromotionProductsCard({
       window.scrollTo(0, scrollY)
     }
   }, [isPickerOpen])
+
+  useEffect(() => {
+    if (!selectAllRef.current) {
+      return
+    }
+
+    selectAllRef.current.indeterminate = someFilteredSelected
+  }, [someFilteredSelected])
 
   const handleAddProducts = () => {
     setDraftSelection(value.products)
@@ -271,6 +294,25 @@ function DiscountPromotionProductsCard({
 
   const handleSearch = () => {
     setAppliedQuery(searchInput)
+  }
+
+  const handleToggleSelectAll = () => {
+    if (filteredProductNames.length === 0) {
+      return
+    }
+
+    if (allFilteredSelected) {
+      setDraftSelection((previous) =>
+        previous.filter((name) => !filteredProductNames.includes(name)),
+      )
+      return
+    }
+
+    setDraftSelection((previous) => {
+      const next = new Set(previous)
+      filteredProductNames.forEach((name) => next.add(name))
+      return Array.from(next)
+    })
   }
 
   const handleResetFilters = () => {
@@ -456,15 +498,27 @@ function DiscountPromotionProductsCard({
                           </div>
                         </div>
 
-                        <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={showAvailableOnly}
-                            onChange={(event) => setShowAvailableOnly(event.target.checked)}
-                            className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
-                          />
-                          Show available products only
-                        </label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={showAvailableOnly}
+                              onChange={(event) => setShowAvailableOnly(event.target.checked)}
+                              className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                            />
+                            Show available products only
+                          </label>
+
+                          <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs font-semibold text-[#1d4ed8]">
+                            <input
+                              type="checkbox"
+                              checked={allFilteredSelected}
+                              onChange={handleToggleSelectAll}
+                              className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                            />
+                            Select all shown products
+                          </label>
+                        </div>
                       </div>
 
                       <div className="mt-3 overflow-auto rounded-lg border border-[#dbeafe] bg-[#f8fbff]">
@@ -526,7 +580,16 @@ function DiscountPromotionProductsCard({
                         <table className="hidden min-w-[760px] w-full border-separate border-spacing-0 sm:table">
                           <thead>
                             <tr className="bg-white text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
-                              <th className="px-3 py-2.5 font-semibold">Select</th>
+                              <th className="px-3 py-2.5 font-semibold">
+                                <input
+                                  ref={selectAllRef}
+                                  type="checkbox"
+                                  checked={allFilteredSelected}
+                                  onChange={handleToggleSelectAll}
+                                  aria-label="Select all filtered products"
+                                  className="h-4 w-4 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                                />
+                              </th>
                               <th className="px-3 py-2.5 font-semibold">Products</th>
                               <th className="px-3 py-2.5 font-semibold">Sales</th>
                               <th className="px-3 py-2.5 font-semibold">Price</th>

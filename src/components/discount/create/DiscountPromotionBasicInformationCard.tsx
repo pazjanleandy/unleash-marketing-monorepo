@@ -1,13 +1,57 @@
-import type { CreateDiscountPromotionForm } from './types'
+import type {
+  CreateDiscountPromotionForm,
+  DiscountDateTimeField,
+} from './types'
 
 type DiscountPromotionBasicInformationCardProps = {
   value: CreateDiscountPromotionForm
   onChange: (value: CreateDiscountPromotionForm) => void
+  onOpenPicker: (field: DiscountDateTimeField) => void
+  activePickerField: DiscountDateTimeField | null
+}
+
+function fromLocalDateTimeInputValue(value: string) {
+  if (!value) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+
+  if (!match) {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+
+  return new Date(year, month, day, hour, minute, 0, 0)
+}
+
+function formatDateTimeLabel(value: string) {
+  const date = fromLocalDateTimeInputValue(value)
+
+  if (!date) {
+    return 'Select date & time'
+  }
+
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
 function DiscountPromotionBasicInformationCard({
   value,
   onChange,
+  onOpenPicker,
+  activePickerField,
 }: DiscountPromotionBasicInformationCardProps) {
   const setField = <K extends keyof CreateDiscountPromotionForm>(
     field: K,
@@ -53,18 +97,39 @@ function DiscountPromotionBasicInformationCard({
           </p>
           <div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <input
-                type="datetime-local"
-                value={value.startDateTime}
-                onChange={(event) => setField('startDateTime', event.target.value)}
-                className="h-11 rounded-md border border-[#cbd5e1] bg-white px-3 text-[14px] text-slate-900 focus:border-[#64748b] focus:outline-none"
-              />
-              <input
-                type="datetime-local"
-                value={value.endDateTime}
-                onChange={(event) => setField('endDateTime', event.target.value)}
-                className="h-11 rounded-md border border-[#cbd5e1] bg-white px-3 text-[14px] text-slate-900 focus:border-[#64748b] focus:outline-none"
-              />
+              <button
+                type="button"
+                onClick={() => onOpenPicker('startDateTime')}
+                className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
+                  activePickerField === 'startDateTime'
+                    ? 'border-[#2563EB] bg-[#eff6ff]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                }`}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Start
+                </span>
+                <span className="mt-0.5 text-[14px] text-slate-900">
+                  {formatDateTimeLabel(value.startDateTime)}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onOpenPicker('endDateTime')}
+                className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
+                  activePickerField === 'endDateTime'
+                    ? 'border-[#2563EB] bg-[#eff6ff]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                }`}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  End
+                </span>
+                <span className="mt-0.5 text-[14px] text-slate-900">
+                  {formatDateTimeLabel(value.endDateTime)}
+                </span>
+              </button>
             </div>
             <p className="mt-1 text-xs text-slate-500">
               Promotion period must be less than 180 days.

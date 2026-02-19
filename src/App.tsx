@@ -8,6 +8,7 @@ import CreateDiscountPromotionPage from './components/discount/create/CreateDisc
 import type { DiscountToolType, PromotionRow } from './components/discount/types'
 import ViewDiscountPromotionPage from './components/discount/view/ViewDiscountPromotionPage'
 import FlashDealsPage from './components/flash-deals/FlashDealsPage'
+import CreateFlashDealPage from './components/flash-deals/create/CreateFlashDealPage'
 import VouchersPage from './components/vouchers/VouchersPage'
 import CreateVoucherPage from './components/vouchers/create/CreateVoucherPage'
 import type { VoucherItem } from './components/vouchers/types'
@@ -18,6 +19,7 @@ type AppView =
   | 'marketing'
   | 'discount'
   | 'flash-deals'
+  | 'create-flash-deal'
   | 'create-discount-promotion'
   | 'view-discount-promotion'
   | 'vouchers'
@@ -146,6 +148,7 @@ function App() {
   const appBackground =
     activeView === 'discount' ||
     activeView === 'flash-deals' ||
+    activeView === 'create-flash-deal' ||
     activeView === 'create-discount-promotion' ||
     activeView === 'view-discount-promotion' ||
     activeView === 'vouchers' ||
@@ -218,6 +221,14 @@ function App() {
     setActiveView('discount')
   }
 
+  const handleCreateFlashDeal = () => {
+    setActiveView('create-flash-deal')
+  }
+
+  const handleCreateFlashDealBack = () => {
+    setActiveView('flash-deals')
+  }
+
   return (
     <div className={`min-h-screen ${appBackground} pb-16 pt-10 text-slate-900`}>
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -237,7 +248,12 @@ function App() {
             onViewPromotion={handleViewDiscountPromotion}
           />
         ) : activeView === 'flash-deals' ? (
-          <FlashDealsPage onBack={() => setActiveView('marketing')} />
+          <FlashDealsPage
+            onBack={() => setActiveView('marketing')}
+            onCreate={handleCreateFlashDeal}
+          />
+        ) : activeView === 'create-flash-deal' ? (
+          <CreateFlashDealPage onBack={handleCreateFlashDealBack} />
         ) : activeView === 'create-discount-promotion' ? (
           <CreateDiscountPromotionPage
             key={discountFormKey}

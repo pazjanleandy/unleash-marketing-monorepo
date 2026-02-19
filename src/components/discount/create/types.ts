@@ -7,3 +7,5 @@ export type CreateDiscountPromotionForm = {
   products: string[]
   productDiscounts: Record<string, string>
 }
+
+export type DiscountDateTimeField = 'startDateTime' | 'endDateTime'
