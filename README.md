@@ -26,7 +26,12 @@ Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
 - `create-voucher`
   - Voucher creation/edit flow.
 
-Routing is view-state based in `src/App.tsx`:
+Routing is URL-based in `src/App.tsx` with `react-router-dom`:
+- `/` redirects to `/market-centre`
+- `/market-centre` renders the full Marketing Centre page in `src/pages/marketCentre.tsx`
+- `*` (unknown routes) redirects to `/market-centre`
+
+Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal module flows:
 - Clicking `Discount`, `Flash Deals`, or `Vouchers` from Marketing Tools opens their pages.
 - Flash Deals `Create` opens the create flow (`create-flash-deal`).
 - Discount `Edit` on Discount Promotion rows opens prefilled edit form (`create-discount-promotion` in edit mode).
@@ -35,6 +40,20 @@ Routing is view-state based in `src/App.tsx`:
 - Back/Cancel actions return to the previous parent view.
 
 ## Daily Update
+### 2026-02-22
+
+#### 1) Market Centre Refactor: App Router + Page Ownership Split
+- Moved the entire Market Centre orchestration logic from `src/App.tsx` to `src/pages/marketCentre.tsx`.
+- `src/App.tsx` now acts as router-only app composition using `BrowserRouter`, `Routes`, `Route`, and `Navigate`.
+- Added route redirects so both `/` and unknown paths resolve to `/market-centre`.
+
+#### 2) Sidebar Alignment with Market Centre Types
+- Updated `src/sidebar/sidebar.tsx` to reuse `MarketCentreView` from `src/pages/marketCentre.tsx`.
+- Removed duplicated view-type definitions between app shell and sidebar for safer maintenance.
+
+#### 3) Dependency Update
+- Added `react-router-dom` to dependencies for route handling in the app shell.
+
 ### 2026-02-19
 
 #### 1) Create Flash Deal Flow Added (Desktop + Mobile)
@@ -255,8 +274,12 @@ Routing is view-state based in `src/App.tsx`:
 
 ### App Shell
 - `src/App.tsx`
+  - Defines top-level routes and redirects
+  - Mounts `MarketCentrePage` at `/market-centre`
+- `src/pages/marketCentre.tsx`
   - Controls active views and cross-view navigation callbacks
   - Handles form prefill mapping for voucher and discount edit flows
+  - Composes sidebar + Market Centre module screens
 
 ### Common Components
 - `src/components/common/MobileDateTimePicker.tsx`
