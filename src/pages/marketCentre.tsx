@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -17,7 +17,14 @@ import type { CreateDiscountPromotionForm } from '../components/discount/create/
 import Sidebar from '../sidebar/sidebar'
 
 export type MarketCentreView =
+  | 'dashboard'
   | 'marketing'
+  | 'orders-all'
+  | 'orders-pending'
+  | 'orders-completed'
+  | 'inventory'
+  | 'add-product'
+  | 'categories'
   | 'discount'
   | 'flash-deals'
   | 'create-flash-deal'
@@ -25,6 +32,36 @@ export type MarketCentreView =
   | 'view-discount-promotion'
   | 'vouchers'
   | 'create-voucher'
+
+const navPlaceholders: Record<
+  'orders-all' | 'orders-pending' | 'orders-completed' | 'inventory' | 'add-product' | 'categories',
+  { title: string; description: string }
+> = {
+  'orders-all': {
+    title: 'All Orders',
+    description: 'Track, search, and manage every order from a centralized list.',
+  },
+  'orders-pending': {
+    title: 'Pending Orders',
+    description: 'Review new orders that still need confirmation and fulfillment.',
+  },
+  'orders-completed': {
+    title: 'Completed Orders',
+    description: 'Audit fulfilled orders and monitor final delivery outcomes.',
+  },
+  inventory: {
+    title: 'Inventory',
+    description: 'Check stock levels, product health, and low-stock alerts.',
+  },
+  'add-product': {
+    title: 'Add Product',
+    description: 'Create new product listings with pricing, inventory, and details.',
+  },
+  categories: {
+    title: 'Categories',
+    description: 'Organize catalog sections and manage storefront taxonomy.',
+  },
+}
 
 const createVoucherDefaults: CreateVoucherForm = {
   rewardType: 'discount',
@@ -131,8 +168,25 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
   }
 }
 
+function PlaceholderView({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <section className="motion-rise rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_28px_62px_-44px_rgba(15,23,42,0.55)]">
+      <h2 className="text-2xl font-semibold text-slate-800">{title}</h2>
+      <p className="mt-3 max-w-2xl text-sm text-slate-500 sm:text-base">{description}</p>
+    </section>
+  )
+}
+
 function MarketCentrePage() {
-  const [activeView, setActiveView] = useState<MarketCentreView>('marketing')
+  const [activeView, setActiveView] = useState<MarketCentreView>('dashboard')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [now, setNow] = useState(() => new Date())
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
   const [viewingPromotion, setViewingPromotion] = useState<PromotionRow | null>(null)
@@ -146,16 +200,6 @@ function MarketCentrePage() {
   )
   const voucherFormKey = editingVoucher ? `edit-${editingVoucher.code}` : 'create'
   const discountFormKey = editingPromotion ? `edit-${editingPromotion.name}` : 'create'
-  const appBackground =
-    activeView === 'discount' ||
-    activeView === 'flash-deals' ||
-    activeView === 'create-flash-deal' ||
-    activeView === 'create-discount-promotion' ||
-    activeView === 'view-discount-promotion' ||
-    activeView === 'vouchers' ||
-    activeView === 'create-voucher'
-      ? 'bg-[linear-gradient(180deg,_#F0F9FF_0%,_#FFFFFF_70%)]'
-      : 'bg-[radial-gradient(circle_at_top,_#dbeafe_0%,_#f8fbff_42%,_#edf4ff_100%)]'
 
   const handleToolSelect = (tool: ToolCard) => {
     if (tool.id === 'vouchers') {
@@ -230,15 +274,117 @@ function MarketCentrePage() {
     setActiveView('flash-deals')
   }
 
+  const isMarketingOverview = activeView === 'dashboard' || activeView === 'marketing'
+  const placeholderConfig =
+    activeView in navPlaceholders
+      ? navPlaceholders[
+          activeView as
+            | 'orders-all'
+            | 'orders-pending'
+            | 'orders-completed'
+            | 'inventory'
+            | 'add-product'
+            | 'categories'
+        ]
+      : null
+  const sidebarWidthClass = sidebarCollapsed ? 'w-[80px]' : 'w-[280px]'
+  const contentMarginClass = sidebarCollapsed ? 'ml-[88px]' : 'ml-[288px]'
+  const datePart = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    year: 'numeric',
+  }).format(now)
+  const timePart = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(now)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(new Date())
+    }, 30_000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   return (
-    <div className={`min-h-screen ${appBackground} pb-16 pt-10 text-slate-900`}>
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="flex justify-center lg:justify-start">
-            <Sidebar activeView={activeView} onSelectView={setActiveView} />
+    <div className="h-screen w-full overflow-hidden bg-[#F4F7FE] text-slate-900">
+      <aside
+        className={`fixed bottom-3 left-3 top-3 z-40 transition-[width] duration-300 ${sidebarWidthClass}`}
+      >
+        <Sidebar
+          activeView={activeView}
+          onSelectView={setActiveView}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+        />
+      </aside>
+
+      <div
+        className={`h-screen overflow-y-auto transition-[margin-left] duration-300 ${contentMarginClass}`}
+      >
+        <header className="bg-[#F4F7FE] px-4 pb-3 pt-4 sm:px-6 lg:px-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-['Inter'] text-[2.2rem] font-normal leading-none tracking-tight text-slate-800 sm:text-[2.5rem]">
+                Admin Portal
+              </h1>
+              <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#1d4ed8]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 2V5M17 2V5M3 9H21M5 4H19C20.1 4 21 4.9 21 6V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V6C3 4.9 3.9 4 5 4Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{`${datePart} | ${timePart}`}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Theme mode"
+                className="relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
+              >
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 4V2M12 22V20M4 12H2M22 12H20M18.36 5.64L16.95 7.05M7.05 16.95L5.64 18.36M18.36 18.36L16.95 16.95M7.05 7.05L5.64 5.64"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                <span className="absolute -right-1 -top-1 rounded-full bg-[#1d4ed8] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  Beta
+                </span>
+              </button>
+              <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-2 pr-4 shadow-sm">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#dbeafe] text-sm font-semibold text-[#1e40af]">
+                  A
+                </span>
+                <p className="text-sm font-medium text-slate-700">Welcome Back, Admin</p>
+              </div>
+            </div>
           </div>
-          <main className="min-w-0 flex-1">
-            {activeView === 'marketing' ? (
+        </header>
+        <div className="mx-auto w-full max-w-[1600px] px-4 pb-12 pt-3 sm:px-6 lg:px-8">
+          <main className="min-w-0">
+            {isMarketingOverview ? (
               <>
                 <MarketingHero />
                 <MarketingToolsPanel
@@ -246,6 +392,11 @@ function MarketCentrePage() {
                   onToolSelect={handleToolSelect}
                 />
               </>
+            ) : placeholderConfig ? (
+              <PlaceholderView
+                title={placeholderConfig.title}
+                description={placeholderConfig.description}
+              />
             ) : activeView === 'discount' ? (
               <DiscountPage
                 onBack={() => setActiveView('marketing')}
