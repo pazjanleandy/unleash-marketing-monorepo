@@ -449,22 +449,22 @@ function MobileDateTimePickerSheet({
           aria-modal="true"
           aria-label={title}
           tabIndex={-1}
-          className="relative z-10 flex w-full max-h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-[#dbeafe] bg-white shadow-[0_26px_58px_-30px_rgba(15,23,42,0.65)] animate-[rise-in_220ms_cubic-bezier(0.22,1,0.36,1)_both] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl"
+          className="relative z-10 flex w-full max-h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-[0_26px_58px_-30px_rgba(15,23,42,0.65)] animate-[rise-in_220ms_cubic-bezier(0.22,1,0.36,1)_both] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl"
         >
           <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
 
-          <header className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white px-4 pb-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:rounded-t-2xl sm:px-5 sm:pt-4">
+          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 pb-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:rounded-t-2xl sm:px-5 sm:pt-4">
             <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Back"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#eff6ff] text-base font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-base font-semibold text-slate-700 transition hover:bg-slate-200"
               >
                 &larr;
               </button>
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-base font-semibold text-[#1E40AF] sm:text-lg">
+                <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
                   {title}
                 </h2>
                 <p className="text-xs text-slate-500">Choose when this promo starts or ends.</p>
@@ -481,13 +481,13 @@ function MobileDateTimePickerSheet({
           </header>
 
           <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4">
-            <section className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-3">
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => canGoPreviousMonth && setDisplayMonth(addMonths(monthStart, -1))}
                   disabled={!canGoPreviousMonth}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#cbd5e1] bg-white text-lg text-[#1d4ed8] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#cbd5e1] bg-white text-lg text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Previous month"
                 >
                   &larr;
@@ -497,7 +497,7 @@ function MobileDateTimePickerSheet({
                   type="button"
                   onClick={() => canGoNextMonth && setDisplayMonth(addMonths(monthStart, 1))}
                   disabled={!canGoNextMonth}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#cbd5e1] bg-white text-lg text-[#1d4ed8] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#cbd5e1] bg-white text-lg text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Next month"
                 >
                   &rarr;
@@ -524,7 +524,7 @@ function MobileDateTimePickerSheet({
                   const isDisabled = isPast || isBeforeMin || isAfterMax
                   const isToday = isSameDay(day, today)
                   const isSelected = selectedDay ? isSameDay(day, selectedDay) : false
-                  let dayClassName = 'text-slate-700 hover:bg-[#eff6ff] active:bg-[#dbeafe]'
+                  let dayClassName = 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
 
                   if (isDisabled) {
                     dayClassName = 'cursor-not-allowed bg-slate-100 text-slate-300'
@@ -532,7 +532,7 @@ function MobileDateTimePickerSheet({
                     dayClassName =
                       'bg-[#2563EB] text-white ring-2 ring-[#2563EB] shadow-[0_8px_16px_-12px_rgba(37,99,235,0.85)]'
                   } else if (isToday) {
-                    dayClassName = 'border border-[#93c5fd] text-[#1d4ed8] hover:bg-[#eff6ff]'
+                    dayClassName = 'border border-slate-400 text-slate-700 hover:bg-slate-100'
                   }
 
                   return (
@@ -556,19 +556,19 @@ function MobileDateTimePickerSheet({
               </div>
             </section>
 
-            <section className="mt-3 rounded-xl border border-[#dbeafe] bg-white p-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+            <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Time
               </h3>
 
               <div className="mt-2 grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-1.5">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-1.5">
                   <p className="px-1 text-[11px] font-semibold text-slate-500">Hour</p>
                   <div className="mt-1 max-h-32 snap-y snap-mandatory overflow-y-auto pr-0.5">
                     {HOURS_12.map((hour) => {
                       const isDisabled = isHourDisabled(hour)
                       const isSelected = selectedHour === hour
-                      let optionClassName = 'bg-white text-slate-700 hover:bg-[#eff6ff] active:bg-[#dbeafe]'
+                      let optionClassName = 'bg-white text-slate-700 hover:bg-slate-100 active:bg-slate-200'
 
                       if (isDisabled) {
                         optionClassName =
@@ -598,13 +598,13 @@ function MobileDateTimePickerSheet({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-1.5">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-1.5">
                   <p className="px-1 text-[11px] font-semibold text-slate-500">Minute</p>
                   <div className="mt-1 max-h-32 snap-y snap-mandatory overflow-y-auto pr-0.5">
                     {minuteOptions.map((minute) => {
                       const isDisabled = isMinuteDisabled(minute)
                       const isSelected = selectedMinute === minute
-                      let optionClassName = 'bg-white text-slate-700 hover:bg-[#eff6ff] active:bg-[#dbeafe]'
+                      let optionClassName = 'bg-white text-slate-700 hover:bg-slate-100 active:bg-slate-200'
 
                       if (isDisabled) {
                         optionClassName =
@@ -634,13 +634,13 @@ function MobileDateTimePickerSheet({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-1.5">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-1.5">
                   <p className="px-1 text-[11px] font-semibold text-slate-500">AM/PM</p>
                   <div className="mt-1 max-h-32 snap-y snap-mandatory overflow-y-auto pr-0.5">
                     {(['AM', 'PM'] as const).map((meridiem) => {
                       const isDisabled = isMeridiemDisabled(meridiem)
                       const isSelected = selectedMeridiem === meridiem
-                      let optionClassName = 'bg-white text-slate-700 hover:bg-[#eff6ff] active:bg-[#dbeafe]'
+                      let optionClassName = 'bg-white text-slate-700 hover:bg-slate-100 active:bg-slate-200'
 
                       if (isDisabled) {
                         optionClassName =
@@ -673,7 +673,7 @@ function MobileDateTimePickerSheet({
             </section>
           </div>
 
-          <footer className="sticky bottom-0 z-10 border-t border-[#dbeafe] bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:py-4">
+          <footer className="sticky bottom-0 z-10 border-t border-slate-200 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:py-4">
             {!isSelectionValid ? (
               <p className="mb-2 text-xs font-medium text-rose-600">
                 Selected date and time is outside the allowed range.

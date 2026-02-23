@@ -29,13 +29,13 @@ const monthLabels = [
 ] as const
 
 const statusClasses: Record<FlashDealStatus, string> = {
-  Upcoming: 'bg-[#DBEAFE] text-[#1D4ED8]',
+  Upcoming: 'bg-amber-100 text-amber-700',
   Ongoing: 'bg-[#DCFCE7] text-[#15803D]',
   Expired: 'bg-slate-200 text-slate-700',
 }
 
 const toggleClasses: Record<FlashDealStatus, string> = {
-  Upcoming: 'bg-[#3B82F6]',
+  Upcoming: 'bg-amber-500',
   Ongoing: 'bg-[#22C55E]',
   Expired: 'bg-slate-300',
 }
@@ -228,19 +228,19 @@ function SwipeablePromotionCard({
   }
 
   return (
-    <article className="relative mx-4 overflow-hidden rounded-2xl border border-[#dbeafe]/80 bg-white shadow-sm">
+    <article className="relative mx-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="pointer-events-none absolute inset-y-0 left-0 flex w-16 items-center justify-center bg-slate-100 text-xs font-semibold text-slate-600">
         Duplicate
       </div>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex w-24 items-center justify-evenly bg-[#eff6ff]">
-        <span className="rounded-lg bg-[#DBEAFE] px-2 py-1 text-xs font-semibold text-[#1D4ED8]">
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex w-24 items-center justify-evenly bg-slate-100">
+        <span className="rounded-lg bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700">
           {primaryActionLabel}
         </span>
         <span
           className={`rounded-lg px-2 py-1 text-xs font-semibold ${
             secondaryDanger
               ? 'bg-[#FEE2E2] text-[#B91C1C]'
-              : 'bg-[#dbeafe] text-[#1d4ed8]'
+              : 'bg-slate-200 text-slate-700'
           }`}
         >
           {secondaryActionLabel}
@@ -271,12 +271,12 @@ function SwipeablePromotionCard({
           </p>
         </div>
 
-        <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-[#f8fbff] px-3 py-2.5">
+        <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5">
           <div className="flex items-center -space-x-2">
             {Array.from({ length: previewCount }).map((_, index) => (
               <span
                 key={`${row.id}-preview-${index}`}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-white bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] text-[10px] font-semibold text-[#1d4ed8]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-white bg-gradient-to-br from-slate-200 to-slate-300 text-[10px] font-semibold text-slate-700"
               >
                 P{index + 1}
               </span>
@@ -308,7 +308,7 @@ function SwipeablePromotionCard({
           <button
             type="button"
             onClick={handlePrimaryAction}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-[#bfdbfe] bg-white px-3 text-sm font-semibold text-[#1d4ed8] transition active:scale-[0.98]"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#2563EB] px-3 text-sm font-semibold text-white transition active:scale-[0.98]"
           >
             {primaryActionLabel}
           </button>
@@ -318,7 +318,7 @@ function SwipeablePromotionCard({
             className={`inline-flex h-11 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition active:scale-[0.98] ${
               secondaryDanger
                 ? 'border-[#fca5a5] bg-white text-[#b91c1c]'
-                : 'border-[#bfdbfe] bg-white text-[#1d4ed8]'
+                : 'border-slate-300 bg-white text-slate-700'
             }`}
           >
             {secondaryActionLabel}
@@ -511,8 +511,8 @@ function FlashDealsPromotionListSection({
       </div>
 
       <div className="sm:hidden">
-        <div className="bg-gradient-to-b from-[#F0F9FF] to-[#F0F9FF]/90 px-4 pb-3 pt-2">
-          <div className="grid grid-cols-4 rounded-full bg-[#dbeafe] p-1 shadow-inner">
+        <div className="bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] px-4 pb-3 pt-2">
+          <div className="grid grid-cols-4 rounded-full bg-slate-200 p-1 shadow-inner">
             {tabs.map((tab) => {
               const active = tab === activeTab
               return (
@@ -523,7 +523,7 @@ function FlashDealsPromotionListSection({
                   className={`inline-flex h-10 items-center justify-center rounded-full px-2 text-[15px] font-semibold transition-colors ${
                     active
                       ? 'bg-[#2563EB] text-white shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)]'
-                      : 'text-[#1d4ed8]'
+                      : 'text-slate-600'
                   }`}
                 >
                   {tab}
@@ -537,7 +537,7 @@ function FlashDealsPromotionListSection({
           <button
             type="button"
             onClick={() => setDateOpen((value) => !value)}
-            className="flex h-12 w-full items-center justify-between rounded-xl border border-[#cfe0f3] bg-white px-3.5 text-sm font-medium text-[#1E293B] shadow-[0_1px_0_rgba(15,23,42,0.02)]"
+            className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-[#1E293B] shadow-[0_1px_0_rgba(15,23,42,0.02)]"
           >
             <span className="truncate">
               Date:{' '}
@@ -573,7 +573,7 @@ function FlashDealsPromotionListSection({
           </button>
 
           {dateOpen ? (
-            <div className="mt-3 space-y-3 rounded-xl border border-[#dbeafe] bg-white p-4">
+            <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
               {[
                 { id: 'all', label: 'All Dates' },
                 { id: 'today', label: 'Today' },

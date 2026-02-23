@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -183,9 +183,21 @@ function PlaceholderView({
   )
 }
 
+function getIsMobileViewport() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  return window.matchMedia('(max-width: 768px)').matches
+}
+
 function MarketCentrePage() {
   const [activeView, setActiveView] = useState<MarketCentreView>('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const wasSidebarOpenRef = useRef(false)
   const [now, setNow] = useState(() => new Date())
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
@@ -274,6 +286,14 @@ function MarketCentrePage() {
     setActiveView('flash-deals')
   }
 
+  const handleSidebarSelectView = (view: MarketCentreView) => {
+    setActiveView(view)
+
+    if (isMobileViewport) {
+      setIsSidebarOpen(false)
+    }
+  }
+
   const isMarketingOverview = activeView === 'dashboard' || activeView === 'marketing'
   const placeholderConfig =
     activeView in navPlaceholders
@@ -288,7 +308,7 @@ function MarketCentrePage() {
         ]
       : null
   const sidebarWidthClass = sidebarCollapsed ? 'w-[80px]' : 'w-[280px]'
-  const contentMarginClass = sidebarCollapsed ? 'ml-[88px]' : 'ml-[288px]'
+  const contentMarginClass = sidebarCollapsed ? 'md:ml-[88px]' : 'md:ml-[288px]'
   const datePart = new Intl.DateTimeFormat('en-US', {
     month: 'long',
     year: 'numeric',
@@ -306,16 +326,110 @@ function MarketCentrePage() {
     return () => window.clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobileViewport(event.matches)
+    }
+
+    setIsMobileViewport(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setIsSidebarOpen(false)
+    }
+  }, [isMobileViewport])
+
+  useEffect(() => {
+    if (!isMobileViewport || !isSidebarOpen) {
+      return
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isMobileViewport, isSidebarOpen])
+
+  useEffect(() => {
+    if (!isMobileViewport || !isSidebarOpen) {
+      return
+    }
+
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+    }
+  }, [isMobileViewport, isSidebarOpen])
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      wasSidebarOpenRef.current = isSidebarOpen
+      return
+    }
+
+    if (wasSidebarOpenRef.current && !isSidebarOpen) {
+      mobileMenuButtonRef.current?.focus()
+    }
+
+    wasSidebarOpenRef.current = isSidebarOpen
+  }, [isMobileViewport, isSidebarOpen])
+
   return (
     <div className="h-screen w-full overflow-hidden bg-[#F4F7FE] text-slate-900">
       <aside
-        className={`fixed bottom-3 left-3 top-3 z-40 transition-[width] duration-300 ${sidebarWidthClass}`}
+        className={`fixed bottom-3 left-3 top-3 z-40 hidden transition-[width] duration-300 md:block ${sidebarWidthClass}`}
       >
         <Sidebar
           activeView={activeView}
-          onSelectView={setActiveView}
+          onSelectView={handleSidebarSelectView}
           collapsed={sidebarCollapsed}
           onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+        />
+      </aside>
+
+      <div
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${
+          isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setIsSidebarOpen(false)}
+        aria-hidden={!isSidebarOpen}
+      />
+
+      <aside
+        id="mobile-sidebar"
+        className={`fixed left-0 top-0 z-50 h-screen w-[82vw] max-w-[320px] bg-white shadow-xl transition-transform duration-300 ease-out md:hidden ${
+          isSidebarOpen
+            ? 'translate-x-0 pointer-events-auto'
+            : '-translate-x-full pointer-events-none'
+        }`}
+        aria-hidden={!isSidebarOpen}
+      >
+        <Sidebar
+          activeView={activeView}
+          onSelectView={handleSidebarSelectView}
+          collapsed={false}
+          mobileMode
+          mobileOpen={isSidebarOpen}
+          onCloseMobile={() => setIsSidebarOpen(false)}
         />
       </aside>
 
@@ -324,27 +438,53 @@ function MarketCentrePage() {
       >
         <header className="bg-[#F4F7FE] px-4 pb-3 pt-4 sm:px-6 lg:px-8">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-['Inter'] text-[2.2rem] font-normal leading-none tracking-tight text-slate-800 sm:text-[2.5rem]">
-                Admin Portal
-              </h1>
-              <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#1d4ed8]">
+            <div className="flex items-start gap-3">
+              <button
+                ref={mobileMenuButtonRef}
+                type="button"
+                aria-label="Open sidebar navigation"
+                aria-expanded={isSidebarOpen}
+                aria-controls="mobile-sidebar"
+                onClick={() => setIsSidebarOpen(true)}
+                className="mt-1 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm md:hidden"
+              >
                 <svg
-                  width="14"
+                  width="18"
                   height="14"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 18 14"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M7 2V5M17 2V5M3 9H21M5 4H19C20.1 4 21 4.9 21 6V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V6C3 4.9 3.9 4 5 4Z"
+                    d="M1 1H17M1 7H17M1 13H17"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
-                    strokeLinejoin="round"
                   />
                 </svg>
-                <span>{`${datePart} | ${timePart}`}</span>
+              </button>
+              <div>
+                <h1 className="font-['Inter'] text-[2.2rem] font-normal leading-none tracking-tight text-slate-800 sm:text-[2.5rem]">
+                  Admin Portal
+                </h1>
+                <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#1d4ed8]">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 2V5M17 2V5M3 9H21M5 4H19C20.1 4 21 4.9 21 6V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V6C3 4.9 3.9 4 5 4Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>{`${datePart} | ${timePart}`}</span>
+                </div>
               </div>
             </div>
 
@@ -373,7 +513,7 @@ function MarketCentrePage() {
                   Beta
                 </span>
               </button>
-              <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-2 pr-4 shadow-sm">
+              <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-2 pr-4 shadow-sm md:flex">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#dbeafe] text-sm font-semibold text-[#1e40af]">
                   A
                 </span>

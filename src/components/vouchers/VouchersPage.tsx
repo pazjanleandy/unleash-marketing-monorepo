@@ -245,7 +245,7 @@ function MobileVoucherCard({
         : null
   const secondaryActionClasses = secondaryAction.danger
     ? 'border-[#fca5a5] bg-white text-[#b91c1c] hover:bg-[#fef2f2]'
-    : 'border-[#bfdbfe] bg-white text-[#1d4ed8] hover:bg-[#dbeafe]'
+    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
 
   const handleActionClick = (action: VoucherAction) => {
     if (action.label.trim().toLowerCase() === 'edit') {
@@ -279,10 +279,10 @@ function MobileVoucherCard({
 
   return (
     <article
-      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-xl border-l-[3px] bg-white px-3.5 py-3 shadow-[0_12px_26px_-22px_rgba(30,64,175,0.75)] ${statusBorderClasses[voucher.status]}`}
+      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-xl border-l-[3px] bg-white px-3.5 py-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.35)] ${statusBorderClasses[voucher.status]}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#eff6ff] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-slate-100 to-transparent" />
 
       <div
         className="relative transition-transform duration-200 ease-out"
@@ -293,9 +293,9 @@ function MobileVoucherCard({
       >
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0">
-            <p className="text-[20px] font-bold leading-none tracking-tight text-[#2563EB]">
+            <p className="text-[20px] font-bold leading-none tracking-tight text-slate-900">
               <span>{discountValue}</span>
-              <span className="ml-1 align-middle text-[10px] font-semibold uppercase tracking-wide text-[#1d4ed8]/80">
+              <span className="ml-1 align-middle text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                 OFF
               </span>
             </p>
@@ -315,7 +315,7 @@ function MobileVoucherCard({
             >
               {voucher.status}
             </span>
-            <code className="inline-flex min-h-[26px] items-center rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-2.5 font-mono text-[11px] font-semibold tracking-wide text-[#1d4ed8]">
+            <code className="inline-flex min-h-[26px] items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 font-mono text-[11px] font-semibold tracking-wide text-slate-700">
               {voucher.code}
             </code>
           </div>
@@ -323,9 +323,9 @@ function MobileVoucherCard({
 
         <p className="mt-1.5 text-[12px] font-medium text-slate-600">{claimingLine}</p>
 
-        <p className="mt-1.5 border-t border-[#dbeafe] pt-1.5 text-[12px] text-slate-600">
+        <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-[12px] text-slate-600">
           Claimed {voucher.claimed} | Used {voucher.usage} | Unused{' '}
-          <span className="font-semibold text-[#1d4ed8]">{unusedCount}</span>
+          <span className="font-semibold text-slate-800">{unusedCount}</span>
         </p>
 
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -347,7 +347,7 @@ function MobileVoucherCard({
       </div>
 
       {isSwiping && swipeAction ? (
-        <div className="absolute bottom-2 right-2 rounded-full bg-[#1E40AF] px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg">
+        <div className="absolute bottom-2 right-2 rounded-full bg-slate-800 px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg">
           {swipeAction}
         </div>
       ) : null}
@@ -528,26 +528,26 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
       style={{ animationDelay: '80ms' }}
     >
       <div className="sm:hidden">
-        <div className="rounded-2xl bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-3 shadow-[0_14px_30px_-26px_rgba(37,99,235,0.9)]">
+        <div className="rounded-2xl bg-gradient-to-r from-[#f8fafc] via-[#f1f5f9] to-white p-3 shadow-[0_14px_30px_-26px_rgba(15,23,42,0.35)]">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-[#1E40AF] shadow-sm transition active:scale-95"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-slate-700 shadow-sm transition active:scale-95"
               aria-label="Back to Marketing Centre"
             >
               &larr;
             </button>
-            <h1 className="text-[24px] font-bold leading-none text-[#1E40AF]">
+            <h1 className="text-[24px] font-bold leading-none text-slate-900">
               Vouchers
             </h1>
           </div>
-          <p className="mt-1.5 text-[12px] text-[#1d4ed8]">
+          <p className="mt-1.5 text-[12px] text-slate-600">
             Pull to refresh, tap cards, or swipe for quick actions.
           </p>
         </div>
 
-        <div className="relative mt-3 rounded-full bg-[#dbeafe] p-1 shadow-inner">
+        <div className="relative mt-3 rounded-full bg-slate-200 p-1 shadow-inner">
           <div
             className="absolute bottom-1 top-1 rounded-full bg-[#2563EB] shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)] transition-all duration-300 ease-out"
             style={{
@@ -565,7 +565,7 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
                   type="button"
                   onClick={() => setMobileTab(tab)}
                   className={`z-10 inline-flex h-11 items-center justify-center rounded-full px-2 text-[13px] font-semibold transition-colors ${
-                    isActive ? 'text-white' : 'text-[#1d4ed8]'
+                    isActive ? 'text-white' : 'text-slate-600'
                   }`}
                 >
                   {tab}
@@ -584,7 +584,7 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
               className={`inline-flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[12px] font-semibold transition ${
                 quickFilter === chip
                   ? 'bg-[#2563EB] text-white shadow-[0_10px_18px_-12px_rgba(30,64,175,0.95)]'
-                  : 'bg-[#eff6ff] text-[#1e40af]'
+                  : 'border border-slate-200 bg-white text-slate-700'
               }`}
             >
               {chip}
@@ -603,13 +603,13 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
               />
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#93c5fd] bg-white px-3 py-8 text-center text-sm text-[#1d4ed8]">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-8 text-center text-sm text-slate-600">
               No vouchers in this tab.
             </div>
           )}
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#dbeafe] bg-white/95 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto w-full max-w-6xl px-4 py-3">
             <button
               type="button"

@@ -21,15 +21,15 @@ const createDiscountChoices: {
 ] as const
 
 const statusTextClasses: Record<PromotionStatus, string> = {
-  Upcoming: 'text-[#2563EB]',
-  Ongoing: 'text-[#2563EB]',
-  Expired: 'text-[#2563EB]',
+  Upcoming: 'text-amber-700',
+  Ongoing: 'text-emerald-700',
+  Expired: 'text-slate-500',
 }
 
 const thumbClasses = [
-  'bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] text-[#1e3a8a]',
-  'bg-gradient-to-br from-[#e0f2fe] to-[#bfdbfe] text-[#0c4a6e]',
-  'bg-gradient-to-br from-[#dcfce7] to-[#bbf7d0] text-[#14532d]',
+  'bg-gradient-to-br from-[#e2e8f0] to-[#cbd5e1] text-[#334155]',
+  'bg-gradient-to-br from-[#e6f7ee] to-[#c9ead8] text-[#166534]',
+  'bg-gradient-to-br from-[#fef3c7] to-[#fde68a] text-[#92400e]',
 ] as const
 
 function ProductThumbStrip({ products }: { products: string[] }) {
@@ -154,8 +154,8 @@ function DiscountMobilePanel({
               className="absolute inset-0 bg-black/50"
             />
 
-            <div className="absolute inset-x-3 bottom-16 z-[90] rounded-xl border border-[#dbeafe] bg-white p-2 shadow-[0_20px_32px_-18px_rgba(30,64,175,0.8)]">
-              <p className="px-1 py-1 text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+            <div className="absolute inset-x-3 bottom-16 z-[90] rounded-xl border border-slate-200 bg-white p-2 shadow-[0_20px_32px_-18px_rgba(15,23,42,0.35)]">
+              <p className="px-1 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Create Discount Type
               </p>
               <div className="mt-1 space-y-1.5">
@@ -164,7 +164,7 @@ function DiscountMobilePanel({
                     key={choice.type}
                     type="button"
                     onClick={() => handleCreateChoiceSelect(choice.type)}
-                    className="inline-flex h-10 w-full items-center justify-start rounded-lg border border-[#dbeafe] bg-[#f8fbff] px-3 text-sm font-semibold text-slate-800 transition hover:bg-[#eff6ff]"
+                    className="inline-flex h-10 w-full items-center justify-start rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
                   >
                     {choice.label}
                   </button>
@@ -178,13 +178,13 @@ function DiscountMobilePanel({
 
   return (
     <div className="sm:hidden flex min-h-[calc(100vh-7.5rem)] flex-col">
-      <article className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-[#dbeafe] bg-white shadow-[0_14px_30px_-24px_rgba(30,64,175,0.45)]">
-        <header className="border-b border-[#dbeafe] bg-[#f8fbff] px-3 py-2.5">
+      <article className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_30px_-24px_rgba(15,23,42,0.24)]">
+        <header className="border-b border-slate-200 bg-slate-50 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-[#2563EB] transition hover:bg-[#eff6ff]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-slate-700 transition hover:bg-slate-200"
               aria-label="Back to Marketing Centre"
             >
               &larr;
@@ -201,7 +201,9 @@ function DiscountMobilePanel({
                   key={status}
                   type="button"
                   onClick={() => setActiveStatus(status)}
-                  className={`relative h-8 text-[11px] font-semibold transition ${statusTextClasses[status]}`}
+                  className={`relative h-8 text-[11px] font-semibold transition ${
+                    isActive ? 'text-slate-900' : statusTextClasses[status]
+                  }`}
                 >
                   {status}
                   {isActive ? (
@@ -213,13 +215,13 @@ function DiscountMobilePanel({
           </div>
         </header>
 
-        <div className="flex-1 bg-[#f8fafc] px-2.5 py-2">
+        <div className="flex-1 bg-slate-50 px-2.5 py-2">
           {activePromotions.length > 0 ? (
             <div className="space-y-2">
               {activePromotions.map((promotion) => (
                 <article
                   key={`${promotion.status}-${promotion.name}`}
-                  className="rounded-md border border-[#dbeafe] bg-white p-2.5"
+                  className="rounded-md border border-slate-200 bg-white p-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -244,7 +246,7 @@ function DiscountMobilePanel({
               ))}
             </div>
           ) : (
-            <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-[#bfdbfe] bg-white px-4 text-center text-xs text-slate-500">
+            <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-slate-300 bg-white px-4 text-center text-xs text-slate-500">
               No promotions in this status yet.
             </div>
           )}
@@ -253,7 +255,7 @@ function DiscountMobilePanel({
 
       {createTypeModal}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#dbeafe] bg-white/95 px-3 py-2 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur">
         <button
           type="button"
           onClick={() => setIsCreateChoiceOpen((previous) => !previous)}

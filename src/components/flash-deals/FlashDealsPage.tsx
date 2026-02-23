@@ -62,7 +62,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
   return (
     <>
       <section
-        className="motion-rise min-h-[calc(100vh-2.5rem)] rounded-3xl border border-slate-200/80 bg-gradient-to-b from-[#F0F9FF] to-white pb-10 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:min-h-0 sm:bg-white/95 sm:p-8 sm:pb-8"
+        className="motion-rise min-h-[calc(100vh-2.5rem)] rounded-3xl border border-slate-200/80 bg-gradient-to-b from-[#f8fafc] to-white pb-10 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:min-h-0 sm:bg-white/95 sm:p-8 sm:pb-8"
         style={{ animationDelay: '80ms' }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -70,7 +70,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
       >
         <div className="sm:hidden">
           <div
-            className="pointer-events-none fixed left-1/2 z-40 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1d4ed8] shadow-sm transition"
+            className="pointer-events-none fixed left-1/2 z-40 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition"
             style={{
               top: `${6 + pullDistance}px`,
               opacity: pullDistance > 6 || refreshing ? 1 : 0,
@@ -79,19 +79,19 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
             {refreshing ? 'Refreshing...' : 'Pull to refresh'}
           </div>
 
-          <header className="rounded-2xl bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4 shadow-[0_14px_30px_-26px_rgba(37,99,235,0.9)]">
+          <header className="rounded-2xl bg-gradient-to-r from-[#f8fafc] via-[#f1f5f9] to-white p-4 shadow-[0_14px_30px_-26px_rgba(15,23,42,0.35)]">
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-[#1E40AF] shadow-sm transition active:scale-95"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-slate-700 shadow-sm transition active:scale-95"
                 aria-label="Back to Marketing Centre"
               >
                 &larr;
               </button>
-              <h1 className="text-[34px] font-bold leading-none text-[#1E40AF]">Flash Deals</h1>
+              <h1 className="text-[34px] font-bold leading-none text-slate-900">Flash Deals</h1>
             </div>
-            <p className="mt-2 text-[12px] text-[#1d4ed8]">
+            <p className="mt-2 text-[12px] text-slate-600">
               Pull to refresh, tap cards, or swipe for quick actions.
             </p>
           </header>

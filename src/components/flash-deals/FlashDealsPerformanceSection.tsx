@@ -43,7 +43,7 @@ function FlashDealsPerformanceSection({
           <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#64748B]">
             Swipe cards
           </span>
-          <span className="ml-1 text-xs font-semibold text-[#2563EB]">&harr;</span>
+          <span className="ml-1 text-xs font-semibold text-slate-500">&harr;</span>
         </div>
         <div className="relative">
           <div className="scrollbar-hide flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden pb-2 pr-3">
@@ -59,7 +59,7 @@ function FlashDealsPerformanceSection({
             return (
               <article
                 key={metric.label}
-                className="flex h-[122px] min-w-[170px] max-w-[170px] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-[#dbeafe] bg-white p-3.5 shadow-sm"
+                className="flex h-[122px] min-w-[170px] max-w-[170px] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748B]">
@@ -81,8 +81,8 @@ function FlashDealsPerformanceSection({
             )
           })}
           </div>
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[#F0F9FF] via-[#F0F9FF]/90 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#F0F9FF] via-[#F0F9FF]/90 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[#f8fafc] via-[#f8fafc]/90 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f8fafc] via-[#f8fafc]/90 to-transparent" />
         </div>
         <div className="mt-1 h-0.5 w-full rounded-full bg-slate-200/80" />
       </div>
