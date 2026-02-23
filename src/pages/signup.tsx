@@ -34,13 +34,16 @@ function PawIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
-function LoginPage() {
+function SignUpPage() {
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [agreeUpdates, setAgreeUpdates] = useState(false)
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     navigate('/market-centre')
   }
@@ -78,18 +81,16 @@ function LoginPage() {
       </header>
 
       <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-8">
-        <section className="motion-rise w-full max-w-[460px] rounded-3xl border border-white/10 bg-[#06122c]/95 p-6 shadow-[0_36px_70px_-40px_rgba(0,0,0,0.9)] sm:p-8">
+        <section className="motion-rise w-full max-w-[500px] rounded-3xl border border-white/10 bg-[#06122c]/95 p-6 shadow-[0_36px_70px_-40px_rgba(0,0,0,0.9)] sm:p-8">
           <div className="mb-6 text-center sm:mb-7">
             <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/85">
               <PawIcon className="h-7 w-7" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">Log In</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Welcome back. Please enter your details.
-            </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-white">Sign Up</h1>
+            <p className="mt-2 text-sm text-slate-300">Create a simple account to continue.</p>
           </div>
 
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-100">Username</span>
               <input
@@ -97,6 +98,17 @@ function LoginPage() {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 placeholder="Enter your username"
+                className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-100">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Enter your email"
                 className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
               />
             </label>
@@ -112,22 +124,36 @@ function LoginPage() {
               />
             </label>
 
-            <div className="flex items-center justify-between gap-3 pt-0.5 text-xs text-slate-300">
-              <label className="inline-flex cursor-pointer items-center gap-2">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-100">Confirm Password</span>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Confirm your password"
+                className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
+              />
+            </label>
+
+            <div className="space-y-2.5 pt-0.5 text-xs text-slate-300">
+              <label className="inline-flex cursor-pointer items-start gap-2.5">
                 <input
                   type="checkbox"
-                  checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-400/70 bg-transparent text-[#5f7fe4] focus:ring-[#5f7fe4]/40"
+                  checked={acceptTerms}
+                  onChange={(event) => setAcceptTerms(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-400/70 bg-transparent text-[#5f7fe4] focus:ring-[#5f7fe4]/40"
                 />
-                <span>Remember me</span>
+                <span>I agree to the Terms and Privacy Policy.</span>
               </label>
-              <button
-                type="button"
-                className="text-slate-300 underline-offset-2 transition hover:text-white hover:underline"
-              >
-                Forgot password?
-              </button>
+              <label className="inline-flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={agreeUpdates}
+                  onChange={(event) => setAgreeUpdates(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-400/70 bg-transparent text-[#5f7fe4] focus:ring-[#5f7fe4]/40"
+                />
+                <span>I want to receive updates and product news.</span>
+              </label>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -135,21 +161,14 @@ function LoginPage() {
                 type="submit"
                 className="h-12 w-full rounded-xl bg-[#4e6ed8] text-sm font-semibold text-white shadow-[0_14px_25px_-16px_rgba(78,110,216,0.95)] transition hover:bg-[#5a79df] active:scale-[0.99]"
               >
-                Log In
+                Create Account
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/sign-up')}
-                className="h-12 w-full rounded-xl border border-[#5f7fe4] bg-[#0f214f] text-sm font-semibold text-white transition hover:bg-[#152b63] active:scale-[0.99]"
-              >
-                Sign Up
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/market-centre')}
+                onClick={() => navigate('/')}
                 className="h-12 w-full rounded-xl border border-[#324c8f] bg-transparent text-sm font-semibold text-slate-200 transition hover:bg-[#0c1d46] active:scale-[0.99]"
               >
-                Skip for now
+                Back to Log In
               </button>
             </div>
           </form>
@@ -159,4 +178,4 @@ function LoginPage() {
   )
 }
 
-export default LoginPage
+export default SignUpPage
