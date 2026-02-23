@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { MarketCentreView } from '../pages/marketCentre'
 
 type SidebarView = MarketCentreView
@@ -120,6 +121,7 @@ function Sidebar({
   mobileOpen = false,
   onCloseMobile,
 }: SidebarProps) {
+  const navigate = useNavigate()
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null)
   const firstAccountActionRef = useRef<HTMLButtonElement>(null)
   const [marketingOpen, setMarketingOpen] = useState(true)
@@ -187,6 +189,8 @@ function Sidebar({
     }
 
     closeAccountSheet()
+    onCloseMobile?.()
+    navigate('/', { replace: true })
   }
 
   useEffect(() => {
@@ -655,6 +659,7 @@ function Sidebar({
           ) : (
             <button
               type="button"
+              onClick={handleLogout}
               className={`w-full rounded-xl px-3 py-3 text-sm font-medium transition ${
                 collapsed
                   ? 'inline-flex items-center justify-center text-slate-400 hover:bg-slate-100'
