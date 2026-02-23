@@ -1,6 +1,7 @@
 # Unleash Marketing Centre (Frontend)
 
 Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
+Last Updated: 2026-02-23
 
 ## Tech Stack
 - React 19
@@ -40,6 +41,34 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
 - Back/Cancel actions return to the previous parent view.
 
 ## Daily Update
+### 2026-02-23
+
+#### 1) Sidebar Navigation Enhancements
+- Added Marketing Centre quick links dropdown in `src/sidebar/sidebar.tsx` for faster access to:
+  - Marketing Home
+  - Discount
+  - Flash Deals
+  - Vouchers
+- Updated sidebar section interactions so collapsed state still supports quick parent navigation.
+
+#### 2) Mobile Sidebar Drawer Behavior
+- Added mobile overlay drawer behavior with backdrop and slide-in animation.
+- Added body scroll lock while mobile drawer is open.
+- Added `Esc` key close handling and backdrop tap close behavior.
+- Added mobile drawer accessibility improvements:
+  - Hamburger button `aria-controls` + `aria-expanded`
+  - Drawer dialog semantics and focus management
+  - Close button focus on open and focus return to hamburger on close
+
+#### 3) Mobile Sidebar Footer and Account Actions
+- Refined mobile footer profile section into a compact account row.
+- Replaced large standalone logout button with account actions bottom sheet:
+  - View Profile
+  - Settings
+  - Logout (danger styled as last row)
+- Added sheet backdrop, slide-up transition, first-action focus, and ESC/backdrop close behavior.
+- Added logout confirmation step before completing logout action.
+
 ### 2026-02-22
 
 #### 1) Market Centre Refactor: App Router + Page Ownership Split
@@ -271,6 +300,7 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
   - now `2` columns on very small widths, `3` columns from ~380px up
 
 ## Component Map
+As of: 2026-02-23
 
 ### App Shell
 - `src/App.tsx`
@@ -280,6 +310,12 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
   - Controls active views and cross-view navigation callbacks
   - Handles form prefill mapping for voucher and discount edit flows
   - Composes sidebar + Market Centre module screens
+
+### Sidebar Components
+- `src/sidebar/sidebar.tsx`
+  - Desktop sidebar navigation and collapsed behavior
+  - Mobile drawer navigation UI and section expansion states
+  - Mobile account footer and account actions bottom sheet
 
 ### Common Components
 - `src/components/common/MobileDateTimePicker.tsx`
