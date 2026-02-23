@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabase'
 
 const pawMarks = [
   { top: '6%', left: '8%', size: 56, opacity: 0.16 },
@@ -42,10 +43,99 @@ function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [agreeUpdates, setAgreeUpdates] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    navigate('/market-centre')
+    if (isSubmitting) {
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const trimmedUsername = username.trim()
+
+    if (!trimmedUsername) {
+      setErrorMessage('Please enter your username.')
+      setSuccessMessage('')
+      return
+    }
+
+    if (!normalizedEmail) {
+      setErrorMessage('Please enter your email address.')
+      setSuccessMessage('')
+      return
+    }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.')
+      setSuccessMessage('')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match.')
+      setSuccessMessage('')
+      return
+    }
+
+    if (!acceptTerms) {
+      setErrorMessage('You must agree to the Terms and Privacy Policy.')
+      setSuccessMessage('')
+      return
+    }
+
+    setErrorMessage('')
+    setSuccessMessage('')
+    setIsSubmitting(true)
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          full_name: trimmedUsername,
+          agree_updates: agreeUpdates,
+        },
+      },
+    })
+
+    if (error) {
+      const duplicateUserError =
+        error.message.toLowerCase().includes('already registered') ||
+        error.message.toLowerCase().includes('already been registered')
+      setErrorMessage(
+        duplicateUserError
+          ? 'An account with this email already exists.'
+          : error.message || 'Unable to create account. Please try again.',
+      )
+      setIsSubmitting(false)
+      return
+    }
+
+    const emailConfirmationRequired = !data.session
+    setSuccessMessage(
+      emailConfirmationRequired
+        ? 'Account created. Please check your email account to confirm your registration.'
+        : 'Account created successfully. You can now log in.',
+    )
+    setUsername('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+    setAcceptTerms(false)
+    setAgreeUpdates(false)
+    setIsSubmitting(false)
+
+    setTimeout(() => {
+      const pendingQuery = emailConfirmationRequired ? '?confirmation=pending' : ''
+      const emailQuery = emailConfirmationRequired
+        ? `&email=${encodeURIComponent(normalizedEmail)}`
+        : ''
+      navigate(`/${pendingQuery}${emailQuery}`)
+    }, 800)
   }
 
   return (
@@ -91,6 +181,16 @@ function SignUpPage() {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {errorMessage ? (
+              <p className="rounded-xl border border-red-300/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {errorMessage}
+              </p>
+            ) : null}
+            {successMessage ? (
+              <p className="rounded-xl border border-emerald-300/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                {successMessage}
+              </p>
+            ) : null}
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-100">Username</span>
               <input
@@ -159,9 +259,10 @@ function SignUpPage() {
             <div className="space-y-3 pt-2">
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="h-12 w-full rounded-xl bg-[#4e6ed8] text-sm font-semibold text-white shadow-[0_14px_25px_-16px_rgba(78,110,216,0.95)] transition hover:bg-[#5a79df] active:scale-[0.99]"
               >
-                Create Account
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </button>
               <button
                 type="button"

@@ -8,8 +8,13 @@ Last Updated: 2026-02-23
 - TypeScript
 - Vite
 - Tailwind CSS
+- `@supabase/supabase-js` (client setup added for upcoming backend auth/data integration)
 
 ## Views and Navigation
+- `login`
+  - Login screen (`/`) with email/password validation and confirmation gate.
+- `sign-up`
+  - Sign-up screen (`/sign-up`) with client-side validation and pending-confirmation redirect.
 - `marketing`
   - Main Marketing Centre landing view.
 - `discount`
@@ -28,9 +33,16 @@ Last Updated: 2026-02-23
   - Voucher creation/edit flow.
 
 Routing is URL-based in `src/App.tsx` with `react-router-dom`:
-- `/` redirects to `/market-centre`
+- `/` renders `LoginPage` (`src/pages/login.tsx`)
+- `/sign-up` renders `SignUpPage` (`src/pages/signup.tsx`)
 - `/market-centre` renders the full Marketing Centre page in `src/pages/marketCentre.tsx`
-- `*` (unknown routes) redirects to `/market-centre`
+- `*` (unknown routes) redirects to `/`
+
+Authentication currently uses browser local storage via `src/lib/usersStore.ts`:
+- Users are stored under `public.users`.
+- Sign-up blocks duplicate emails and stores a user with `email_confirmed: false`.
+- Login checks email/password and blocks access until email is confirmed.
+- After successful sign-up, users are redirected to login with `?confirmation=pending&email=<email>`.
 
 Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal module flows:
 - Clicking `Discount`, `Flash Deals`, or `Vouchers` from Marketing Tools opens their pages.
@@ -68,6 +80,23 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
   - Logout (danger styled as last row)
 - Added sheet backdrop, slide-up transition, first-action focus, and ESC/backdrop close behavior.
 - Added logout confirmation step before completing logout action.
+
+#### 4) Login / Sign-up Flow and Local User Store
+- Added dedicated auth routes in `src/App.tsx`:
+  - `/` for login
+  - `/sign-up` for account creation
+  - unknown routes now redirect to `/`
+- Added `src/lib/usersStore.ts` local user store helpers (`createUser`, `findUserByEmail`, `isEmailConfirmed`).
+- Updated sign-up flow in `src/pages/signup.tsx`:
+  - validation for username/email/password/confirm password/terms
+  - duplicate-email prevention
+  - success + error message states
+  - post-signup redirect to login with confirmation query params
+- Updated login flow in `src/pages/login.tsx`:
+  - email + password validation against local users
+  - blocks users whose email is not confirmed
+  - displays confirmation banner when redirected from sign-up
+- Added `src/supabase.js` and installed `@supabase/supabase-js` for upcoming backend integration.
 
 ### 2026-02-22
 
@@ -305,11 +334,21 @@ As of: 2026-02-23
 ### App Shell
 - `src/App.tsx`
   - Defines top-level routes and redirects
-  - Mounts `MarketCentrePage` at `/market-centre`
+  - Mounts `LoginPage` at `/`, `SignUpPage` at `/sign-up`, and `MarketCentrePage` at `/market-centre`
+- `src/pages/login.tsx`
+  - Login form UI and local auth checks
+- `src/pages/signup.tsx`
+  - Sign-up form UI and local account creation flow
 - `src/pages/marketCentre.tsx`
   - Controls active views and cross-view navigation callbacks
   - Handles form prefill mapping for voucher and discount edit flows
   - Composes sidebar + Market Centre module screens
+
+### Data / Integration Utilities
+- `src/lib/usersStore.ts`
+  - LocalStorage-backed user records and auth helper functions
+- `src/supabase.js`
+  - Supabase client bootstrap using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
 
 ### Sidebar Components
 - `src/sidebar/sidebar.tsx`
@@ -388,5 +427,7 @@ npm run lint
 ```
 
 ## Scope Notes
-- Current data is frontend-only sample data (no backend integration).
-- Action links/buttons are UI-driven and do not persist server state.
+- Marketing tools data remains frontend sample data.
+- Current auth flow is localStorage-based (`public.users`) for development/demo.
+- Passwords in local storage are not production-safe and should be replaced by backend auth.
+- `src/supabase.js` exists for integration prep, but runtime auth is not yet using Supabase.

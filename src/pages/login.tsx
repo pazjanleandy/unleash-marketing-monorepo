@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { supabase } from '../supabase'
 const pawMarks = [
   { top: '6%', left: '8%', size: 56, opacity: 0.16 },
   { top: '10%', left: '38%', size: 68, opacity: 0.14 },
@@ -36,13 +36,83 @@ function PawIcon({ className = 'h-6 w-6' }: { className?: string }) {
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
+  const [searchParams] = useSearchParams()
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const signupPendingConfirmation = searchParams.get('confirmation') === 'pending'
+  const signupEmail = searchParams.get('email') ?? ''
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isSubmitting) {
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!normalizedEmail) {
+      setErrorMessage('Please enter your email address.')
+      return
+    }
+
+    if (!password) {
+      setErrorMessage('Please enter your password.')
+      return
+    }
+
+    setErrorMessage('')
+    setIsSubmitting(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    })
+
+    if (error) {
+      const loweredMessage = error.message.toLowerCase()
+      if (loweredMessage.includes('email not confirmed')) {
+        setErrorMessage(
+          'Please check your email account and confirm your registration before logging in.',
+        )
+      } else {
+        setErrorMessage('Invalid email or password.')
+      }
+      setIsSubmitting(false)
+      return
+    }
+
+    if (rememberMe) {
+      window.localStorage.setItem('rememberedEmail', normalizedEmail)
+    } else {
+      window.localStorage.removeItem('rememberedEmail')
+    }
+
+    setIsSubmitting(false)
+    setErrorMessage('')
     navigate('/market-centre')
+  }
+
+  const handleForgotPassword = async () => {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      setErrorMessage('Enter your email first to reset your password.')
+      return
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/`,
+    })
+
+    if (error) {
+      setErrorMessage('Unable to send reset email. Please try again.')
+      return
+    }
+
+    setErrorMessage('Password reset link sent. Please check your email account.')
   }
 
   return (
@@ -90,13 +160,24 @@ function LoginPage() {
           </div>
 
           <form className="space-y-4" onSubmit={handleLogin}>
+            {signupPendingConfirmation ? (
+              <p className="rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                Please check your email account{signupEmail ? ` (${signupEmail})` : ''} to confirm
+                your registration.
+              </p>
+            ) : null}
+            {errorMessage ? (
+              <p className="rounded-xl border border-red-300/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {errorMessage}
+              </p>
+            ) : null}
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-100">Username</span>
+              <span className="text-sm font-medium text-slate-100">Email</span>
               <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Enter your username"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Enter your email"
                 className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
               />
             </label>
@@ -124,6 +205,7 @@ function LoginPage() {
               </label>
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="text-slate-300 underline-offset-2 transition hover:text-white hover:underline"
               >
                 Forgot password?
@@ -133,9 +215,10 @@ function LoginPage() {
             <div className="space-y-3 pt-2">
               <button
                 type="submit"
-                className="h-12 w-full rounded-xl bg-[#4e6ed8] text-sm font-semibold text-white shadow-[0_14px_25px_-16px_rgba(78,110,216,0.95)] transition hover:bg-[#5a79df] active:scale-[0.99]"
+                disabled={isSubmitting}
+                className="h-12 w-full rounded-xl bg-[#4e6ed8] text-sm font-semibold text-white shadow-[0_14px_25px_-16px_rgba(78,110,216,0.95)] transition hover:bg-[#5a79df] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Log In
+                {isSubmitting ? 'Logging In...' : 'Log In'}
               </button>
               <button
                 type="button"
