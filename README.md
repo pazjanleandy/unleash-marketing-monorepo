@@ -1,7 +1,7 @@
 # Unleash Marketing Centre (Frontend)
 
 Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
-Last Updated: 2026-02-23
+Last Updated: 2026-02-26
 
 ## Tech Stack
 - React 19
@@ -41,6 +41,12 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
 - Back/Cancel actions return to the previous parent view.
 
 ## Daily Update
+### 2026-02-26
+
+#### 1) Top Navigation Settings Icon Update
+- Updated the desktop top navigation middle utility icon (between Notifications and User Profile) to a clear gear icon in `src/pages/marketCentre.tsx`.
+- Keeps the existing button behavior and layout unchanged while improving settings icon recognizability.
+
 ### 2026-02-23
 
 #### 1) Sidebar Navigation Enhancements

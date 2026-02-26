@@ -63,6 +63,29 @@ const navPlaceholders: Record<
   },
 }
 
+const marketingViews: Set<MarketCentreView> = new Set([
+  'marketing',
+  'discount',
+  'flash-deals',
+  'create-flash-deal',
+  'create-discount-promotion',
+  'view-discount-promotion',
+  'vouchers',
+  'create-voucher',
+])
+
+const orderViews: Set<MarketCentreView> = new Set([
+  'orders-all',
+  'orders-pending',
+  'orders-completed',
+])
+
+const productViews: Set<MarketCentreView> = new Set([
+  'inventory',
+  'add-product',
+  'categories',
+])
+
 const createVoucherDefaults: CreateVoucherForm = {
   rewardType: 'discount',
   discountType: 'fixed-amount',
@@ -193,12 +216,10 @@ function getIsMobileViewport() {
 
 function MarketCentrePage() {
   const [activeView, setActiveView] = useState<MarketCentreView>('dashboard')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const wasSidebarOpenRef = useRef(false)
-  const [now, setNow] = useState(() => new Date())
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
   const [viewingPromotion, setViewingPromotion] = useState<PromotionRow | null>(null)
@@ -295,6 +316,34 @@ function MarketCentrePage() {
   }
 
   const isMarketingOverview = activeView === 'dashboard' || activeView === 'marketing'
+  const isOrderActive = orderViews.has(activeView)
+  const isProductActive = productViews.has(activeView)
+  const isMarketingActive = marketingViews.has(activeView)
+  const marketingModules: Array<{
+    label: string
+    view: MarketCentreView
+    active: boolean
+  }> = [
+    { label: 'Marketing Home', view: 'marketing', active: activeView === 'marketing' },
+    {
+      label: 'Discount',
+      view: 'discount',
+      active:
+        activeView === 'discount' ||
+        activeView === 'create-discount-promotion' ||
+        activeView === 'view-discount-promotion',
+    },
+    {
+      label: 'Flash Deals',
+      view: 'flash-deals',
+      active: activeView === 'flash-deals' || activeView === 'create-flash-deal',
+    },
+    {
+      label: 'Vouchers',
+      view: 'vouchers',
+      active: activeView === 'vouchers' || activeView === 'create-voucher',
+    },
+  ]
   const placeholderConfig =
     activeView in navPlaceholders
       ? navPlaceholders[
@@ -307,24 +356,6 @@ function MarketCentrePage() {
             | 'categories'
         ]
       : null
-  const sidebarWidthClass = sidebarCollapsed ? 'w-[80px]' : 'w-[280px]'
-  const contentMarginClass = sidebarCollapsed ? 'md:ml-[88px]' : 'md:ml-[288px]'
-  const datePart = new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-  }).format(now)
-  const timePart = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(now)
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNow(new Date())
-    }, 30_000)
-
-    return () => window.clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
@@ -393,19 +424,15 @@ function MarketCentrePage() {
     wasSidebarOpenRef.current = isSidebarOpen
   }, [isMobileViewport, isSidebarOpen])
 
-  return (
-    <div className="h-screen w-full overflow-hidden bg-[#F4F7FE] text-slate-900">
-      <aside
-        className={`fixed bottom-3 left-3 top-3 z-40 hidden transition-[width] duration-300 md:block ${sidebarWidthClass}`}
-      >
-        <Sidebar
-          activeView={activeView}
-          onSelectView={handleSidebarSelectView}
-          collapsed={sidebarCollapsed}
-          onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
-        />
-      </aside>
+  const topNavButtonClass = (active: boolean) =>
+    `relative inline-flex h-full shrink-0 items-center gap-2 px-4 text-[13px] font-medium transition ${
+      active
+        ? 'bg-white text-[#2d46ba] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-[2px] after:rounded-full after:bg-[#2d46ba]'
+        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+    }`
 
+  return (
+    <div className="h-screen w-full overflow-hidden bg-white text-slate-900">
       <div
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${
           isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
@@ -433,20 +460,251 @@ function MarketCentrePage() {
         />
       </aside>
 
-      <div
-        className={`h-screen overflow-y-auto transition-[margin-left] duration-300 ${contentMarginClass}`}
-      >
-        <header className="bg-[#F4F7FE] px-4 pb-3 pt-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
+      <div className="h-screen overflow-y-auto">
+        <header className="bg-white px-4 pb-3 pt-4 sm:px-6 md:px-0 md:pt-0 lg:px-0">
+          <div className="hidden h-[66px] w-full items-stretch border-y border-slate-200 bg-white md:grid md:grid-cols-[1fr_auto_1fr]">
+            <div className="flex min-w-0 items-center gap-3 bg-white px-4">
+              <img
+                src="/Asset/unleash_logo.png"
+                alt="Unleash logo"
+                className="h-8 w-8 object-contain"
+              />
+              <p className="text-[13px] font-semibold leading-[1.08] text-slate-900">
+                <span className="block">Inventory Management</span>
+                <span className="block">System</span>
+              </p>
+            </div>
+
+            <nav
+              aria-label="Desktop navigation"
+              className="flex items-stretch justify-center gap-1"
+            >
+                <button
+                  type="button"
+                  onClick={() => setActiveView('dashboard')}
+                  className={topNavButtonClass(activeView === 'dashboard')}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M3 3H9V9H3V3ZM11 3H17V9H11V3ZM3 11H9V17H3V11ZM11 11H17V17H11V11Z"
+                      fill={activeView === 'dashboard' ? '#2647c7' : '#94a3b8'}
+                    />
+                  </svg>
+                  <span>Dashboard</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView('orders-all')}
+                  className={topNavButtonClass(isOrderActive)}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 17C5.343 17 4 18.343 4 20C4 21.657 5.343 23 7 23C8.657 23 10 21.657 10 20C10 18.343 8.657 17 7 17ZM17 17C15.343 17 14 18.343 14 20C14 21.657 15.343 23 17 23C18.657 23 20 21.657 20 20C20 18.343 18.657 17 17 17Z"
+                      fill={isOrderActive ? '#2647c7' : '#94a3b8'}
+                    />
+                    <path
+                      d="M6 6H22L20 14H8L6 6Z"
+                      stroke={isOrderActive ? '#2647c7' : '#94a3b8'}
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M6 6L4 2H1"
+                      stroke={isOrderActive ? '#2647c7' : '#94a3b8'}
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span>Order Management</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView('inventory')}
+                  className={topNavButtonClass(isProductActive)}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4 20H20V4H4V20Z"
+                      stroke={isProductActive ? '#2647c7' : '#94a3b8'}
+                      strokeWidth="1.8"
+                    />
+                    <path
+                      d="M8 4V20M16 4V20M4 8H20M4 16H20"
+                      stroke={isProductActive ? '#2647c7' : '#94a3b8'}
+                      strokeWidth="1.2"
+                    />
+                  </svg>
+                  <span>Product Management</span>
+                </button>
+
+                <div className="group relative h-full">
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('marketing')}
+                    className={topNavButtonClass(isMarketingActive)}
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 10L12 5L20 10V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V10Z"
+                        stroke={isMarketingActive ? '#2647c7' : '#94a3b8'}
+                        strokeWidth="1.6"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 13H15M9 16H14"
+                        stroke={isMarketingActive ? '#2647c7' : '#94a3b8'}
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span>Marketing Centre</span>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="text-slate-400 transition group-hover:rotate-180 group-focus-within:rotate-180"
+                    >
+                      <path
+                        d="M4 7L10 13L16 7"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-1 opacity-0 shadow-[0_26px_48px_-30px_rgba(15,23,42,0.6)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                    {marketingModules.map((module) => (
+                      <button
+                        key={module.view}
+                        type="button"
+                        onClick={() => setActiveView(module.view)}
+                        className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                          module.active
+                            ? 'bg-[#e9efff] font-semibold text-[#2747c7]'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                        }`}
+                      >
+                        {module.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+            </nav>
+
+            <div className="flex items-stretch justify-end gap-1 px-3">
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="inline-flex h-full w-11 items-center justify-center rounded-md bg-white text-slate-600 transition hover:bg-slate-50"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 10C6 6.68629 8.68629 4 12 4C15.3137 4 18 6.68629 18 10V13.5L20 16V17H4V16L6 13.5V10Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 19C10.4 20.2 11.2 21 12 21C12.8 21 13.6 20.2 14 19"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Settings"
+                  className="inline-flex h-full w-11 items-center justify-center rounded-md bg-white text-slate-600 transition hover:bg-slate-50"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M19.4 15C19.535 15.302 19.605 15.629 19.605 15.96C19.605 16.291 19.535 16.618 19.4 16.92L19.34 17.06L20.11 17.83C20.89 18.61 20.89 19.87 20.11 20.65C19.33 21.43 18.07 21.43 17.29 20.65L16.52 19.88L16.38 19.94C16.078 20.075 15.751 20.145 15.42 20.145C15.089 20.145 14.762 20.075 14.46 19.94L14.32 19.88V20.97C14.32 22.09 13.41 23 12.29 23H11.71C10.59 23 9.68 22.09 9.68 20.97V19.88L9.54 19.94C9.238 20.075 8.911 20.145 8.58 20.145C8.249 20.145 7.922 20.075 7.62 19.94L7.48 19.88L6.71 20.65C5.93 21.43 4.67 21.43 3.89 20.65C3.11 19.87 3.11 18.61 3.89 17.83L4.66 17.06L4.6 16.92C4.465 16.618 4.395 16.291 4.395 15.96C4.395 15.629 4.465 15.302 4.6 15L4.66 14.86H3.57C2.45 14.86 1.54 13.95 1.54 12.83V11.25C1.54 10.13 2.45 9.22 3.57 9.22H4.66L4.6 9.08C4.465 8.778 4.395 8.451 4.395 8.12C4.395 7.789 4.465 7.462 4.6 7.16L4.66 7.02L3.89 6.25C3.11 5.47 3.11 4.21 3.89 3.43C4.67 2.65 5.93 2.65 6.71 3.43L7.48 4.2L7.62 4.14C7.922 4.005 8.249 3.935 8.58 3.935C8.911 3.935 9.238 4.005 9.54 4.14L9.68 4.2V3.11C9.68 1.99 10.59 1.08 11.71 1.08H12.29C13.41 1.08 14.32 1.99 14.32 3.11V4.2L14.46 4.14C14.762 4.005 15.089 3.935 15.42 3.935C15.751 3.935 16.078 4.005 16.38 4.14L16.52 4.2L17.29 3.43C18.07 2.65 19.33 2.65 20.11 3.43C20.89 4.21 20.89 5.47 20.11 6.25L19.34 7.02L19.4 7.16C19.535 7.462 19.605 7.789 19.605 8.12C19.605 8.451 19.535 8.778 19.4 9.08L19.34 9.22H20.43C21.55 9.22 22.46 10.13 22.46 11.25V12.83C22.46 13.95 21.55 14.86 20.43 14.86H19.34L19.4 15Z"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="12" cy="12.04" r="3.1" stroke="currentColor" strokeWidth="1.6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="User profile"
+                  className="inline-flex h-full w-11 items-center justify-center rounded-md bg-white text-slate-600 transition hover:bg-slate-50"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M4 22C4 18.6863 7.58172 16 12 16C16.4183 16 20 18.6863 20 22"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+            </div>
+
+          </div>
+
+          <div className="mx-auto mt-3 w-full max-w-[1600px] md:hidden md:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
               <button
                 ref={mobileMenuButtonRef}
                 type="button"
-                aria-label="Open sidebar navigation"
+                aria-label="Open navigation menu"
                 aria-expanded={isSidebarOpen}
                 aria-controls="mobile-sidebar"
                 onClick={() => setIsSidebarOpen(true)}
-                className="mt-1 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm md:hidden"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm"
               >
                 <svg
                   width="18"
@@ -463,40 +721,15 @@ function MarketCentrePage() {
                   />
                 </svg>
               </button>
-              <div>
-                <h1 className="font-['Inter'] text-[2.2rem] font-normal leading-none tracking-tight text-slate-800 sm:text-[2.5rem]">
-                  Admin Portal
-                </h1>
-                <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#1d4ed8]">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 2V5M17 2V5M3 9H21M5 4H19C20.1 4 21 4.9 21 6V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V6C3 4.9 3.9 4 5 4Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span>{`${datePart} | ${timePart}`}</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3">
               <button
                 type="button"
                 aria-label="Theme mode"
-                className="relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
               >
                 <svg
-                  width="30"
-                  height="30"
+                  width="24"
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -513,12 +746,6 @@ function MarketCentrePage() {
                   Beta
                 </span>
               </button>
-              <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-2 pr-4 shadow-sm md:flex">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#dbeafe] text-sm font-semibold text-[#1e40af]">
-                  A
-                </span>
-                <p className="text-sm font-medium text-slate-700">Welcome Back, Admin</p>
-              </div>
             </div>
           </div>
         </header>
