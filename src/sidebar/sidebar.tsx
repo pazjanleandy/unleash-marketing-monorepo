@@ -32,6 +32,8 @@ const marketingViews: Set<SidebarView> = new Set([
   'flash-deals',
   'create-flash-deal',
   'create-discount-promotion',
+  'create-bundle-deal',
+  'create-add-on-deal',
   'view-discount-promotion',
   'vouchers',
   'create-voucher',
@@ -144,6 +146,8 @@ function Sidebar({
       active:
         activeView === 'discount' ||
         activeView === 'create-discount-promotion' ||
+        activeView === 'create-bundle-deal' ||
+        activeView === 'create-add-on-deal' ||
         activeView === 'view-discount-promotion',
     },
     {
@@ -202,8 +206,16 @@ function Sidebar({
   }, [mobileMode, mobileOpen])
 
   useEffect(() => {
-    if (!mobileMode || !mobileOpen) {
+    if (mobileMode && mobileOpen) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
       setIsAccountSheetOpen(false)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
     }
   }, [mobileMode, mobileOpen])
 
