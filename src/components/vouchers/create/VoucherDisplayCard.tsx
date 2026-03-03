@@ -4,6 +4,7 @@ import type { CreateVoucherForm } from './types'
 type VoucherDisplayCardProps = {
   value: CreateVoucherForm
   onChange: (value: CreateVoucherForm) => void
+  onProductScopeChange?: (value: CreateVoucherForm['productScope']) => void
   displaySettingError?: string
   displaySettingInputIds?: {
     allPages: string
@@ -14,6 +15,7 @@ type VoucherDisplayCardProps = {
 function VoucherDisplayCard({
   value,
   onChange,
+  onProductScopeChange,
   displaySettingError,
   displaySettingInputIds,
 }: VoucherDisplayCardProps) {
@@ -34,6 +36,7 @@ function VoucherDisplayCard({
           displaySetting={value.displaySetting}
           productScope={value.productScope}
           onDisplaySettingChange={setDisplaySetting}
+          onProductScopeChange={onProductScopeChange}
           displaySettingError={displaySettingError}
           displaySettingInputIds={displaySettingInputIds}
         />

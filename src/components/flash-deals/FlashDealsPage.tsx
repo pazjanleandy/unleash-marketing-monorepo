@@ -1,12 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
 import FlashDealsPerformanceSection from './FlashDealsPerformanceSection'
 import FlashDealsPromotionListSection from './FlashDealsPromotionListSection'
-import {
-  flashDealRows,
-  flashDealsPerformanceDateLabel,
-  flashDealsPerformanceMetrics,
-} from './data'
+import type { FlashDealRow, FlashDealsMetric } from './types'
+import { listFlashDeals } from '../../services/market/flashDeals.repo'
 
 type FlashDealsPageProps = {
   onBack: () => void
@@ -18,6 +15,99 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [startY, setStartY] = useState<number | null>(null)
   const [refreshNonce, setRefreshNonce] = useState(0)
+  const [flashDealRows, setFlashDealRows] = useState<FlashDealRow[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [authRequired, setAuthRequired] = useState(false)
+  const [noShop, setNoShop] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+
+    const load = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const result = await listFlashDeals()
+        if (!alive) {
+          return
+        }
+        setFlashDealRows(result.items)
+        setAuthRequired(result.authRequired)
+        setNoShop(result.noShop)
+      } catch (loadError) {
+        if (!alive) {
+          return
+        }
+        setFlashDealRows([])
+        setAuthRequired(false)
+        setNoShop(false)
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load flash deals.')
+      } finally {
+        if (alive) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void load()
+    return () => {
+      alive = false
+    }
+  }, [refreshNonce])
+
+  const flashDealsPerformanceDateLabel = useMemo(() => {
+    const now = new Date()
+    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const format = (value: Date) => {
+      const day = `${value.getDate()}`.padStart(2, '0')
+      const month = `${value.getMonth() + 1}`.padStart(2, '0')
+      const year = value.getFullYear()
+      return `${day}-${month}-${year}`
+    }
+    return `Data from ${format(past)} to ${format(now)} GMT+8`
+  }, [])
+
+  const flashDealsPerformanceMetrics = useMemo<FlashDealsMetric[]>(() => {
+    const totalDeals = flashDealRows.length
+    const activeDeals = flashDealRows.filter((item) => item.status === 'Ongoing').length
+    const totalEnabledProducts = flashDealRows.reduce((sum, item) => sum + item.enabledProducts, 0)
+    const inventorySnapshot = flashDealRows.reduce((sum, item) => sum + item.totalAvailable, 0)
+
+    return [
+      {
+        label: 'Flash Deals',
+        value: `${totalDeals}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+        trend: 'neutral',
+      },
+      {
+        label: 'Ongoing',
+        value: `${activeDeals}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+        trend: activeDeals > 0 ? 'up' : 'neutral',
+      },
+      {
+        label: 'Enabled Products',
+        value: `${totalEnabledProducts}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+        trend: totalEnabledProducts > 0 ? 'up' : 'neutral',
+      },
+      {
+        label: 'Inventory Snapshot',
+        value: `${inventorySnapshot}`,
+        comparisonLabel: 'Derived from loaded rows',
+        comparisonValue: 'Live',
+        trend: 'neutral',
+      },
+    ]
+  }, [flashDealRows])
+
+  const showDataState = isLoading || Boolean(error) || authRequired || noShop
 
   const onTouchStart: TouchEventHandler<HTMLElement> = (event) => {
     if (window.scrollY > 0 || refreshing) {
@@ -97,6 +187,19 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
           </header>
 
           <div className="space-y-5 pt-5">
+            {showDataState ? (
+              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                {isLoading ? (
+                  <p>Loading flash deals...</p>
+                ) : error ? (
+                  <p>{error}</p>
+                ) : authRequired ? (
+                  <p>Sign in to view flash deals.</p>
+                ) : noShop ? (
+                  <p>No shop found for this account.</p>
+                ) : null}
+              </div>
+            ) : null}
             <FlashDealsPerformanceSection
               dateLabel={flashDealsPerformanceDateLabel}
               metrics={flashDealsPerformanceMetrics}
@@ -133,6 +236,19 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
           </div>
 
           <div className="mt-4 space-y-4">
+            {showDataState ? (
+              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                {isLoading ? (
+                  <p>Loading flash deals...</p>
+                ) : error ? (
+                  <p>{error}</p>
+                ) : authRequired ? (
+                  <p>Sign in to view flash deals.</p>
+                ) : noShop ? (
+                  <p>No shop found for this account.</p>
+                ) : null}
+              </div>
+            ) : null}
             <FlashDealsPerformanceSection
               dateLabel={flashDealsPerformanceDateLabel}
               metrics={flashDealsPerformanceMetrics}

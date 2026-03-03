@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CreateDiscountPromotionForm } from './types'
+import { listShopProducts, type ShopProduct } from '../../../services/market/products.repo'
 
 type DiscountPromotionProductsCardProps = {
   value: CreateDiscountPromotionForm
@@ -8,100 +9,10 @@ type DiscountPromotionProductsCardProps = {
   mobileVariant?: boolean
 }
 
-type PetProduct = {
-  id: string
-  name: string
-  category: string
-  price: number
-  stock: number
-  sales: number
-}
-
 type SearchField = 'Product Name' | 'Product ID'
 type PickerTab = 'select' | 'upload'
 
-const petProductCatalog: PetProduct[] = [
-  {
-    id: 'PT-001',
-    name: 'Fetsup Freeze-Dried Cat Food 1kg',
-    category: 'Cat Food',
-    price: 29.7,
-    stock: 3,
-    sales: 0,
-  },
-  {
-    id: 'PT-002',
-    name: 'Fetsup Freeze-Dried Meat Pet Treats',
-    category: 'Pet Treats',
-    price: 9.8,
-    stock: 22,
-    sales: 8,
-  },
-  {
-    id: 'PT-003',
-    name: "Nature's Protection Cat Food with Fish",
-    category: 'Cat Food',
-    price: 6.1,
-    stock: 6,
-    sales: 0,
-  },
-  {
-    id: 'PT-004',
-    name: 'Natures Protection Cat Food Pouch',
-    category: 'Cat Food',
-    price: 6.2,
-    stock: 6,
-    sales: 0,
-  },
-  {
-    id: 'PT-005',
-    name: 'Pedigree Puppy Chicken Flavour',
-    category: 'Dog Food',
-    price: 8.2,
-    stock: 2,
-    sales: 12,
-  },
-  {
-    id: 'PT-006',
-    name: 'PawGuard Flea & Tick Collar',
-    category: 'Dog Care',
-    price: 12.5,
-    stock: 15,
-    sales: 4,
-  },
-  {
-    id: 'PT-007',
-    name: 'Cloud Nap Orthopedic Pet Bed',
-    category: 'Pet Bed',
-    price: 34.9,
-    stock: 10,
-    sales: 6,
-  },
-  {
-    id: 'PT-008',
-    name: 'Whisker Bowl Automatic Water Fountain',
-    category: 'Pet Accessories',
-    price: 21.3,
-    stock: 7,
-    sales: 3,
-  },
-  {
-    id: 'PT-009',
-    name: 'Purrfect Clumping Cat Litter 10L',
-    category: 'Cat Litter',
-    price: 13.4,
-    stock: 20,
-    sales: 9,
-  },
-  {
-    id: 'PT-010',
-    name: 'BuddyLeash Reflective Dog Harness',
-    category: 'Dog Accessories',
-    price: 15.9,
-    stock: 11,
-    sales: 5,
-  },
-]
+type DisplayProduct = ShopProduct
 
 function toCurrency(value: number) {
   return `₱${value.toFixed(2)}`
@@ -139,17 +50,45 @@ function DiscountPromotionProductsCard({
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [showAvailableOnly, setShowAvailableOnly] = useState(true)
   const [draftSelection, setDraftSelection] = useState<string[]>(value.products)
+  const [catalogItems, setCatalogItems] = useState<DisplayProduct[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [isAuthRequired, setIsAuthRequired] = useState(false)
+  const [hasNoShop, setHasNoShop] = useState(false)
+
+  const loadProducts = async () => {
+    setIsLoading(true)
+    setLoadError('')
+
+    try {
+      const result = await listShopProducts()
+      setCatalogItems(result.items)
+      setIsAuthRequired(result.authRequired)
+      setHasNoShop(result.noShop)
+    } catch (error) {
+      setCatalogItems([])
+      setIsAuthRequired(false)
+      setHasNoShop(false)
+      setLoadError(error instanceof Error ? error.message : 'Unable to load products.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadProducts()
+  }, [])
 
   const categories = useMemo(() => {
-    const set = new Set(petProductCatalog.map((product) => product.category))
+    const set = new Set(catalogItems.map((product) => product.category))
     return ['All Categories', ...Array.from(set)]
-  }, [])
+  }, [catalogItems])
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = appliedQuery.trim().toLowerCase()
 
-    return petProductCatalog.filter((product) => {
-      if (showAvailableOnly && product.stock <= 0) {
+    return catalogItems.filter((product) => {
+      if (showAvailableOnly && (product.stock <= 0 || product.status !== 'avail')) {
         return false
       }
 
@@ -170,43 +109,43 @@ function DiscountPromotionProductsCard({
 
       return product.name.toLowerCase().includes(normalizedQuery)
     })
-  }, [appliedQuery, searchField, selectedCategory, showAvailableOnly])
+  }, [appliedQuery, catalogItems, searchField, selectedCategory, showAvailableOnly])
 
-  const filteredProductNames = useMemo(
-    () => filteredProducts.map((product) => product.name),
+  const filteredProductIds = useMemo(
+    () => filteredProducts.map((product) => product.id),
     [filteredProducts],
   )
   const selectedInFilteredCount = useMemo(
-    () => filteredProductNames.filter((name) => draftSelection.includes(name)).length,
-    [draftSelection, filteredProductNames],
+    () => filteredProductIds.filter((id) => draftSelection.includes(id)).length,
+    [draftSelection, filteredProductIds],
   )
   const allFilteredSelected =
-    filteredProductNames.length > 0 &&
-    selectedInFilteredCount === filteredProductNames.length
+    filteredProductIds.length > 0 &&
+    selectedInFilteredCount === filteredProductIds.length
   const someFilteredSelected =
     selectedInFilteredCount > 0 && !allFilteredSelected
 
-  const selectedProducts = useMemo(
+  const selectedProducts = useMemo<DisplayProduct[]>(
     () =>
-      value.products.map((productName, index) => {
-        const foundProduct = petProductCatalog.find(
-          (product) => product.name === productName,
-        )
+      value.products.map((productId, index) => {
+        const foundProduct = catalogItems.find((product) => product.id === productId)
 
         if (foundProduct) {
           return foundProduct
         }
 
         return {
-          id: `PT-CUSTOM-${index + 1}`,
-          name: productName,
-          category: 'Pet Product',
+          id: productId || `LEGACY-${index + 1}`,
+          name: productId || `Legacy Product ${index + 1}`,
+          category: 'Legacy Product',
           price: 0,
           stock: 0,
           sales: 0,
+          status: 'avail',
+          image: null,
         }
       }),
-    [value.products],
+    [catalogItems, value.products],
   )
 
   useEffect(() => {
@@ -243,6 +182,10 @@ function DiscountPromotionProductsCard({
   }, [someFilteredSelected])
 
   const handleAddProducts = () => {
+    if (isAuthRequired || hasNoShop) {
+      return
+    }
+
     setDraftSelection(value.products)
     setIsPickerOpen(true)
     setActiveTab('select')
@@ -250,8 +193,8 @@ function DiscountPromotionProductsCard({
 
   const handleConfirmSelection = () => {
     const nextDiscounts = draftSelection.reduce<Record<string, string>>(
-      (accumulator, productName) => {
-        accumulator[productName] = value.productDiscounts[productName] ?? ''
+      (accumulator, productId) => {
+        accumulator[productId] = value.productDiscounts[productId] ?? ''
         return accumulator
       },
       {},
@@ -270,8 +213,8 @@ function DiscountPromotionProductsCard({
       (_, productIndex) => productIndex !== index,
     )
     const nextDiscounts = nextProducts.reduce<Record<string, string>>(
-      (accumulator, productName) => {
-        accumulator[productName] = value.productDiscounts[productName] ?? ''
+      (accumulator, productId) => {
+        accumulator[productId] = value.productDiscounts[productId] ?? ''
         return accumulator
       },
       {},
@@ -284,11 +227,11 @@ function DiscountPromotionProductsCard({
     })
   }
 
-  const handleToggleProduct = (name: string) => {
+  const handleToggleProduct = (productId: string) => {
     setDraftSelection((previous) =>
-      previous.includes(name)
-        ? previous.filter((productName) => productName !== name)
-        : [...previous, name],
+      previous.includes(productId)
+        ? previous.filter((id) => id !== productId)
+        : [...previous, productId],
     )
   }
 
@@ -297,20 +240,20 @@ function DiscountPromotionProductsCard({
   }
 
   const handleToggleSelectAll = () => {
-    if (filteredProductNames.length === 0) {
+    if (filteredProductIds.length === 0) {
       return
     }
 
     if (allFilteredSelected) {
       setDraftSelection((previous) =>
-        previous.filter((name) => !filteredProductNames.includes(name)),
+        previous.filter((id) => !filteredProductIds.includes(id)),
       )
       return
     }
 
     setDraftSelection((previous) => {
       const next = new Set(previous)
-      filteredProductNames.forEach((name) => next.add(name))
+      filteredProductIds.forEach((id) => next.add(id))
       return Array.from(next)
     })
   }
@@ -323,7 +266,7 @@ function DiscountPromotionProductsCard({
     setShowAvailableOnly(true)
   }
 
-  const handleDiscountInputChange = (productName: string, nextValue: string) => {
+  const handleDiscountInputChange = (productId: string, nextValue: string) => {
     let sanitized = nextValue.replace(/[^\d.]/g, '')
     const firstDot = sanitized.indexOf('.')
 
@@ -348,7 +291,7 @@ function DiscountPromotionProductsCard({
       ...value,
       productDiscounts: {
         ...value.productDiscounts,
-        [productName]: sanitized,
+        [productId]: sanitized,
       },
     })
   }
@@ -366,6 +309,8 @@ function DiscountPromotionProductsCard({
     const normalizedDiscount = Math.min(Math.max(parsedDiscount, 0), 100)
     return price * (1 - normalizedDiscount / 100)
   }
+
+  const canManageProducts = !isAuthRequired && !hasNoShop
 
   const pickerModal =
     isPickerOpen && typeof document !== 'undefined'
@@ -444,6 +389,29 @@ function DiscountPromotionProductsCard({
                   {activeTab === 'upload' ? (
                     <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
                       Upload flow can be added next. Use Select tab for now.
+                    </div>
+                  ) : isLoading ? (
+                    <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                      Loading products...
+                    </div>
+                  ) : isAuthRequired ? (
+                    <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                      Sign in to load shop products.
+                    </div>
+                  ) : hasNoShop ? (
+                    <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                      No shop found for this account.
+                    </div>
+                  ) : loadError ? (
+                    <div className="space-y-3 py-6 text-center text-sm text-slate-600 sm:py-8">
+                      <p>{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadProducts()}
+                        className="inline-flex h-9 items-center justify-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+                      >
+                        Retry
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -530,7 +498,7 @@ function DiscountPromotionProductsCard({
                         <div className="space-y-2 p-2 sm:hidden">
                           {filteredProducts.length > 0 ? (
                             filteredProducts.map((product) => {
-                              const isChecked = draftSelection.includes(product.name)
+                              const isChecked = draftSelection.includes(product.id)
 
                               return (
                                 <label
@@ -541,7 +509,7 @@ function DiscountPromotionProductsCard({
                                     <input
                                       type="checkbox"
                                       checked={isChecked}
-                                      onChange={() => handleToggleProduct(product.name)}
+                                      onChange={() => handleToggleProduct(product.id)}
                                       className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
                                     />
                                   </span>
@@ -599,7 +567,7 @@ function DiscountPromotionProductsCard({
                           <tbody>
                             {filteredProducts.length > 0 ? (
                               filteredProducts.map((product) => {
-                                const isChecked = draftSelection.includes(product.name)
+                                const isChecked = draftSelection.includes(product.id)
 
                                 return (
                                   <tr key={product.id} className="bg-white text-sm text-slate-700">
@@ -607,7 +575,7 @@ function DiscountPromotionProductsCard({
                                       <input
                                         type="checkbox"
                                         checked={isChecked}
-                                        onChange={() => handleToggleProduct(product.name)}
+                                        onChange={() => handleToggleProduct(product.id)}
                                         className="h-4 w-4 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
                                       />
                                     </td>
@@ -664,7 +632,8 @@ function DiscountPromotionProductsCard({
                     <button
                       type="button"
                       onClick={handleConfirmSelection}
-                      className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] sm:h-10"
+                      disabled={!canManageProducts}
+                      className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
                     >
                       Confirm
                     </button>
@@ -685,17 +654,36 @@ function DiscountPromotionProductsCard({
           <button
             type="button"
             onClick={handleAddProducts}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#f8fbff] active:bg-[#eff6ff]"
+            disabled={!canManageProducts || isLoading}
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#f8fbff] active:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <span className="text-base leading-none">+</span>
             <span>Add Product(s)</span>
           </button>
         </div>
+        {isLoading ? (
+          <p className="mt-2 text-xs text-slate-500">Loading products...</p>
+        ) : isAuthRequired ? (
+          <p className="mt-2 text-xs text-slate-500">Sign in to manage products.</p>
+        ) : hasNoShop ? (
+          <p className="mt-2 text-xs text-slate-500">No shop found for this account.</p>
+        ) : loadError ? (
+          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+            <span>{loadError}</span>
+            <button
+              type="button"
+              onClick={() => void loadProducts()}
+              className="font-semibold text-[#1d4ed8] hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
 
         {selectedProducts.length > 0 ? (
           <div className="mt-3 space-y-2.5">
             {selectedProducts.map((product, index) => {
-              const discountValue = value.productDiscounts[product.name] ?? ''
+              const discountValue = value.productDiscounts[product.id] ?? ''
               const discountedPrice = getDiscountedPrice(product.price, discountValue)
 
               return (
@@ -735,7 +723,7 @@ function DiscountPromotionProductsCard({
                         inputMode="decimal"
                         value={discountValue}
                         onChange={(event) =>
-                          handleDiscountInputChange(product.name, event.target.value)
+                          handleDiscountInputChange(product.id, event.target.value)
                         }
                         placeholder="0"
                         className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
@@ -769,11 +757,30 @@ function DiscountPromotionProductsCard({
         <button
           type="button"
           onClick={handleAddProducts}
-          className="inline-flex h-10 items-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+          disabled={!canManageProducts || isLoading}
+          className="inline-flex h-10 items-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe] disabled:cursor-not-allowed disabled:opacity-45"
         >
           + Add Products
         </button>
       </div>
+      {isLoading ? (
+        <p className="mt-2 text-xs text-slate-500">Loading products...</p>
+      ) : isAuthRequired ? (
+        <p className="mt-2 text-xs text-slate-500">Sign in to manage products.</p>
+      ) : hasNoShop ? (
+        <p className="mt-2 text-xs text-slate-500">No shop found for this account.</p>
+      ) : loadError ? (
+        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+          <span>{loadError}</span>
+          <button
+            type="button"
+            onClick={() => void loadProducts()}
+            className="font-semibold text-[#1d4ed8] hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
 
       {selectedProducts.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-lg border border-[#dbeafe]">
@@ -787,7 +794,7 @@ function DiscountPromotionProductsCard({
 
           <div className="divide-y divide-[#dbeafe] bg-white">
             {selectedProducts.map((product, index) => {
-              const discountValue = value.productDiscounts[product.name] ?? ''
+              const discountValue = value.productDiscounts[product.id] ?? ''
               const discountedPrice = getDiscountedPrice(product.price, discountValue)
 
               return (
@@ -817,7 +824,7 @@ function DiscountPromotionProductsCard({
                       inputMode="decimal"
                       value={discountValue}
                       onChange={(event) =>
-                        handleDiscountInputChange(product.name, event.target.value)
+                        handleDiscountInputChange(product.id, event.target.value)
                       }
                       placeholder="0"
                       className="w-16 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"

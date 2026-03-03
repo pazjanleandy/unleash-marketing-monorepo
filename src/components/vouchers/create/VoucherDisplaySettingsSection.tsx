@@ -5,6 +5,7 @@ type VoucherDisplaySettingsSectionProps = {
   displaySetting: VoucherDisplaySetting
   productScope: ProductScope
   onDisplaySettingChange: (value: VoucherDisplaySetting) => void
+  onProductScopeChange?: (value: ProductScope) => void
   displaySettingError?: string
   displaySettingInputIds?: {
     allPages: string
@@ -16,6 +17,7 @@ function VoucherDisplaySettingsSection({
   displaySetting,
   productScope,
   onDisplaySettingChange,
+  onProductScopeChange,
   displaySettingError,
   displaySettingInputIds,
 }: VoucherDisplaySettingsSectionProps) {
@@ -89,6 +91,20 @@ function VoucherDisplaySettingsSection({
               Learn More
             </a>
           </p>
+          {productScope === 'specific-products' ? (
+            <div className="mt-3 rounded-md border border-[#fde68a] bg-[#fffbeb] px-3 py-2 text-xs text-[#92400e]">
+              Specific-product vouchers are not available in this release.
+              {onProductScopeChange ? (
+                <button
+                  type="button"
+                  onClick={() => onProductScopeChange('all-products')}
+                  className="ml-2 font-semibold text-[#1d4ed8] hover:underline"
+                >
+                  Switch to all products
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

@@ -8,6 +8,7 @@ export type VoucherAction = {
 }
 
 export type VoucherItem = {
+  id: string
   code: string
   name: string
   type: string

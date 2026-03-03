@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
-import { sampleVouchers, voucherTabs } from './data'
 import type {
   VoucherAction,
   VoucherIcon,
@@ -12,7 +11,17 @@ type VouchersPageProps = {
   onBack: () => void
   onCreate: () => void
   onEdit: (voucher: VoucherItem) => void
+  onDelete?: (voucher: VoucherItem) => void
+  vouchers?: VoucherItem[]
+  isLoading?: boolean
+  error?: string | null
+  isAuthRequired?: boolean
+  hasNoShop?: boolean
+  onRetry?: () => void
+  canManage?: boolean
 }
+
+const voucherTabs = ['All', 'Ongoing', 'Upcoming', 'Expired'] as const
 
 type MobileTab = (typeof voucherTabs)[number]
 
@@ -220,10 +229,14 @@ function MobileVoucherCard({
   voucher,
   delayMs,
   onEdit,
+  onDelete,
+  canManage = true,
 }: {
   voucher: VoucherItem
   delayMs: number
   onEdit: (voucher: VoucherItem) => void
+  onDelete?: (voucher: VoucherItem) => void
+  canManage?: boolean
 }) {
   const unusedCount = Math.max(voucher.quantity - voucher.usage, 0)
   const { primaryAction, secondaryAction } = getMobileActions(voucher.actions)
@@ -248,8 +261,14 @@ function MobileVoucherCard({
     : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
 
   const handleActionClick = (action: VoucherAction) => {
-    if (action.label.trim().toLowerCase() === 'edit') {
+    const lowered = action.label.trim().toLowerCase()
+    if (lowered === 'edit' && canManage) {
       onEdit(voucher)
+      return
+    }
+
+    if (lowered === 'delete' && onDelete && canManage) {
+      onDelete(voucher)
     }
   }
 
@@ -332,6 +351,7 @@ function MobileVoucherCard({
           <button
             type="button"
             onClick={() => handleActionClick(primaryAction)}
+            disabled={!canManage}
             className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#2563EB] px-3 text-[13px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
           >
             {primaryAction.label}
@@ -339,6 +359,7 @@ function MobileVoucherCard({
           <button
             type="button"
             onClick={() => handleActionClick(secondaryAction)}
+            disabled={!canManage}
             className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
           >
             {secondaryAction.label}
@@ -358,9 +379,13 @@ function MobileVoucherCard({
 function VoucherRow({
   voucher,
   onEdit,
+  onDelete,
+  canManage = true,
 }: {
   voucher: VoucherItem
   onEdit: (voucher: VoucherItem) => void
+  onDelete?: (voucher: VoucherItem) => void
+  canManage?: boolean
 }) {
   const productScope = voucher.type.toLowerCase().includes('all')
     ? 'All products'
@@ -401,10 +426,15 @@ function VoucherRow({
               <button
                 type="button"
                 onClick={() => {
-                  if (action.label.trim().toLowerCase() === 'edit') {
+                  const lowered = action.label.trim().toLowerCase()
+                  if (lowered === 'edit' && canManage) {
                     onEdit(voucher)
                   }
+                  if (lowered === 'delete' && onDelete && canManage) {
+                    onDelete(voucher)
+                  }
                 }}
+                disabled={!canManage}
                 className={`text-sm font-medium transition hover:underline ${
                   action.danger ? 'text-[#dc4f1f]' : 'text-[#2f70db]'
                 }`}
@@ -422,9 +452,11 @@ function VoucherRow({
 function DesktopCreateVoucherTypeCard({
   card,
   onCreate,
+  canManage = true,
 }: {
   card: VoucherCreateTypeCard
   onCreate: () => void
+  canManage?: boolean
 }) {
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-4">
@@ -434,7 +466,8 @@ function DesktopCreateVoucherTypeCard({
         <button
           type="button"
           onClick={onCreate}
-          className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-4 text-xs font-semibold text-[#2563EB] transition hover:bg-[#eff6ff]"
+          disabled={!canManage}
+          className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-4 text-xs font-semibold text-[#2563EB] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
         >
           Create
         </button>
@@ -461,17 +494,30 @@ function DesktopPerformanceMetricCard({
   )
 }
 
-function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
+function VouchersPage({
+  onBack,
+  onCreate,
+  onEdit,
+  onDelete,
+  vouchers,
+  isLoading = false,
+  error = null,
+  isAuthRequired = false,
+  hasNoShop = false,
+  onRetry,
+  canManage = true,
+}: VouchersPageProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('Upcoming')
   const [quickFilter, setQuickFilter] =
     useState<(typeof quickFilters)[number]>('All Products')
   const [desktopTab, setDesktopTab] = useState<(typeof voucherTabs)[number]>('All')
   const [desktopSearch, setDesktopSearch] = useState('')
+  const sourceVouchers = useMemo(() => vouchers ?? [], [vouchers])
 
   const mobileVouchers =
     mobileTab === 'All'
-      ? sampleVouchers
-      : sampleVouchers.filter((voucher) => voucher.status === mobileTab)
+      ? sourceVouchers
+      : sourceVouchers.filter((voucher) => voucher.status === mobileTab)
 
   const activeTabIndex = mobileCarouselTabs.findIndex((tab) => tab === mobileTab)
   const tabWidthPercent = 100 / mobileCarouselTabs.length
@@ -487,8 +533,8 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
   const desktopVouchers = useMemo(() => {
     const byTab =
       desktopTab === 'All'
-        ? sampleVouchers
-        : sampleVouchers.filter((voucher) => voucher.status === desktopTab)
+        ? sourceVouchers
+        : sourceVouchers.filter((voucher) => voucher.status === desktopTab)
 
     const query = desktopSearch.trim().toLowerCase()
     if (!query) {
@@ -500,15 +546,15 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
         voucher.name.toLowerCase().includes(query) ||
         voucher.code.toLowerCase().includes(query),
     )
-  }, [desktopSearch, desktopTab])
+  }, [desktopSearch, desktopTab, sourceVouchers])
 
   const performanceSummary = useMemo(() => {
-    const totalSales = sampleVouchers.reduce((sum, voucher) => {
+    const totalSales = sourceVouchers.reduce((sum, voucher) => {
       const amount = Number.parseFloat(voucher.discountAmount.replace(/[^0-9.]/g, ''))
       return sum + (Number.isFinite(amount) ? amount : 0)
     }, 0)
-    const totalOrders = sampleVouchers.reduce((sum, voucher) => sum + voucher.usage, 0)
-    const totalUsageBase = sampleVouchers.reduce((sum, voucher) => sum + voucher.quantity, 0)
+    const totalOrders = sourceVouchers.reduce((sum, voucher) => sum + voucher.usage, 0)
+    const totalUsageBase = sourceVouchers.reduce((sum, voucher) => sum + voucher.quantity, 0)
     const usageRate = totalUsageBase > 0 ? (totalOrders / totalUsageBase) * 100 : 0
 
     return {
@@ -520,7 +566,9 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
       usageRate: `${usageRate.toFixed(2)}%`,
       buyers: `${Math.max(totalOrders, 1)}`,
     }
-  }, [])
+  }, [sourceVouchers])
+
+  const hasDataState = isLoading || Boolean(error) || isAuthRequired || hasNoShop
 
   return (
     <section
@@ -546,6 +594,30 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
             Pull to refresh, tap cards, or swipe for quick actions.
           </p>
         </div>
+        {hasDataState ? (
+          <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+            {isLoading ? (
+              <p>Loading vouchers...</p>
+            ) : error ? (
+              <div className="space-y-2">
+                <p>{error}</p>
+                {onRetry ? (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-3 text-xs font-semibold text-[#2563EB]"
+                  >
+                    Retry
+                  </button>
+                ) : null}
+              </div>
+            ) : isAuthRequired ? (
+              <p>Sign in to view and manage vouchers.</p>
+            ) : hasNoShop ? (
+              <p>No shop found for this account.</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="relative mt-3 rounded-full bg-slate-200 p-1 shadow-inner">
           <div
@@ -600,6 +672,8 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
                 voucher={voucher}
                 delayMs={90 + index * 70}
                 onEdit={onEdit}
+                onDelete={onDelete}
+                canManage={canManage}
               />
             ))
           ) : (
@@ -614,6 +688,7 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
             <button
               type="button"
               onClick={onCreate}
+              disabled={!canManage}
               className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
               aria-label="Create new voucher"
             >
@@ -631,6 +706,31 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
         >
           &larr; Back to Marketing Centre
         </button>
+
+        {hasDataState ? (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+            {isLoading ? (
+              <p>Loading vouchers...</p>
+            ) : error ? (
+              <div className="flex items-center justify-between gap-3">
+                <p>{error}</p>
+                {onRetry ? (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-3 text-xs font-semibold text-[#2563EB]"
+                  >
+                    Retry
+                  </button>
+                ) : null}
+              </div>
+            ) : isAuthRequired ? (
+              <p>Sign in to view and manage vouchers.</p>
+            ) : hasNoShop ? (
+              <p>No shop found for this account.</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <article className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
           <h1 className="text-[28px] font-semibold text-slate-800">Create Voucher</h1>
@@ -655,6 +755,7 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
                       key={`${group.title}-${card.title}`}
                       card={card}
                       onCreate={onCreate}
+                      canManage={canManage}
                     />
                   ))}
                 </div>
@@ -773,7 +874,13 @@ function VouchersPage({ onBack, onCreate, onEdit }: VouchersPageProps) {
               <tbody>
                 {desktopVouchers.length > 0 ? (
                   desktopVouchers.map((voucher) => (
-                    <VoucherRow key={voucher.code} voucher={voucher} onEdit={onEdit} />
+                    <VoucherRow
+                      key={voucher.id}
+                      voucher={voucher}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      canManage={canManage}
+                    />
                   ))
                 ) : (
                   <tr>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -15,6 +15,12 @@ import type { VoucherItem } from '../components/vouchers/types'
 import type { CreateVoucherForm } from '../components/vouchers/create/types'
 import type { CreateDiscountPromotionForm } from '../components/discount/create/types'
 import Sidebar from '../sidebar/sidebar'
+import {
+  createVoucher,
+  deleteVoucher,
+  listVouchers,
+  updateVoucher,
+} from '../services/market/vouchers.repo'
 
 export type MarketCentreView =
   | 'dashboard'
@@ -221,6 +227,11 @@ function MarketCentrePage() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const wasSidebarOpenRef = useRef(false)
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
+  const [voucherItems, setVoucherItems] = useState<VoucherItem[]>([])
+  const [voucherLoading, setVoucherLoading] = useState(false)
+  const [voucherError, setVoucherError] = useState<string | null>(null)
+  const [voucherAuthRequired, setVoucherAuthRequired] = useState(false)
+  const [voucherNoShop, setVoucherNoShop] = useState(false)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
   const [viewingPromotion, setViewingPromotion] = useState<PromotionRow | null>(null)
   const editInitialForm = useMemo(
@@ -263,6 +274,49 @@ function MarketCentrePage() {
   const handleVoucherFormBack = () => {
     setEditingVoucher(null)
     setActiveView('vouchers')
+  }
+
+  const loadVouchers = useCallback(async () => {
+    setVoucherLoading(true)
+    setVoucherError(null)
+
+    try {
+      const result = await listVouchers()
+      setVoucherItems(result.items)
+      setVoucherAuthRequired(result.authRequired)
+      setVoucherNoShop(result.noShop)
+    } catch (error) {
+      setVoucherItems([])
+      setVoucherAuthRequired(false)
+      setVoucherNoShop(false)
+      setVoucherError(error instanceof Error ? error.message : 'Unable to load vouchers.')
+    } finally {
+      setVoucherLoading(false)
+    }
+  }, [])
+
+  const handleVoucherConfirm = async (form: CreateVoucherForm) => {
+    if (editingVoucher?.id) {
+      await updateVoucher(editingVoucher.id, form)
+    } else {
+      await createVoucher(form)
+    }
+
+    await loadVouchers()
+  }
+
+  const handleDeleteVoucher = async (voucher: VoucherItem) => {
+    const shouldDelete = window.confirm(`Delete voucher ${voucher.code}?`)
+    if (!shouldDelete) {
+      return
+    }
+
+    try {
+      await deleteVoucher(voucher.id)
+      await loadVouchers()
+    } catch (error) {
+      setVoucherError(error instanceof Error ? error.message : 'Unable to delete voucher.')
+    }
   }
 
   const handleCreateDiscountTool = (type: DiscountToolType) => {
@@ -376,6 +430,12 @@ function MarketCentrePage() {
       setIsSidebarOpen(false)
     }
   }, [isMobileViewport])
+
+  useEffect(() => {
+    if (activeView === 'vouchers') {
+      void loadVouchers()
+    }
+  }, [activeView, loadVouchers])
 
   useEffect(() => {
     if (!isMobileViewport || !isSidebarOpen) {
@@ -797,11 +857,20 @@ function MarketCentrePage() {
                     onBack={() => setActiveView('marketing')}
                     onCreate={handleCreateVoucher}
                     onEdit={handleEditVoucher}
+                    onDelete={handleDeleteVoucher}
+                    vouchers={voucherItems}
+                    isLoading={voucherLoading}
+                    error={voucherError}
+                    isAuthRequired={voucherAuthRequired}
+                    hasNoShop={voucherNoShop}
+                    onRetry={() => void loadVouchers()}
+                    canManage={!voucherAuthRequired && !voucherNoShop}
                   />
                 ) : (
                   <CreateVoucherPage
                     key={voucherFormKey}
                     onBack={handleVoucherFormBack}
+                    onConfirm={handleVoucherConfirm}
                     mode={editingVoucher ? 'edit' : 'create'}
                     initialForm={editInitialForm}
                   />

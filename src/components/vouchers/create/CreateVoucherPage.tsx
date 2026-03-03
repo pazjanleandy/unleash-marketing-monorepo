@@ -9,7 +9,7 @@ type VoucherFormMode = 'create' | 'edit'
 
 type CreateVoucherPageProps = {
   onBack: () => void
-  onConfirm?: () => void
+  onConfirm?: (form: CreateVoucherForm) => Promise<void> | void
   mode?: VoucherFormMode
   initialForm?: CreateVoucherForm
 }
@@ -56,14 +56,29 @@ function CreateVoucherPage({
   const [form, setForm] = useState<CreateVoucherForm>(() => ({ ...startingForm }))
   const [currentStep, setCurrentStep] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<FormErrorMap>({})
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const lastStepIndex = stepTitles.length - 1
 
-  const handleConfirm = () => {
-    if (onConfirm) {
-      onConfirm()
+  const handleConfirm = async () => {
+    if (isSubmitting) {
       return
     }
 
+    setSubmitError('')
+    setIsSubmitting(true)
+
+    if (onConfirm) {
+      try {
+        await onConfirm(form)
+      } catch (error) {
+        setSubmitError(error instanceof Error ? error.message : 'Unable to save voucher.')
+        setIsSubmitting(false)
+        return
+      }
+    }
+
+    setIsSubmitting(false)
     onBack()
   }
 
@@ -151,7 +166,7 @@ function CreateVoucherPage({
 
   const handleNextStep = () => {
     if (currentStep === lastStepIndex) {
-      handleConfirm()
+      void handleConfirm()
       return
     }
 
@@ -183,6 +198,11 @@ function CreateVoucherPage({
           {pageLabel}
         </h1>
       </header>
+      {submitError ? (
+        <p className="mt-4 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+          {submitError}
+        </p>
+      ) : null}
 
       <div className="mt-4 rounded-xl border border-[#dbe1ea] bg-white px-4 py-3 sm:hidden">
         <div className="flex items-start justify-between gap-2">
@@ -218,6 +238,7 @@ function CreateVoucherPage({
           <VoucherDisplayCard
             value={form}
             onChange={setForm}
+            onProductScopeChange={(productScope) => setForm((previous) => ({ ...previous, productScope }))}
             displaySettingError={fieldErrors.displaySetting}
             displaySettingInputIds={{
               allPages: fieldElementIds.displaySetting ?? '',
@@ -242,6 +263,7 @@ function CreateVoucherPage({
           <VoucherDisplayCard
             value={form}
             onChange={setForm}
+            onProductScopeChange={(productScope) => setForm((previous) => ({ ...previous, productScope }))}
             displaySettingError={fieldErrors.displaySetting}
             displaySettingInputIds={{
               allPages: fieldElementIds.displaySetting ?? '',
@@ -253,16 +275,18 @@ function CreateVoucherPage({
             <button
               type="button"
               onClick={onBack}
+              disabled={isSubmitting}
               className="inline-flex h-10 items-center rounded-md border border-[#d6dbe3] bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
             >
               Cancel
             </button>
             <button
               type="button"
-              onClick={handleConfirm}
-              className="inline-flex h-10 items-center rounded-md bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+              onClick={() => void handleConfirm()}
+              disabled={isSubmitting}
+              className="inline-flex h-10 items-center rounded-md bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {desktopConfirmLabel}
+              {isSubmitting ? 'Saving...' : desktopConfirmLabel}
             </button>
           </div>
         </div>
@@ -277,7 +301,7 @@ function CreateVoucherPage({
           <button
             type="button"
             onClick={handlePreviousStep}
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isSubmitting}
             className="inline-flex h-11 items-center justify-center rounded-lg border border-[#cfd7e3] bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Back
@@ -285,9 +309,14 @@ function CreateVoucherPage({
           <button
             type="button"
             onClick={handleNextStep}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+            disabled={isSubmitting}
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {currentStep === lastStepIndex ? mobileStepActionLabel : 'Next'}
+            {currentStep === lastStepIndex
+              ? isSubmitting
+                ? 'Saving...'
+                : mobileStepActionLabel
+              : 'Next'}
           </button>
         </div>
       </div>
