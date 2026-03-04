@@ -32,7 +32,7 @@ create table if not exists public.products (
   image text,
   description text,
   price numeric default 0 check (price >= 0),
-  currency text default 'USD',
+  currency text default 'PHP',
   metadata jsonb default '{}'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),

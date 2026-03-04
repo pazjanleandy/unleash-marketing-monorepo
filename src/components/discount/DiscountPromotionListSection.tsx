@@ -5,6 +5,7 @@ type DiscountPromotionListSectionProps = {
   promotions: PromotionRow[]
   onEditPromotion?: (promotion: PromotionRow) => void
   onViewPromotion?: (promotion: PromotionRow) => void
+  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
 }
 
 type SearchField = 'Promotion Name' | 'Promotion Type'
@@ -50,6 +51,7 @@ function DiscountPromotionListSection({
   promotions,
   onEditPromotion,
   onViewPromotion,
+  onDeletePromotion,
 }: DiscountPromotionListSectionProps) {
   const [searchField, setSearchField] = useState<SearchField>('Promotion Name')
   const [query, setQuery] = useState('')
@@ -86,6 +88,11 @@ function DiscountPromotionListSection({
 
     if (action === 'View') {
       onViewPromotion?.(promotion)
+      return
+    }
+
+    if (action === 'Delete') {
+      void onDeletePromotion?.(promotion)
     }
   }
 
@@ -149,7 +156,7 @@ function DiscountPromotionListSection({
         <div className="space-y-3">
           {filteredPromotions.map((promotion) => (
             <article
-              key={promotion.name}
+              key={promotion.id}
               className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-3"
             >
               <div className="flex items-start justify-between gap-2">
@@ -173,7 +180,7 @@ function DiscountPromotionListSection({
               <div className="mt-2 flex flex-wrap gap-2">
                 {promotion.actions.map((action) => (
                   <button
-                    key={`${promotion.name}-${action}`}
+                    key={`${promotion.id}-${action}`}
                     type="button"
                     onClick={() => handleActionClick(promotion, action)}
                     className={`text-xs font-medium transition ${getActionClassName(action)}`}
@@ -201,7 +208,7 @@ function DiscountPromotionListSection({
           <tbody>
             {filteredPromotions.length > 0 ? (
               filteredPromotions.map((promotion) => (
-                <tr key={promotion.name} className="align-top text-sm text-slate-700">
+                <tr key={promotion.id} className="align-top text-sm text-slate-700">
                   <td className="px-3 py-3.5">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses[promotion.status]}`}
@@ -221,7 +228,7 @@ function DiscountPromotionListSection({
                   <td className="px-3 py-3.5">
                     <ul className="space-y-1.5">
                       {promotion.actions.map((action) => (
-                        <li key={`${promotion.name}-${action}`}>
+                        <li key={`${promotion.id}-${action}`}>
                           <button
                             type="button"
                             onClick={() => handleActionClick(promotion, action)}

@@ -60,6 +60,77 @@ export type Database = {
           updated_at?: string
         }
       }
+      discount_promotions: {
+        Row: {
+          id: string
+          shop_id: string
+          name: string
+          start_at: string
+          end_at: string
+          max_uses: number | null
+          used_count: number
+          is_active: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          shop_id: string
+          name: string
+          start_at: string
+          end_at: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+        }
+        Update: {
+          name?: string
+          start_at?: string
+          end_at?: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+          updated_at?: string
+        }
+      }
+      product_discounts: {
+        Row: {
+          id: string
+          promotion_id: string
+          product_id: string
+          shop_id: string
+          discount_type: 'percentage' | 'fixed'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses: number | null
+          used_count: number | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          promotion_id: string
+          product_id: string
+          shop_id: string
+          discount_type: 'percentage' | 'fixed'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses?: number | null
+          used_count?: number | null
+          is_active?: boolean
+        }
+        Update: {
+          discount_type?: 'percentage' | 'fixed'
+          discount_value?: number
+          start_at?: string
+          end_at?: string
+          max_uses?: number | null
+          used_count?: number | null
+          is_active?: boolean
+          updated_at?: string
+        }
+      }
     }
   }
 }

@@ -7,7 +7,7 @@ import type { CreateDiscountPromotionForm, DiscountDateTimeField } from './types
 
 type CreateDiscountPromotionPageProps = {
   onBack: () => void
-  onConfirm?: () => void
+  onConfirm?: (form: CreateDiscountPromotionForm) => Promise<void> | void
   mode?: 'create' | 'edit'
   initialForm?: CreateDiscountPromotionForm
 }
@@ -59,6 +59,29 @@ function formatMobileDateTime(value: string) {
   return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
+function toSubmitErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    try {
+      const serialized = JSON.stringify(error)
+      if (serialized && serialized !== '{}') {
+        return serialized
+      }
+    } catch {
+      return 'Unable to save discount promotion.'
+    }
+  }
+
+  return 'Unable to save discount promotion.'
+}
+
 const now = new Date()
 const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
 
@@ -66,7 +89,6 @@ const createDiscountDefaults: CreateDiscountPromotionForm = {
   promotionName: '',
   startDateTime: toLocalDateTimeInputValue(now),
   endDateTime: toLocalDateTimeInputValue(oneHourLater),
-  discountRate: '',
   purchaseLimit: '',
   products: [],
   productDiscounts: {},
@@ -105,6 +127,8 @@ function CreateDiscountPromotionPage({
   )
   const [activePickerField, setActivePickerField] =
     useState<DiscountDateTimeField | null>(null)
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const hasSelectedProducts = form.products.length > 0
   const isEditMode = mode === 'edit'
   const mobileTitle = isEditMode ? 'Edit Discount' : 'Create New Discount'
@@ -121,7 +145,8 @@ function CreateDiscountPromotionPage({
   }
 
   const isConfirmDisabled = useMemo(() => {
-    if (!form.promotionName.trim()) {
+    const trimmedName = form.promotionName.trim()
+    if (!trimmedName) {
       return true
     }
 
@@ -129,11 +154,31 @@ function CreateDiscountPromotionPage({
       return true
     }
 
-    if (!form.startDateTime || !form.endDateTime) {
+    const start = fromLocalDateTimeInputValue(form.startDateTime)
+    const end = fromLocalDateTimeInputValue(form.endDateTime)
+
+    if (!start || !end || end.getTime() <= start.getTime()) {
       return true
     }
 
-    return form.endDateTime <= form.startDateTime
+    const maxDurationMs = 180 * 24 * 60 * 60 * 1000
+    if (end.getTime() - start.getTime() > maxDurationMs) {
+      return true
+    }
+
+    if (form.purchaseLimit.trim().length > 0 && !/^\d+$/.test(form.purchaseLimit.trim())) {
+      return true
+    }
+
+    return form.products.some((productId) => {
+      const rawValue = form.productDiscounts[productId]?.trim() ?? ''
+      if (!rawValue) {
+        return true
+      }
+
+      const parsed = Number(rawValue)
+      return Number.isNaN(parsed) || parsed <= 0 || parsed > 100
+    })
   }, [form])
 
   const activePickerValue = useMemo(() => {
@@ -195,17 +240,24 @@ function CreateDiscountPromotionPage({
     setField(activePickerField, nextValue)
   }
 
-  const handleConfirm = () => {
-    if (isConfirmDisabled) {
+  const handleConfirm = async () => {
+    if (isConfirmDisabled || isSubmitting) {
       return
     }
 
-    if (onConfirm) {
-      onConfirm()
-      return
-    }
+    setSubmitError('')
+    setIsSubmitting(true)
 
-    onBack()
+    try {
+      if (onConfirm) {
+        await onConfirm(form)
+      }
+      onBack()
+    } catch (error) {
+      setSubmitError(toSubmitErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -213,6 +265,11 @@ function CreateDiscountPromotionPage({
       className="motion-rise min-h-[calc(100vh-2.5rem)] bg-[#f1f5f9] pb-24 sm:rounded-3xl sm:border sm:border-slate-200/80 sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)]"
       style={{ animationDelay: '80ms' }}
     >
+      {submitError ? (
+        <p className="mx-4 mt-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c] sm:mx-0 sm:mt-4">
+          {submitError}
+        </p>
+      ) : null}
       <div className="sm:hidden">
         <div className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white px-4 py-3">
           <div className="flex items-start gap-2">
@@ -312,23 +369,6 @@ function CreateDiscountPromotionPage({
 
             <div className="border-t border-slate-200 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] font-medium text-slate-700">Discount</p>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={form.discountRate}
-                    onChange={(event) => setField('discountRate', event.target.value)}
-                    placeholder="0"
-                    className="h-9 w-16 border-0 bg-transparent text-right text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                  />
-                  <span className="text-xs font-semibold text-slate-400">% OFF</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
                 <p className="text-[13px] font-medium text-slate-700">Purchase Limit</p>
                 <input
                   type="text"
@@ -378,17 +418,18 @@ function CreateDiscountPromotionPage({
           <button
             type="button"
             onClick={onBack}
+            disabled={isSubmitting}
             className="inline-flex h-11 items-center justify-center rounded-md border border-[#cbd5e1] bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-10"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
-            disabled={isConfirmDisabled}
+            onClick={() => void handleConfirm()}
+            disabled={isConfirmDisabled || isSubmitting}
             className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
           >
-            Confirm
+            {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
         </div>
       </div>

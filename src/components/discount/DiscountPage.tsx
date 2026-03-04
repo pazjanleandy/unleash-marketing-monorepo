@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import DiscountCreateSection from './DiscountCreateSection'
 import DiscountMobilePanel from './DiscountMobilePanel'
 import DiscountPerformanceSection from './DiscountPerformanceSection'
@@ -11,6 +11,7 @@ type DiscountPageProps = {
   onCreateTool?: (type: DiscountToolType) => void
   onEditPromotion?: (promotion: PromotionRow) => void
   onViewPromotion?: (promotion: PromotionRow) => void
+  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
 }
 
 const discountCreationTools: DiscountCreateTool[] = [
@@ -43,6 +44,7 @@ function DiscountPage({
   onCreateTool,
   onEditPromotion,
   onViewPromotion,
+  onDeletePromotion,
 }: DiscountPageProps) {
   const [activeTab, setActiveTab] = useState<DiscountPromotionTab>('All')
   const [promotionRows, setPromotionRows] = useState<PromotionRow[]>([])
@@ -51,40 +53,43 @@ function DiscountPage({
   const [authRequired, setAuthRequired] = useState(false)
   const [noShop, setNoShop] = useState(false)
 
-  useEffect(() => {
-    let alive = true
-
-    const load = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const result = await listDiscountPromotions()
-        if (!alive) {
-          return
-        }
-        setPromotionRows(result.items)
-        setAuthRequired(result.authRequired)
-        setNoShop(result.noShop)
-      } catch (loadError) {
-        if (!alive) {
-          return
-        }
-        setPromotionRows([])
-        setAuthRequired(false)
-        setNoShop(false)
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load discount data.')
-      } finally {
-        if (alive) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-    return () => {
-      alive = false
+  const loadPromotions = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await listDiscountPromotions()
+      setPromotionRows(result.items)
+      setAuthRequired(result.authRequired)
+      setNoShop(result.noShop)
+    } catch (loadError) {
+      setPromotionRows([])
+      setAuthRequired(false)
+      setNoShop(false)
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load discount data.')
+    } finally {
+      setIsLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    void loadPromotions()
+  }, [loadPromotions])
+
+  const handleDeletePromotion = async (promotion: PromotionRow) => {
+    const shouldDelete = window.confirm(`Delete promotion "${promotion.name}"?`)
+    if (!shouldDelete) {
+      return
+    }
+
+    try {
+      if (onDeletePromotion) {
+        await onDeletePromotion(promotion)
+      }
+      await loadPromotions()
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete promotion.')
+    }
+  }
 
   const tabPromotions = useMemo(
     () =>
@@ -153,6 +158,7 @@ function DiscountPage({
         onCreateTool={onCreateTool}
         onEditPromotion={onEditPromotion}
         onViewPromotion={onViewPromotion}
+        onDeletePromotion={handleDeletePromotion}
       />
       {showDataState ? (
         <div className="mb-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 sm:hidden">
@@ -239,6 +245,7 @@ function DiscountPage({
             promotions={tabPromotions}
             onEditPromotion={onEditPromotion}
             onViewPromotion={onViewPromotion}
+            onDeletePromotion={handleDeletePromotion}
           />
         </div>
       </div>

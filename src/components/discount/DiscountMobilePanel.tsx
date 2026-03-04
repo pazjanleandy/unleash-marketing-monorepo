@@ -8,6 +8,7 @@ type DiscountMobilePanelProps = {
   onCreateTool?: (type: DiscountToolType) => void
   onEditPromotion?: (promotion: PromotionRow) => void
   onViewPromotion?: (promotion: PromotionRow) => void
+  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
 }
 
 const mobileStatusTabs: PromotionStatus[] = ['Upcoming', 'Ongoing', 'Expired']
@@ -54,10 +55,12 @@ function StatusActions({
   promotion,
   onEditPromotion,
   onViewPromotion,
+  onDeletePromotion,
 }: {
   promotion: PromotionRow
   onEditPromotion?: (promotion: PromotionRow) => void
   onViewPromotion?: (promotion: PromotionRow) => void
+  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
 }) {
   const { status } = promotion
 
@@ -73,6 +76,7 @@ function StatusActions({
         </button>
         <button
           type="button"
+          onClick={() => void onDeletePromotion?.(promotion)}
           className="inline-flex h-8 items-center justify-center rounded border border-[#fdc4ac] bg-white text-xs font-semibold text-[#dc4f1f] transition hover:bg-[#fff4ef]"
         >
           Delete
@@ -98,6 +102,7 @@ function StatusActions({
       </button>
       <button
         type="button"
+        onClick={() => void onDeletePromotion?.(promotion)}
         className="inline-flex h-8 items-center justify-center rounded border border-[#fdc4ac] bg-white text-xs font-semibold text-[#dc4f1f] transition hover:bg-[#fff4ef]"
       >
         Delete
@@ -112,6 +117,7 @@ function DiscountMobilePanel({
   onCreateTool,
   onEditPromotion,
   onViewPromotion,
+  onDeletePromotion,
 }: DiscountMobilePanelProps) {
   const [activeStatus, setActiveStatus] = useState<PromotionStatus>('Upcoming')
   const [isCreateChoiceOpen, setIsCreateChoiceOpen] = useState(false)
@@ -220,7 +226,7 @@ function DiscountMobilePanel({
             <div className="space-y-2">
               {activePromotions.map((promotion) => (
                 <article
-                  key={`${promotion.status}-${promotion.name}`}
+                  key={`${promotion.status}-${promotion.id}`}
                   className="rounded-md border border-slate-200 bg-white p-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -240,6 +246,7 @@ function DiscountMobilePanel({
                       promotion={promotion}
                       onEditPromotion={onEditPromotion}
                       onViewPromotion={onViewPromotion}
+                      onDeletePromotion={onDeletePromotion}
                     />
                   </div>
                 </article>

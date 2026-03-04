@@ -21,6 +21,11 @@ import {
   listVouchers,
   updateVoucher,
 } from '../services/market/vouchers.repo'
+import {
+  createDiscountPromotion,
+  deleteDiscountPromotion,
+  updateDiscountPromotion,
+} from '../services/market/discounts.repo'
 
 export type MarketCentreView =
   | 'dashboard'
@@ -178,9 +183,10 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
     parsedEnd ?? (parsedStart ? new Date(parsedStart.getTime() + 60 * 60 * 1000) : oneHourLater),
   )
 
-  const productDiscounts = promotion.products.reduce<Record<string, string>>(
-    (accumulator, productName) => {
-      accumulator[productName] = ''
+  const selectedProductIds = Object.keys(promotion.productDiscounts)
+  const productDiscounts = selectedProductIds.reduce<Record<string, string>>(
+    (accumulator, productId) => {
+      accumulator[productId] = promotion.productDiscounts[productId] ?? ''
       return accumulator
     },
     {},
@@ -190,9 +196,8 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
     promotionName: promotion.name,
     startDateTime,
     endDateTime,
-    discountRate: '',
-    purchaseLimit: '',
-    products: promotion.products,
+    purchaseLimit: promotion.maxUses === null ? '' : `${promotion.maxUses}`,
+    products: selectedProductIds,
     productDiscounts,
   }
 }
@@ -346,6 +351,19 @@ function MarketCentrePage() {
   const handleDiscountFormBack = () => {
     setEditingPromotion(null)
     setActiveView('discount')
+  }
+
+  const handleDiscountConfirm = async (form: CreateDiscountPromotionForm) => {
+    if (editingPromotion?.id) {
+      await updateDiscountPromotion(editingPromotion.id, form)
+    } else {
+      await createDiscountPromotion(form)
+    }
+    setEditingPromotion(null)
+  }
+
+  const handleDeleteDiscountPromotion = async (promotion: PromotionRow) => {
+    await deleteDiscountPromotion(promotion.id)
   }
 
   const handleViewDiscountBack = () => {
@@ -830,6 +848,7 @@ function MarketCentrePage() {
                 onCreateTool={handleCreateDiscountTool}
                 onEditPromotion={handleEditDiscountPromotion}
                 onViewPromotion={handleViewDiscountPromotion}
+                onDeletePromotion={handleDeleteDiscountPromotion}
               />
             ) : activeView === 'flash-deals' ? (
               <FlashDealsPage
@@ -842,6 +861,7 @@ function MarketCentrePage() {
               <CreateDiscountPromotionPage
                 key={discountFormKey}
                 onBack={handleDiscountFormBack}
+                onConfirm={handleDiscountConfirm}
                 mode={editingPromotion ? 'edit' : 'create'}
                 initialForm={editDiscountInitialForm}
               />
