@@ -28,7 +28,7 @@ type FlashDealCriteriaCategory = {
 
 type CreateFlashDealPageProps = {
   onBack: () => void
-  onConfirm?: () => void
+  onConfirm?: (form: CreateFlashDealForm) => Promise<void> | void
 }
 
 type MobileFlashDealStep = 'setup' | 'products' | 'discount'
@@ -39,6 +39,19 @@ type FlashDealProductState = {
   campaignStock: string
   purchaseLimit: string
   enabled: boolean
+}
+
+export type CreateFlashDealForm = {
+  startAt: string
+  endAt: string
+  products: Array<{
+    productId: string
+    originalPrice: number
+    flashPrice: number
+    flashQuantity: number
+    purchaseLimit: number | null
+    isActive: boolean
+  }>
 }
 
 type FlashDealCatalogEntry = {
@@ -281,6 +294,29 @@ function getInitialSlotStartDate() {
   return date
 }
 
+function toSubmitErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    try {
+      const serialized = JSON.stringify(error)
+      if (serialized && serialized !== '{}') {
+        return serialized
+      }
+    } catch {
+      return 'Unable to save flash deal.'
+    }
+  }
+
+  return 'Unable to save flash deal.'
+}
+
 function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   const [slotStartDateTime, setSlotStartDateTime] = useState(() =>
     toLocalDateTimeInputValue(getInitialSlotStartDate()),
@@ -318,6 +354,8 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   const [mobileBulkPurchaseLimit, setMobileBulkPurchaseLimit] = useState('')
   const [mobileBulkNoLimit, setMobileBulkNoLimit] = useState(false)
   const [mobileBulkEnabledOnly, setMobileBulkEnabledOnly] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const slotStartDate = useMemo(
     () => fromLocalDateTimeInputValue(slotStartDateTime),
@@ -801,17 +839,101 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     setSlotStartDateTime(toLocalDateTimeInputValue(candidate))
   }
 
-  const handleConfirm = () => {
-    if (isConfirmDisabled) {
+  const handleConfirm = async () => {
+    if (isConfirmDisabled || isSubmitting) {
       return
     }
 
-    if (onConfirm) {
-      onConfirm()
+    if (!slotStartDate || !slotEndDate) {
+      setSubmitError('Select a valid flash deal schedule.')
       return
     }
 
-    onBack()
+    const enabledProductIds = selectedProductIds.filter((productId) => {
+      const state =
+        productStateById[productId] ??
+        createProductState(getCatalogEntry(productId, productsById))
+      return state.enabled
+    })
+
+    if (enabledProductIds.length === 0) {
+      setSubmitError('Enable at least one product before confirming.')
+      return
+    }
+
+    const products: CreateFlashDealForm['products'] = []
+
+    for (const productId of enabledProductIds) {
+      const catalogEntry = getCatalogEntry(productId, productsById)
+      const state =
+        productStateById[productId] ??
+        createProductState(getCatalogEntry(productId, productsById))
+
+      if (catalogEntry.name === 'Unknown product') {
+        setSubmitError('One or more selected products are no longer available. Reload products and try again.')
+        return
+      }
+
+      const flashPrice = Number(state.discountedPrice)
+      if (!Number.isFinite(flashPrice) || flashPrice <= 0) {
+        setSubmitError(`Enter a valid discounted price for ${catalogEntry.name}.`)
+        return
+      }
+      if (flashPrice > catalogEntry.originalPrice) {
+        setSubmitError(`Discounted price cannot exceed original price for ${catalogEntry.name}.`)
+        return
+      }
+
+      const flashQuantity = Number(state.campaignStock)
+      if (!Number.isInteger(flashQuantity) || flashQuantity <= 0) {
+        setSubmitError(`Enter a valid campaign stock for ${catalogEntry.name}.`)
+        return
+      }
+      if (flashQuantity > catalogEntry.stock) {
+        setSubmitError(`Campaign stock cannot exceed available stock for ${catalogEntry.name}.`)
+        return
+      }
+
+      const purchaseLimitRaw = state.purchaseLimit.trim()
+      let purchaseLimit: number | null = null
+      if (purchaseLimitRaw.length > 0) {
+        const parsed = Number(purchaseLimitRaw)
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          setSubmitError(`Enter a valid purchase limit for ${catalogEntry.name}.`)
+          return
+        }
+        purchaseLimit = parsed
+      }
+
+      products.push({
+        productId,
+        originalPrice: catalogEntry.originalPrice,
+        flashPrice,
+        flashQuantity,
+        purchaseLimit,
+        isActive: true,
+      })
+    }
+
+    const payload: CreateFlashDealForm = {
+      startAt: slotStartDate.toISOString(),
+      endAt: slotEndDate.toISOString(),
+      products,
+    }
+
+    setSubmitError('')
+    setIsSubmitting(true)
+
+    try {
+      if (onConfirm) {
+        await onConfirm(payload)
+      }
+      onBack()
+    } catch (error) {
+      setSubmitError(toSubmitErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const selectedMobileDayForSlots = selectedMobileDay ?? getStartOfDay(new Date())
@@ -824,6 +946,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       className="motion-rise relative min-h-[calc(100vh-2.5rem)] overflow-hidden bg-[linear-gradient(165deg,_#f0f7ff_0%,_#f7fbff_40%,_#fdfefe_100%)] pb-32 sm:rounded-3xl sm:border sm:border-[#d6e7ff] sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_52px_-45px_rgba(30,64,175,0.5)]"
       style={{ animationDelay: '80ms' }}
     >
+      {submitError ? (
+        <p className="mx-4 mt-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c] sm:mx-0 sm:mt-0 sm:mb-4">
+          {submitError}
+        </p>
+      ) : null}
       <div className="pointer-events-none absolute -left-24 top-20 hidden h-72 w-72 rounded-full bg-[#c7e2ff]/45 blur-3xl sm:block" />
       <div className="pointer-events-none absolute -bottom-24 right-[-60px] hidden h-80 w-80 rounded-full bg-[#bae6fd]/45 blur-3xl sm:block" />
 
@@ -1988,11 +2115,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               </button>
               <button
                 type="button"
-                onClick={handleConfirm}
-                disabled={isConfirmDisabled}
+                onClick={() => void handleConfirm()}
+                disabled={isConfirmDisabled || isSubmitting}
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563eb] px-5 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
               >
-                Confirm
+                {isSubmitting ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           )}
@@ -2002,17 +2129,18 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
           <button
             type="button"
             onClick={onBack}
+            disabled={isSubmitting}
             className="inline-flex h-9 items-center justify-center rounded border border-[#d1d5db] bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
-            disabled={isConfirmDisabled}
+            onClick={() => void handleConfirm()}
+            disabled={isConfirmDisabled || isSubmitting}
             className="inline-flex h-9 items-center justify-center rounded bg-[#2563eb] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
           >
-            Confirm
+            {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
         </div>
       </div>

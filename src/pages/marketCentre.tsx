@@ -9,6 +9,7 @@ import type { DiscountToolType, PromotionRow } from '../components/discount/type
 import ViewDiscountPromotionPage from '../components/discount/view/ViewDiscountPromotionPage'
 import FlashDealsPage from '../components/flash-deals/FlashDealsPage'
 import CreateFlashDealPage from '../components/flash-deals/create/CreateFlashDealPage'
+import type { CreateFlashDealForm } from '../components/flash-deals/create/CreateFlashDealPage'
 import VouchersPage from '../components/vouchers/VouchersPage'
 import CreateVoucherPage from '../components/vouchers/create/CreateVoucherPage'
 import type { VoucherItem } from '../components/vouchers/types'
@@ -26,6 +27,7 @@ import {
   deleteDiscountPromotion,
   updateDiscountPromotion,
 } from '../services/market/discounts.repo'
+import { createFlashDeals } from '../services/market/flashDeals.repo'
 
 export type MarketCentreView =
   | 'dashboard'
@@ -377,6 +379,10 @@ function MarketCentrePage() {
 
   const handleCreateFlashDealBack = () => {
     setActiveView('flash-deals')
+  }
+
+  const handleFlashDealConfirm = async (form: CreateFlashDealForm) => {
+    await createFlashDeals(form)
   }
 
   const handleSidebarSelectView = (view: MarketCentreView) => {
@@ -856,7 +862,10 @@ function MarketCentrePage() {
                 onCreate={handleCreateFlashDeal}
               />
             ) : activeView === 'create-flash-deal' ? (
-              <CreateFlashDealPage onBack={handleCreateFlashDealBack} />
+              <CreateFlashDealPage
+                onBack={handleCreateFlashDealBack}
+                onConfirm={handleFlashDealConfirm}
+              />
             ) : activeView === 'create-discount-promotion' ? (
               <CreateDiscountPromotionPage
                 key={discountFormKey}
