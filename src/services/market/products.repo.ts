@@ -11,8 +11,19 @@ export type ShopProduct = {
   image: string | null
 }
 
+export type ShopCategory = {
+  id: string
+  name: string
+}
+
 type ProductsListResult = {
   items: ShopProduct[]
+  authRequired: boolean
+  noShop: boolean
+}
+
+type CategoriesListResult = {
+  items: ShopCategory[]
   authRequired: boolean
   noShop: boolean
 }
@@ -25,6 +36,13 @@ type ProductRow = {
   status: string
   image: string | null
   categories?: { name?: string | null } | null
+}
+
+type CategoryRow = {
+  id: string
+  name: string
+  active: boolean | null
+  position: number | null
 }
 
 async function getCurrentUserShopId() {
@@ -89,5 +107,35 @@ export async function listShopProducts(): Promise<ProductsListResult> {
     items,
     authRequired: false,
     noShop: false,
+  }
+}
+
+export async function listShopCategories(): Promise<CategoriesListResult> {
+  const { authRequired, noShop } = await getCurrentUserShopId()
+  if (authRequired) {
+    return { items: [], authRequired, noShop: false }
+  }
+
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id,name,active,position')
+    .eq('active', true)
+    .order('position', { ascending: true })
+    .order('name', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  const rows = (data ?? []) as CategoryRow[]
+  const items = rows.map((row) => ({
+    id: row.id,
+    name: row.name?.trim() || 'Unnamed Category',
+  }))
+
+  return {
+    items,
+    authRequired: false,
+    noShop,
   }
 }

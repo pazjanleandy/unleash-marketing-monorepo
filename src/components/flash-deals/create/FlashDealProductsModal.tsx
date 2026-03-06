@@ -1,91 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-type FlashDealProductsModalProps = {
-  isOpen: boolean
-  selectedProducts: string[]
-  onClose: () => void
-  onConfirm: (products: string[]) => void
-}
-
-type FlashDealProduct = {
+export type FlashDealSelectableProduct = {
   id: string
   name: string
   category: string
   sales: number
   price: number
   stock: number
+  status: string
+}
+
+type FlashDealProductsModalProps = {
+  isOpen: boolean
+  selectedProductIds: string[]
+  products: FlashDealSelectableProduct[]
+  isLoadingProducts: boolean
+  productsError: string
+  authRequired: boolean
+  noShop: boolean
+  onRetryLoadProducts: () => void
+  onClose: () => void
+  onConfirm: (productIds: string[]) => void
 }
 
 type PickerTab = 'select' | 'upload'
 type SearchField = 'Product Name' | 'Product ID'
-
-const flashDealProductCatalog: FlashDealProduct[] = [
-  {
-    id: 'FD-41775186070',
-    name: 'Petsup Freeze-Dried Cat Food 1kg',
-    category: 'Pet Food',
-    sales: 0,
-    price: 297,
-    stock: 3,
-  },
-  {
-    id: 'FD-23641075967',
-    name: 'Petsup Freeze-Dried Meat Pet Treats 30g',
-    category: 'Pet Food',
-    sales: 8,
-    price: 98,
-    stock: 22,
-  },
-  {
-    id: 'FD-25896794112',
-    name: "Nature's Protection Cat Food with Fish",
-    category: 'Pet Food',
-    sales: 0,
-    price: 61,
-    stock: 6,
-  },
-  {
-    id: 'FD-27741987504',
-    name: 'Natures Protection Cat Food Pouch Fish',
-    category: 'Pet Food',
-    sales: 0,
-    price: 62,
-    stock: 6,
-  },
-  {
-    id: 'FD-41777194845',
-    name: 'Pedigree Puppy Chicken Flavour',
-    category: 'Pet Food',
-    sales: 12,
-    price: 82,
-    stock: 2,
-  },
-  {
-    id: 'FD-22778139912',
-    name: 'PetSoft Clumping Cat Litter 10L',
-    category: 'Litter & Toilet',
-    sales: 21,
-    price: 149,
-    stock: 18,
-  },
-  {
-    id: 'FD-19877553121',
-    name: 'PawCare Ear Cleaner 100ml',
-    category: 'Pet Healthcare',
-    sales: 11,
-    price: 75,
-    stock: 9,
-  },
-  {
-    id: 'FD-33872654190',
-    name: 'Glow Fur Gentle Shampoo 500ml',
-    category: 'Pet Grooming',
-    sales: 14,
-    price: 109,
-    stock: 7,
-  },
-]
 
 function ProductImageStub({
   name,
@@ -111,7 +51,13 @@ function toPriceLabel(value: number) {
 
 function FlashDealProductsModal({
   isOpen,
-  selectedProducts,
+  selectedProductIds,
+  products,
+  isLoadingProducts,
+  productsError,
+  authRequired,
+  noShop,
+  onRetryLoadProducts,
   onClose,
   onConfirm,
 }: FlashDealProductsModalProps) {
@@ -122,12 +68,12 @@ function FlashDealProductsModal({
   const [appliedQuery, setAppliedQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [showAvailableOnly, setShowAvailableOnly] = useState(true)
-  const [draftSelection, setDraftSelection] = useState<string[]>(selectedProducts)
+  const [draftSelection, setDraftSelection] = useState<string[]>(selectedProductIds)
 
   const categories = useMemo(() => {
-    const values = new Set(flashDealProductCatalog.map((product) => product.category))
+    const values = new Set(products.map((product) => product.category))
     return ['All Categories', ...Array.from(values)]
-  }, [])
+  }, [products])
 
   useEffect(() => {
     if (!isOpen) {
@@ -135,8 +81,8 @@ function FlashDealProductsModal({
     }
 
     setActiveTab('select')
-    setDraftSelection(selectedProducts)
-  }, [isOpen, selectedProducts])
+    setDraftSelection(selectedProductIds)
+  }, [isOpen, selectedProductIds])
 
   useEffect(() => {
     if (!isOpen) {
@@ -166,8 +112,8 @@ function FlashDealProductsModal({
   const filteredProducts = useMemo(() => {
     const query = appliedQuery.trim().toLowerCase()
 
-    return flashDealProductCatalog.filter((product) => {
-      if (showAvailableOnly && product.stock <= 0) {
+    return products.filter((product) => {
+      if (showAvailableOnly && (product.stock <= 0 || product.status !== 'avail')) {
         return false
       }
 
@@ -185,21 +131,20 @@ function FlashDealProductsModal({
 
       return product.name.toLowerCase().includes(query)
     })
-  }, [appliedQuery, searchField, selectedCategory, showAvailableOnly])
+  }, [appliedQuery, products, searchField, selectedCategory, showAvailableOnly])
 
-  const filteredProductNames = useMemo(
-    () => filteredProducts.map((product) => product.name),
+  const filteredProductIds = useMemo(
+    () => filteredProducts.map((product) => product.id),
     [filteredProducts],
   )
-
   const selectedInFilteredCount = useMemo(
-    () => filteredProductNames.filter((name) => draftSelection.includes(name)).length,
-    [draftSelection, filteredProductNames],
+    () => filteredProductIds.filter((id) => draftSelection.includes(id)).length,
+    [draftSelection, filteredProductIds],
   )
 
   const allFilteredSelected =
-    filteredProductNames.length > 0 &&
-    selectedInFilteredCount === filteredProductNames.length
+    filteredProductIds.length > 0 &&
+    selectedInFilteredCount === filteredProductIds.length
   const someFilteredSelected =
     selectedInFilteredCount > 0 && !allFilteredSelected
 
@@ -211,11 +156,11 @@ function FlashDealProductsModal({
     selectAllRef.current.indeterminate = someFilteredSelected
   }, [someFilteredSelected])
 
-  const handleToggleProduct = (productName: string) => {
+  const handleToggleProduct = (productId: string) => {
     setDraftSelection((previous) =>
-      previous.includes(productName)
-        ? previous.filter((name) => name !== productName)
-        : [...previous, productName],
+      previous.includes(productId)
+        ? previous.filter((id) => id !== productId)
+        : [...previous, productId],
     )
   }
 
@@ -224,20 +169,20 @@ function FlashDealProductsModal({
   }
 
   const handleToggleSelectAll = () => {
-    if (filteredProductNames.length === 0) {
+    if (filteredProductIds.length === 0) {
       return
     }
 
     if (allFilteredSelected) {
       setDraftSelection((previous) =>
-        previous.filter((name) => !filteredProductNames.includes(name)),
+        previous.filter((id) => !filteredProductIds.includes(id)),
       )
       return
     }
 
     setDraftSelection((previous) => {
       const next = new Set(previous)
-      filteredProductNames.forEach((name) => next.add(name))
+      filteredProductIds.forEach((id) => next.add(id))
       return Array.from(next)
     })
   }
@@ -336,6 +281,29 @@ function FlashDealProductsModal({
               <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
                 Upload flow can be added next. Use Select tab for now.
               </div>
+            ) : isLoadingProducts ? (
+              <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                Loading products...
+              </div>
+            ) : authRequired ? (
+              <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                Sign in to load shop products.
+              </div>
+            ) : noShop ? (
+              <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
+                No shop found for this account.
+              </div>
+            ) : productsError ? (
+              <div className="space-y-3 py-6 text-center text-sm text-slate-600 sm:py-8">
+                <p>{productsError}</p>
+                <button
+                  type="button"
+                  onClick={onRetryLoadProducts}
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+                >
+                  Retry
+                </button>
+              </div>
             ) : (
               <>
                 <div className="space-y-2">
@@ -400,6 +368,7 @@ function FlashDealProductsModal({
 
                     <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs font-semibold text-[#1d4ed8]">
                       <input
+                        ref={selectAllRef}
                         type="checkbox"
                         checked={allFilteredSelected}
                         onChange={handleToggleSelectAll}
@@ -413,13 +382,13 @@ function FlashDealProductsModal({
                 <div className="mt-3 overflow-auto rounded-lg border border-[#dbeafe] bg-[#f8fbff]">
                   <div className="border-b border-[#dbeafe] bg-white px-3 py-2 text-xs font-semibold text-[#1d4ed8] sm:hidden">
                     Selected {draftSelection.length} product
-                    {draftSelection.length === 1 ? '' : 's'}
+                    {draftSelection.length === 1 ? '' : 's'}.
                   </div>
 
                   <div className="space-y-2 p-2 sm:hidden">
                     {filteredProducts.length > 0 ? (
                       filteredProducts.map((product) => {
-                        const isChecked = draftSelection.includes(product.name)
+                        const isChecked = draftSelection.includes(product.id)
 
                         return (
                           <label
@@ -430,7 +399,7 @@ function FlashDealProductsModal({
                               <input
                                 type="checkbox"
                                 checked={isChecked}
-                                onChange={() => handleToggleProduct(product.name)}
+                                onChange={() => handleToggleProduct(product.id)}
                                 className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
                               />
                             </span>
@@ -469,16 +438,7 @@ function FlashDealProductsModal({
                   <table className="hidden min-w-[760px] w-full border-separate border-spacing-0 sm:table">
                     <thead>
                       <tr className="bg-white text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
-                        <th className="px-3 py-2.5 font-semibold">
-                          <input
-                            ref={selectAllRef}
-                            type="checkbox"
-                            checked={allFilteredSelected}
-                            onChange={handleToggleSelectAll}
-                            aria-label="Select all filtered products"
-                            className="h-4 w-4 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
-                          />
-                        </th>
+                        <th className="px-3 py-2.5 font-semibold">Select</th>
                         <th className="px-3 py-2.5 font-semibold">Products</th>
                         <th className="px-3 py-2.5 font-semibold">Sales</th>
                         <th className="px-3 py-2.5 font-semibold">Price</th>
@@ -488,7 +448,7 @@ function FlashDealProductsModal({
                     <tbody>
                       {filteredProducts.length > 0 ? (
                         filteredProducts.map((product) => {
-                          const isChecked = draftSelection.includes(product.name)
+                          const isChecked = draftSelection.includes(product.id)
 
                           return (
                             <tr key={product.id} className="bg-white text-sm text-slate-700">
@@ -496,7 +456,7 @@ function FlashDealProductsModal({
                                 <input
                                   type="checkbox"
                                   checked={isChecked}
-                                  onChange={() => handleToggleProduct(product.name)}
+                                  onChange={() => handleToggleProduct(product.id)}
                                   className="h-4 w-4 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
                                 />
                               </td>
@@ -545,7 +505,8 @@ function FlashDealProductsModal({
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] sm:h-10"
+                disabled={authRequired || noShop || isLoadingProducts}
+                className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
               >
                 Confirm
               </button>
