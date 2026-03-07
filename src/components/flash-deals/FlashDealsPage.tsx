@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
 import FlashDealsPerformanceSection from './FlashDealsPerformanceSection'
 import FlashDealsPromotionListSection from './FlashDealsPromotionListSection'
 import type { FlashDealRow, FlashDealsMetric } from './types'
-import { listFlashDeals } from '../../services/market/flashDeals.repo'
+import {
+  deleteFlashDeal,
+  listFlashDeals,
+  updateFlashDeal,
+  type UpdateFlashDealInput,
+} from '../../services/market/flashDeals.repo'
 
 type FlashDealsPageProps = {
   onBack: () => void
@@ -21,13 +26,31 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
   const [authRequired, setAuthRequired] = useState(false)
   const [noShop, setNoShop] = useState(false)
 
+  const loadFlashDeals = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const result = await listFlashDeals()
+      setFlashDealRows(result.items)
+      setAuthRequired(result.authRequired)
+      setNoShop(result.noShop)
+    } catch (loadError) {
+      setFlashDealRows([])
+      setAuthRequired(false)
+      setNoShop(false)
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load flash deals.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     let alive = true
 
     const load = async () => {
       setIsLoading(true)
       setError(null)
-
       try {
         const result = await listFlashDeals()
         if (!alive) {
@@ -56,6 +79,16 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
       alive = false
     }
   }, [refreshNonce])
+
+  const handleDeleteFlashDeal = async (row: FlashDealRow) => {
+    await deleteFlashDeal(row.id)
+    await loadFlashDeals()
+  }
+
+  const handleEditFlashDeal = async (row: FlashDealRow, input: UpdateFlashDealInput) => {
+    await updateFlashDeal(row.id, input)
+    await loadFlashDeals()
+  }
 
   const flashDealsPerformanceDateLabel = useMemo(() => {
     const now = new Date()
@@ -208,6 +241,8 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
               rows={flashDealRows}
               refreshNonce={refreshNonce}
               onCreate={onCreate}
+              onDelete={handleDeleteFlashDeal}
+              onEdit={handleEditFlashDeal}
             />
           </div>
         </div>
@@ -232,7 +267,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
           </header>
 
           <div className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2.5 text-sm text-[#1d4ed8]">
-            Expired promotions that ended before 01 May 2020 can&apos;t be edited.
+            Expired promotions that ended before 01 May 2020 can't be edited.
           </div>
 
           <div className="mt-4 space-y-4">
@@ -257,6 +292,8 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
               rows={flashDealRows}
               refreshNonce={refreshNonce}
               onCreate={onCreate}
+              onDelete={handleDeleteFlashDeal}
+              onEdit={handleEditFlashDeal}
             />
           </div>
         </div>

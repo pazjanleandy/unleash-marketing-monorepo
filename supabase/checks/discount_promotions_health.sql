@@ -20,7 +20,7 @@ select
   permissive,
   roles,
   cmd
-from pg_policies
+from pg_policies4
 where schemaname = 'public'
   and tablename in ('discount_promotions', 'product_discounts')
 order by tablename, policyname;
