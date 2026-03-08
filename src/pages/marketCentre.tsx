@@ -168,9 +168,13 @@ function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
       createVoucherDefaults.maxDistributionPerBuyer,
     ),
     displaySetting: createVoucherDefaults.displaySetting,
-    productScope: voucher.type.toLowerCase().includes('specific')
-      ? 'specific-products'
-      : 'all-products',
+    productScope:
+      voucher.type.toLowerCase().includes('product') ||
+      voucher.type.toLowerCase().includes('private') ||
+      voucher.type.toLowerCase().includes('live') ||
+      voucher.type.toLowerCase().includes('video')
+        ? 'specific-products'
+        : 'all-products',
   }
 }
 

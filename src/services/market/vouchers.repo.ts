@@ -6,6 +6,7 @@ import type { Database } from '../../types/database'
 type VoucherRow = Database['public']['Tables']['vouchers']['Row']
 type VoucherInsert = Database['public']['Tables']['vouchers']['Insert']
 type VoucherUpdate = Database['public']['Tables']['vouchers']['Update']
+type VoucherMetadata = Database['public']['Tables']['vouchers']['Row']['metadata']
 
 export type VoucherListFilters = {
   tab?: 'All' | VoucherStatus
@@ -19,6 +20,17 @@ export type VoucherListResult = {
 }
 
 const DEFAULT_VOUCHER_DURATION_DAYS = 30
+const VOUCHER_TYPE_LABELS: Record<string, string> = {
+  shop: 'Shop Voucher',
+  product: 'Product Voucher',
+  private: 'Private Voucher',
+  live: 'Live Voucher',
+  video: 'Video Voucher',
+}
+
+type VoucherRowWithRelations = VoucherRow & {
+  voucher_products?: Array<{ product_id?: string | null }> | null
+}
 
 function formatMoney(value: number) {
   return `PHP ${value.toLocaleString('en-PH', {
@@ -62,26 +74,71 @@ function getVoucherStatus(startAt: string, endAt: string): VoucherStatus {
   return 'Ongoing'
 }
 
-function toVoucherItem(row: VoucherRow): VoucherItem {
+function toLowerToken(value: unknown) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : ''
+}
+
+function resolveVoucherType(
+  row: VoucherRow,
+  productLinks: number,
+): string {
+  const metadata = (row.metadata ?? {}) as VoucherMetadata
+  const metadataRecord =
+    typeof metadata === 'object' && metadata !== null
+      ? (metadata as Record<string, unknown>)
+      : {}
+
+  const directTokens = [
+    toLowerToken(row.voucher_type),
+    toLowerToken(metadataRecord.voucher_type),
+    toLowerToken(metadataRecord.voucherType),
+    toLowerToken(metadataRecord.channel),
+    toLowerToken(row.name),
+    toLowerToken(row.description),
+  ]
+
+  const matchedKey = (Object.keys(VOUCHER_TYPE_LABELS) as Array<keyof typeof VOUCHER_TYPE_LABELS>)
+    .find((key) =>
+      directTokens.some((token) => token === key || token.includes(key)),
+    )
+
+  if (matchedKey) {
+    return VOUCHER_TYPE_LABELS[matchedKey]
+  }
+
+  if (productLinks > 0) {
+    return VOUCHER_TYPE_LABELS.product
+  }
+
+  return VOUCHER_TYPE_LABELS.shop
+}
+
+function toVoucherItem(row: VoucherRowWithRelations): VoucherItem {
   const status = getVoucherStatus(row.start_at, row.end_at)
-  const usedCount = row.used_count ?? 0
-  const usageLimit = row.usage_limit ?? 0
+  const productLinks = row.voucher_products?.length ?? 0
+  const usedCount = row.total_used ?? row.used_count ?? 0
+  const usageQuantity = row.usage_quantity ?? row.usage_limit ?? 0
+  const perUserLimit = row.usage_per_user ?? row.usage_limit
   const isPercentage = row.discount_type === 'percentage'
+  const discountNumeric = row.discount_amount ?? row.discount_value
+  const voucherTypeLabel = resolveVoucherType(row, productLinks)
+  const claimingStart = row.claim_start_at ?? row.start_at
+  const claimingEnd = row.claim_end_at ?? row.end_at
 
   return {
     id: row.id,
     code: row.code,
-    name: row.description?.trim() || row.code,
-    type: 'Shop Voucher (all products)',
-    discountAmount: isPercentage ? `${row.discount_value}%` : formatMoney(row.discount_value),
-    quantity: usageLimit,
-    usageLimit: row.usage_limit === null ? '-' : `${row.usage_limit}`,
+    name: row.name?.trim() || row.description?.trim() || row.code,
+    type: voucherTypeLabel,
+    discountAmount: isPercentage ? `${discountNumeric}%` : formatMoney(discountNumeric),
+    quantity: usageQuantity,
+    usageLimit: perUserLimit === null ? '-' : `${perUserLimit}`,
     claimed: usedCount,
     usage: usedCount,
     status,
     claimingPeriod: {
-      start: formatDateTimeLabel(row.start_at),
-      end: formatDateTimeLabel(row.end_at),
+      start: formatDateTimeLabel(claimingStart),
+      end: formatDateTimeLabel(claimingEnd),
     },
     actions:
       status === 'Expired'
@@ -102,25 +159,44 @@ function parseIntInput(value: string, fallback: number) {
 }
 
 function buildVoucherPayload(form: CreateVoucherForm, shopId: string): VoucherInsert {
-  if (form.productScope !== 'all-products') {
-    throw new Error('Specific-product vouchers are not supported yet.')
-  }
-
   const now = new Date()
   const end = new Date(now.getTime() + DEFAULT_VOUCHER_DURATION_DAYS * 24 * 60 * 60 * 1000)
+  const discountAmount = parseDecimalInput(form.discountAmount, 0)
+  const usageQuantity = parseIntInput(form.usageQuantity, 0)
+  const usagePerUser = parseIntInput(form.maxDistributionPerBuyer, 1)
 
   return {
     shop_id: shopId,
     code: `V-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    name:
+      form.displaySetting === 'voucher-code'
+        ? 'Private Voucher'
+        : form.productScope === 'specific-products'
+          ? 'Product Voucher'
+          : 'Shop Voucher',
     description: form.displaySetting === 'voucher-code' ? 'Voucher Code Campaign' : 'Shop Voucher',
     discount_type: form.discountType === 'percentage' ? 'percentage' : 'fixed',
-    discount_value: parseDecimalInput(form.discountAmount, 0),
+    discount_value: discountAmount,
+    discount_amount: discountAmount,
     min_spend: parseDecimalInput(form.minimumBasketPrice, 0),
-    usage_limit: parseIntInput(form.usageQuantity, 0),
+    usage_limit: usageQuantity,
+    usage_quantity: usageQuantity,
+    usage_per_user: usagePerUser,
     used_count: 0,
+    total_used: 0,
     start_at: now.toISOString(),
     end_at: end.toISOString(),
+    claim_start_at: now.toISOString(),
+    claim_end_at: end.toISOString(),
     is_active: true,
+    metadata: {
+      voucher_category:
+        form.displaySetting === 'voucher-code'
+          ? 'private'
+          : form.productScope === 'specific-products'
+            ? 'product'
+            : 'shop',
+    },
   }
 }
 
@@ -161,7 +237,7 @@ export async function listVouchers(filters: VoucherListFilters = {}): Promise<Vo
   const { data, error } = await supabase
     .from('vouchers')
     .select(
-      'id,shop_id,code,description,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,is_active,created_at,updated_at',
+      'id,shop_id,code,description,name,voucher_type,discount_type,discount_value,discount_amount,min_spend,max_discount,usage_limit,usage_quantity,usage_per_user,used_count,total_used,start_at,end_at,claim_start_at,claim_end_at,is_active,metadata,created_at,updated_at,voucher_products(product_id)',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
@@ -211,16 +287,32 @@ export async function updateVoucher(voucherId: string, form: CreateVoucherForm) 
     throw new Error('No shop found for your account.')
   }
 
-  if (form.productScope !== 'all-products') {
-    throw new Error('Specific-product vouchers are not supported yet.')
-  }
-
+  const discountAmount = parseDecimalInput(form.discountAmount, 0)
+  const usageQuantity = parseIntInput(form.usageQuantity, 0)
+  const usagePerUser = parseIntInput(form.maxDistributionPerBuyer, 1)
   const payload: VoucherUpdate = {
+    name:
+      form.displaySetting === 'voucher-code'
+        ? 'Private Voucher'
+        : form.productScope === 'specific-products'
+          ? 'Product Voucher'
+          : 'Shop Voucher',
     description: form.displaySetting === 'voucher-code' ? 'Voucher Code Campaign' : 'Shop Voucher',
     discount_type: form.discountType === 'percentage' ? 'percentage' : 'fixed',
-    discount_value: parseDecimalInput(form.discountAmount, 0),
+    discount_value: discountAmount,
+    discount_amount: discountAmount,
     min_spend: parseDecimalInput(form.minimumBasketPrice, 0),
-    usage_limit: parseIntInput(form.usageQuantity, 0),
+    usage_limit: usageQuantity,
+    usage_quantity: usageQuantity,
+    usage_per_user: usagePerUser,
+    metadata: {
+      voucher_category:
+        form.displaySetting === 'voucher-code'
+          ? 'private'
+          : form.productScope === 'specific-products'
+            ? 'product'
+            : 'shop',
+    },
     updated_at: new Date().toISOString(),
   }
 

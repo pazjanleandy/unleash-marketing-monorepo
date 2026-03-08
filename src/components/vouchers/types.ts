@@ -25,3 +25,4 @@ export type VoucherItem = {
   actions: VoucherAction[]
   icon: VoucherIcon
 }
+    

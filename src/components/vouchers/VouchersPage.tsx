@@ -324,7 +324,7 @@ function MobileVoucherCard({
             </p>
 
             <p className="mt-0.5 text-[12px] leading-snug text-slate-600">
-              Shop Voucher | Min spend {minimumSpend}
+              {voucher.type} | Min spend {minimumSpend}
             </p>
           </div>
 
@@ -389,7 +389,9 @@ function VoucherRow({
 }) {
   const productScope = voucher.type.toLowerCase().includes('all')
     ? 'All products'
-    : 'Selected products'
+    : voucher.type.toLowerCase().includes('shop')
+      ? 'All products'
+      : 'Selected products'
 
   return (
     <tr className="align-top border-t border-slate-100 text-sm text-slate-700">
@@ -527,7 +529,7 @@ function VouchersPage({
       return mobileVouchers
     }
 
-    return mobileVouchers.filter((voucher) => voucher.type.toLowerCase().includes('shop'))
+    return mobileVouchers.filter((voucher) => !voucher.type.toLowerCase().includes('shop'))
   }, [mobileVouchers, quickFilter])
 
   const desktopVouchers = useMemo(() => {
