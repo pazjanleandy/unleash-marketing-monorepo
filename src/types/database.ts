@@ -192,6 +192,132 @@ export type Database = {
           updated_at?: string
         }
       }
+      bundle_deals: {
+        Row: {
+          id: string
+          shop_id: string
+          name: string
+          discount_type: 'percentage' | 'fixed' | 'bundle_price'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses: number | null
+          used_count: number
+          is_active: boolean
+          metadata: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          shop_id: string
+          name: string
+          discount_type: 'percentage' | 'fixed' | 'bundle_price'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+          metadata?: Json | null
+        }
+        Update: {
+          name?: string
+          discount_type?: 'percentage' | 'fixed' | 'bundle_price'
+          discount_value?: number
+          start_at?: string
+          end_at?: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+          metadata?: Json | null
+          updated_at?: string
+        }
+      }
+      bundle_deal_items: {
+        Row: {
+          id: string
+          bundle_deal_id: string
+          product_id: string
+          required_quantity: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bundle_deal_id: string
+          product_id: string
+          required_quantity?: number
+        }
+        Update: {
+          required_quantity?: number
+          updated_at?: string
+        }
+      }
+      addon_deals: {
+        Row: {
+          id: string
+          shop_id: string
+          name: string
+          trigger_product_id: string
+          discount_type: 'percentage' | 'fixed'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses: number | null
+          used_count: number
+          is_active: boolean
+          metadata: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          shop_id: string
+          name: string
+          trigger_product_id: string
+          discount_type: 'percentage' | 'fixed'
+          discount_value: number
+          start_at: string
+          end_at: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+          metadata?: Json | null
+        }
+        Update: {
+          name?: string
+          trigger_product_id?: string
+          discount_type?: 'percentage' | 'fixed'
+          discount_value?: number
+          start_at?: string
+          end_at?: string
+          max_uses?: number | null
+          used_count?: number
+          is_active?: boolean
+          metadata?: Json | null
+          updated_at?: string
+        }
+      }
+      addon_deal_items: {
+        Row: {
+          id: string
+          addon_deal_id: string
+          product_id: string
+          required_quantity: number
+          max_addon_quantity: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          addon_deal_id: string
+          product_id: string
+          required_quantity?: number
+          max_addon_quantity?: number | null
+        }
+        Update: {
+          required_quantity?: number
+          max_addon_quantity?: number | null
+          updated_at?: string
+        }
+      }
     }
   }
 }

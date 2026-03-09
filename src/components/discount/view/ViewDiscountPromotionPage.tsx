@@ -6,19 +6,6 @@ type ViewDiscountPromotionPageProps = {
   promotion: PromotionRow
 }
 
-type ProductMeta = {
-  category: string
-  price: number
-}
-
-function toCurrency(value: number) {
-  return `₱${value.toFixed(2)}`
-}
-
-function getProductMeta(name: string): ProductMeta {
-  return { category: 'Product', price: Math.max(name.length, 1) }
-}
-
 function ProductPreviewShape({ label }: { label: string }) {
   return (
     <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] to-[#bfdbfe] text-xs font-bold text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)]">
@@ -32,39 +19,28 @@ function ViewDiscountPromotionPage({
   promotion,
 }: ViewDiscountPromotionPageProps) {
   const metrics = useMemo(() => {
-    const base = Math.max(promotion.products.length, 1)
-    const availed = promotion.status === 'Expired' ? base * 21 : base * 9
-    const buyers = Math.max(Math.floor(availed * 0.68), 1)
-    const orders = Math.max(Math.floor(availed * 0.81), 1)
-    const sales = orders * 17.5
+    const discountEntryCount = Object.keys(promotion.productDiscounts).length
 
     return [
-      { label: 'Availed', value: `${availed}` },
-      { label: 'Buyers', value: `${buyers}` },
-      { label: 'Orders', value: `${orders}` },
-      { label: 'Sales', value: toCurrency(sales) },
+      { label: 'Status', value: promotion.status },
+      { label: 'Products', value: `${promotion.products.length}` },
+      {
+        label: 'Purchase Limit',
+        value: promotion.maxUses === null ? 'No limit' : `${promotion.maxUses}`,
+      },
+      { label: 'Discount Entries', value: `${discountEntryCount}` },
     ]
   }, [promotion])
 
-  const productRows = useMemo(
-    () =>
-      promotion.products.map((name, index) => {
-        const meta = getProductMeta(name)
-        const discountPercent = `${Math.min(10 + index * 5, 45)}`
-        const discountedPrice =
-          meta.price * (1 - Number(discountPercent) / 100)
+  const productRows = useMemo(() => {
+    const discountValues = Object.values(promotion.productDiscounts)
 
-        return {
-          id: `${promotion.name}-${name}-${index}`,
-          name,
-          category: meta.category,
-          price: meta.price,
-          discountPercent,
-          discountedPrice,
-        }
-      }),
-    [promotion],
-  )
+    return promotion.products.map((name, index) => ({
+      id: `${promotion.id}-${index}`,
+      name,
+      discountPercent: discountValues[index] ?? '',
+    }))
+  }, [promotion])
 
   return (
     <section
@@ -194,18 +170,17 @@ function ViewDiscountPromotionPage({
                       <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {product.name}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">{product.category}</p>
                     </div>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <div>
-                      <p className="mb-1 text-[11px] font-medium text-slate-500">Original</p>
+                      <p className="mb-1 text-[11px] font-medium text-slate-500">Product</p>
                       <input
                         type="text"
                         readOnly
                         disabled
-                        value={toCurrency(product.price)}
+                        value={product.name}
                         className="h-9 w-full rounded-md border border-[#cbd5e1] bg-slate-100 px-2.5 text-xs text-slate-700"
                       />
                     </div>
@@ -215,17 +190,21 @@ function ViewDiscountPromotionPage({
                         type="text"
                         readOnly
                         disabled
-                        value={`${product.discountPercent}% OFF`}
+                        value={
+                          product.discountPercent
+                            ? `${product.discountPercent}% OFF`
+                            : '-'
+                        }
                         className="h-9 w-full rounded-md border border-[#cbd5e1] bg-slate-100 px-2.5 text-xs text-slate-700"
                       />
                     </div>
                     <div>
-                      <p className="mb-1 text-[11px] font-medium text-slate-500">Discounted</p>
+                      <p className="mb-1 text-[11px] font-medium text-slate-500">Type</p>
                       <input
                         type="text"
                         readOnly
                         disabled
-                        value={toCurrency(product.discountedPrice)}
+                        value={promotion.type}
                         className="h-9 w-full rounded-md border border-[#cbd5e1] bg-slate-100 px-2.5 text-xs font-semibold text-[#1d4ed8]"
                       />
                     </div>
@@ -245,4 +224,3 @@ function ViewDiscountPromotionPage({
 }
 
 export default ViewDiscountPromotionPage
-
