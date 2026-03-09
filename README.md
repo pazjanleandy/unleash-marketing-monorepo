@@ -426,8 +426,29 @@ npm run preview
 npm run lint
 ```
 
+## install supabase 
+```bash
+npm install @supabase/supabase-js
+
+```
+
+##backend updates
+- Added executable Supabase SQL migrations in `supabase/migrations/`:
+- `001_marketing_core_schema.sql` for core marketing tables (`shops`, `categories`, `products`, `vouchers`, `voucher_products`, `voucher_usages`, `product_discounts`, `flash_deals`) plus constraints and indexes.
+- `002_marketing_rls_policies.sql` for owner-scoped RLS policies using `auth.uid()` and `shops.owner_id`.
+- Added typed Supabase client entry `src/supabase.ts` and DB type scaffold `src/types/database.ts`.
+- Added vouchers backend service `src/services/market/vouchers.repo.ts` with owner-scoped shop resolution and voucher list/create/update/delete methods.
+- Integrated vouchers UI with backend states in:
+- `src/pages/marketCentre.tsx`
+- `src/components/vouchers/VouchersPage.tsx`
+- `src/components/vouchers/create/CreateVoucherPage.tsx`
+- Added products backend service `src/services/market/products.repo.ts`.
+- Updated `src/components/discount/create/DiscountPromotionProductsCard.tsx` to load products from `public.products` (owner-scoped), use `product_id` as selection identity, and support loading/auth/no-shop/error+retry states.
+- Added future service stubs:
+- `src/services/market/discounts.repo.ts`
+- `src/services/market/flashDeals.repo.ts`
+
 ## Scope Notes
 - Marketing tools data remains frontend sample data.
-- Current auth flow is localStorage-based (`public.users`) for development/demo.
-- Passwords in local storage are not production-safe and should be replaced by backend auth.
-- `src/supabase.js` exists for integration prep, but runtime auth is not yet using Supabase.
+- Login and sign-up now use Supabase Auth.
+- Discount list/performance modules and flash deals modules still use frontend sample data.

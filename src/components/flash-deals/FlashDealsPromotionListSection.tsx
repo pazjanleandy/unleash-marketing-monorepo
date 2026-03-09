@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
 import MobileDateTimePicker from '../common/MobileDateTimePicker'
 import type { FlashDealRow, FlashDealStatus, FlashDealsTab } from './types'
+import type { UpdateFlashDealInput } from '../../services/market/flashDeals.repo'
 
 type FlashDealsPromotionListSectionProps = {
   rows: FlashDealRow[]
   refreshNonce?: number
   onCreate?: () => void
+  onDelete?: (row: FlashDealRow) => Promise<void> | void
+  onEdit?: (row: FlashDealRow, input: UpdateFlashDealInput) => Promise<void> | void
 }
 
 const tabs: FlashDealsTab[] = ['All', 'Ongoing', 'Upcoming', 'Expired']
@@ -99,6 +102,61 @@ function toStatusLabel(status: FlashDealStatus) {
   return status === 'Expired' ? 'Ended' : status
 }
 
+function formatMoney(value: number) {
+  return `PHP ${value.toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
+function toLocalDateTimeInputValue(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const hour = `${date.getHours()}`.padStart(2, '0')
+  const minute = `${date.getMinutes()}`.padStart(2, '0')
+  return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
+function fromLocalDateTimeInputValue(value: string) {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function toDiscountPercent(originalPrice: number, flashPrice: number) {
+  if (!Number.isFinite(originalPrice) || originalPrice <= 0) {
+    return 0
+  }
+
+  const raw = ((originalPrice - flashPrice) / originalPrice) * 100
+  return Math.max(0, Math.min(99, Number(raw.toFixed(2))))
+}
+
 function getPrimaryActionLabel(row: FlashDealRow) {
   const preferred = row.status === 'Expired' ? 'view' : 'edit'
   const match = row.actions.find((action) => action.trim().toLowerCase() === preferred)
@@ -173,11 +231,15 @@ function SwipeablePromotionCard({
   row,
   enabled,
   onToggle,
+  onPrimaryAction,
+  onDelete,
   showDateInCard = false,
 }: {
   row: FlashDealRow
   enabled: boolean
   onToggle: () => void
+  onPrimaryAction: (row: FlashDealRow) => void
+  onDelete: (row: FlashDealRow) => void
   showDateInCard?: boolean
 }) {
   const [offsetX, setOffsetX] = useState(0)
@@ -216,15 +278,16 @@ function SwipeablePromotionCard({
   }
 
   const handlePrimaryAction = () => {
-    if (primaryActionLabel.toLowerCase() === 'edit') {
-      return
-    }
+    onPrimaryAction(row)
   }
 
   const handleSecondaryAction = () => {
-    if (row.status !== 'Expired') {
-      onToggle()
+    if (secondaryDanger) {
+      onDelete(row)
+      return
     }
+
+    onToggle()
   }
 
   return (
@@ -341,10 +404,269 @@ function SwipeablePromotionCard({
   )
 }
 
+function FlashDealDetailsPopover({
+  row,
+  onClose,
+}: {
+  row: FlashDealRow
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close flash deal details"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40"
+      />
+      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#dbeafe] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#1d4ed8]">
+              Flash Deal Details
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">{row.productName}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+            aria-label="Close"
+          >
+            x
+          </button>
+        </div>
+
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Status</dt>
+            <dd className="mt-1 font-medium text-slate-700">{row.status}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Product ID</dt>
+            <dd className="mt-1 font-medium text-slate-700">{row.productId}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Start</dt>
+            <dd className="mt-1 font-medium text-slate-700">{formatDateTime(row.startAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">End</dt>
+            <dd className="mt-1 font-medium text-slate-700">{formatDateTime(row.endAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Original Price</dt>
+            <dd className="mt-1 font-medium text-slate-700">{formatMoney(row.originalPrice)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Flash Price</dt>
+            <dd className="mt-1 font-medium text-slate-700">{formatMoney(row.flashPrice)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Flash Quantity</dt>
+            <dd className="mt-1 font-medium text-slate-700">{row.flashQuantity}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Sold Quantity</dt>
+            <dd className="mt-1 font-medium text-slate-700">{row.soldQuantity}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Purchase Limit</dt>
+            <dd className="mt-1 font-medium text-slate-700">
+              {row.purchaseLimit === null ? 'No limit' : row.purchaseLimit}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-slate-400">Time Slot</dt>
+            <dd className="mt-1 font-medium text-slate-700">{row.timeSlot}</dd>
+          </div>
+        </dl>
+      </article>
+    </div>
+  )
+}
+
+function FlashDealEditPopover({
+  row,
+  isSaving,
+  onClose,
+  onSave,
+}: {
+  row: FlashDealRow
+  isSaving: boolean
+  onClose: () => void
+  onSave: (input: UpdateFlashDealInput) => Promise<void> | void
+}) {
+  const [startAt, setStartAt] = useState(() => toLocalDateTimeInputValue(row.startAt))
+  const [endAt, setEndAt] = useState(() => toLocalDateTimeInputValue(row.endAt))
+  const [discountPercent, setDiscountPercent] = useState(
+    () => `${toDiscountPercent(row.originalPrice, row.flashPrice)}`,
+  )
+  const [flashQuantity, setFlashQuantity] = useState(() => `${row.flashQuantity}`)
+  const [purchaseLimit, setPurchaseLimit] = useState(
+    () => (row.purchaseLimit === null ? '' : `${row.purchaseLimit}`),
+  )
+  const [error, setError] = useState('')
+
+  const handleSubmit = async () => {
+    const parsedStart = fromLocalDateTimeInputValue(startAt)
+    const parsedEnd = fromLocalDateTimeInputValue(endAt)
+    if (!parsedStart || !parsedEnd || parsedEnd.getTime() <= parsedStart.getTime()) {
+      setError('End time must be later than start time.')
+      return
+    }
+
+    const parsedPercent = Number(discountPercent)
+    if (!Number.isFinite(parsedPercent) || parsedPercent <= 0 || parsedPercent >= 100) {
+      setError('Discount must be between 0 and 100.')
+      return
+    }
+
+    const parsedQuantity = Number(flashQuantity)
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      setError('Campaign stock must be a whole number greater than 0.')
+      return
+    }
+
+    let parsedLimit: number | null = null
+    const trimmedLimit = purchaseLimit.trim()
+    if (trimmedLimit.length > 0) {
+      parsedLimit = Number(trimmedLimit)
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1) {
+        setError('Purchase limit must be empty or a whole number greater than 0.')
+        return
+      }
+    }
+
+    setError('')
+    await onSave({
+      startAt: parsedStart.toISOString(),
+      endAt: parsedEnd.toISOString(),
+      discountPercent: parsedPercent,
+      flashQuantity: parsedQuantity,
+      purchaseLimit: parsedLimit,
+      originalPrice: row.originalPrice,
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close flash deal editor"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40"
+      />
+      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#dbeafe] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#1d4ed8]">
+              Edit Flash Deal
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">{row.productName}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+            aria-label="Close"
+            disabled={isSaving}
+          >
+            x
+          </button>
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-sm text-[#b91c1c]">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm text-slate-600">
+            Start Time
+            <input
+              type="datetime-local"
+              value={startAt}
+              onChange={(event) => setStartAt(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            End Time
+            <input
+              type="datetime-local"
+              value={endAt}
+              onChange={(event) => setEndAt(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            Discount (%)
+            <input
+              type="number"
+              min={1}
+              max={99}
+              step={0.01}
+              value={discountPercent}
+              onChange={(event) => setDiscountPercent(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            Campaign Stock
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={flashQuantity}
+              onChange={(event) => setFlashQuantity(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+            />
+          </label>
+          <label className="text-sm text-slate-600 sm:col-span-2">
+            Purchase Limit (optional)
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={purchaseLimit}
+              onChange={(event) => setPurchaseLimit(event.target.value)}
+              placeholder="No limit"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-[#cbd5e1] bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={isSaving}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </article>
+    </div>
+  )
+}
+
 function FlashDealsPromotionListSection({
   rows,
   refreshNonce = 0,
   onCreate,
+  onDelete,
+  onEdit,
 }: FlashDealsPromotionListSectionProps) {
   const [activeTab, setActiveTab] = useState<FlashDealsTab>('All')
   const [enabledById, setEnabledById] = useState<Record<string, boolean>>(() =>
@@ -358,6 +680,11 @@ function FlashDealsPromotionListSection({
   const [customDate, setCustomDate] = useState('')
   const [customDatePickerOpen, setCustomDatePickerOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [viewingRow, setViewingRow] = useState<FlashDealRow | null>(null)
+  const [editingRow, setEditingRow] = useState<FlashDealRow | null>(null)
+  const [deletingRowId, setDeletingRowId] = useState<string | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [actionError, setActionError] = useState('')
 
   const customPickerValue = useMemo(() => fromDateISO(customDate), [customDate])
 
@@ -408,6 +735,82 @@ function FlashDealsPromotionListSection({
     }))
   }
 
+  const handleView = (row: FlashDealRow) => {
+    setViewingRow(row)
+  }
+
+  const handleEdit = (row: FlashDealRow) => {
+    if (row.status === 'Expired') {
+      return
+    }
+
+    setEditingRow(row)
+  }
+
+  const handleDelete = async (row: FlashDealRow) => {
+    if (!onDelete) {
+      return
+    }
+
+    const shouldDelete = window.confirm(`Delete flash deal for "${row.productName}"?`)
+    if (!shouldDelete) {
+      return
+    }
+
+    setActionError('')
+    setDeletingRowId(row.id)
+    try {
+      await onDelete(row)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to delete flash deal.')
+    } finally {
+      setDeletingRowId(null)
+    }
+  }
+
+  const handleActionClick = (row: FlashDealRow, action: string) => {
+    const normalized = action.trim().toLowerCase()
+    if (normalized === 'delete') {
+      void handleDelete(row)
+      return
+    }
+
+    if (normalized === 'edit') {
+      handleEdit(row)
+      return
+    }
+
+    if (normalized === 'view') {
+      handleView(row)
+    }
+  }
+
+  const handleMobilePrimaryAction = (row: FlashDealRow) => {
+    if (row.status === 'Expired') {
+      handleView(row)
+      return
+    }
+
+    handleEdit(row)
+  }
+
+  const handleEditSave = async (input: UpdateFlashDealInput) => {
+    if (!editingRow || !onEdit) {
+      return
+    }
+
+    setActionError('')
+    setSavingEdit(true)
+    try {
+      await onEdit(editingRow, input)
+      setEditingRow(null)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to update flash deal.')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   const getActionClassName = (action: string) => {
     const normalized = action.trim().toLowerCase()
 
@@ -418,6 +821,11 @@ function FlashDealsPromotionListSection({
 
   return (
     <article className="bg-transparent pb-28 sm:rounded-2xl sm:border sm:border-[#dbeafe] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(37,99,235,0.8)]">
+      {actionError ? (
+        <p className="mb-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-sm text-[#b91c1c]">
+          {actionError}
+        </p>
+      ) : null}
       <div className="hidden sm:block">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -464,7 +872,7 @@ function FlashDealsPromotionListSection({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr key={row.id} className="align-top text-sm text-slate-700">
                   <td className="px-3 py-3.5">{row.timeSlot}</td>
                   <td className="px-3 py-3.5">
@@ -495,9 +903,13 @@ function FlashDealsPromotionListSection({
                         <li key={`${row.id}-${action}`}>
                           <button
                             type="button"
+                            onClick={() => handleActionClick(row, action)}
+                            disabled={deletingRowId === row.id}
                             className={`text-sm font-medium transition ${getActionClassName(action)}`}
                           >
-                            {action}
+                            {deletingRowId === row.id && action.trim().toLowerCase() === 'delete'
+                              ? 'Deleting...'
+                              : action}
                           </button>
                         </li>
                       ))}
@@ -505,6 +917,13 @@ function FlashDealsPromotionListSection({
                   </td>
                 </tr>
               ))}
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-sm text-slate-500" colSpan={7}>
+                    No flash deals match your selected filters.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -636,6 +1055,8 @@ function FlashDealsPromotionListSection({
                         row={row}
                         enabled={enabledById[row.id]}
                         onToggle={() => handleToggle(row.id)}
+                        onPrimaryAction={handleMobilePrimaryAction}
+                        onDelete={(item) => void handleDelete(item)}
                         showDateInCard={false}
                       />
                     ))}
@@ -682,6 +1103,17 @@ function FlashDealsPromotionListSection({
         title="Select custom date"
         minuteStep={30}
       />
+      {viewingRow ? (
+        <FlashDealDetailsPopover row={viewingRow} onClose={() => setViewingRow(null)} />
+      ) : null}
+      {editingRow ? (
+        <FlashDealEditPopover
+          row={editingRow}
+          isSaving={savingEdit}
+          onClose={() => setEditingRow(null)}
+          onSave={handleEditSave}
+        />
+      ) : null}
     </article>
   )
 }

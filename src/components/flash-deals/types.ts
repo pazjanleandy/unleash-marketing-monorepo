@@ -15,6 +15,15 @@ export type FlashDealsMetric = {
 export type FlashDealRow = {
   id: string
   timeSlot: string
+  startAt: string
+  endAt: string
+  productId: string
+  productName: string
+  originalPrice: number
+  flashPrice: number
+  flashQuantity: number
+  soldQuantity: number
+  purchaseLimit: number | null
   enabledProducts: number
   totalAvailable: number
   remindersSet: number | null

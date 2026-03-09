@@ -1,39 +1,151 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import DiscountCreateSection from './DiscountCreateSection'
 import DiscountMobilePanel from './DiscountMobilePanel'
 import DiscountPerformanceSection from './DiscountPerformanceSection'
 import DiscountPromotionListSection from './DiscountPromotionListSection'
-import {
-  discountCreationTools,
-  promotionPerformanceDateLabel,
-  promotionPerformanceMetrics,
-  promotionRows,
-  promotionTabs,
-} from './data'
-import type { DiscountPromotionTab, DiscountToolType, PromotionRow } from './types'
+import type { DiscountCreateTool, DiscountPromotionTab, DiscountToolType, PromotionMetric, PromotionRow } from './types'
+import { listDiscountPromotions } from '../../services/market/discounts.repo'
 
 type DiscountPageProps = {
   onBack: () => void
   onCreateTool?: (type: DiscountToolType) => void
   onEditPromotion?: (promotion: PromotionRow) => void
   onViewPromotion?: (promotion: PromotionRow) => void
+  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
 }
+
+const discountCreationTools: DiscountCreateTool[] = [
+  {
+    type: 'discount-promotions',
+    title: 'Discount Promotions',
+    description: 'Set a discount for a single product.',
+  },
+  {
+    type: 'bundle-deal',
+    title: 'Bundle Deal',
+    description: 'Set discounts for your products as bundles to increase average basket size.',
+  },
+  {
+    type: 'add-on-deal',
+    title: 'Add-on Deal',
+    description: 'Set a discount for products to be sold together.',
+  },
+]
+
+const promotionTabs: DiscountPromotionTab[] = [
+  'All',
+  'Discount Promotions',
+  'Bundle Deal',
+  'Add-on Deal',
+]
 
 function DiscountPage({
   onBack,
   onCreateTool,
   onEditPromotion,
   onViewPromotion,
+  onDeletePromotion,
 }: DiscountPageProps) {
   const [activeTab, setActiveTab] = useState<DiscountPromotionTab>('All')
+  const [promotionRows, setPromotionRows] = useState<PromotionRow[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [authRequired, setAuthRequired] = useState(false)
+  const [noShop, setNoShop] = useState(false)
+
+  const loadPromotions = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await listDiscountPromotions()
+      setPromotionRows(result.items)
+      setAuthRequired(result.authRequired)
+      setNoShop(result.noShop)
+    } catch (loadError) {
+      setPromotionRows([])
+      setAuthRequired(false)
+      setNoShop(false)
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load discount data.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadPromotions()
+  }, [loadPromotions])
+
+  const handleDeletePromotion = async (promotion: PromotionRow) => {
+    const shouldDelete = window.confirm(`Delete promotion "${promotion.name}"?`)
+    if (!shouldDelete) {
+      return
+    }
+
+    try {
+      if (onDeletePromotion) {
+        await onDeletePromotion(promotion)
+      }
+      await loadPromotions()
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete promotion.')
+    }
+  }
 
   const tabPromotions = useMemo(
     () =>
       activeTab === 'All'
         ? promotionRows
         : promotionRows.filter((promotion) => promotion.type === activeTab),
-    [activeTab],
+    [activeTab, promotionRows],
   )
+
+  const promotionPerformanceDateLabel = useMemo(() => {
+    const now = new Date()
+    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const format = (value: Date) => {
+      const day = `${value.getDate()}`.padStart(2, '0')
+      const month = `${value.getMonth() + 1}`.padStart(2, '0')
+      const year = value.getFullYear()
+      return `${day}-${month}-${year}`
+    }
+    return `Data from ${format(past)} to ${format(now)} GMT+8`
+  }, [])
+
+  const promotionPerformanceMetrics = useMemo<PromotionMetric[]>(() => {
+    const rows = promotionRows.length
+    const ongoing = promotionRows.filter((item) => item.status === 'Ongoing').length
+    const upcoming = promotionRows.filter((item) => item.status === 'Upcoming').length
+    const expired = promotionRows.filter((item) => item.status === 'Expired').length
+
+    return [
+      {
+        label: 'Promotions',
+        value: `${rows}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+      },
+      {
+        label: 'Ongoing',
+        value: `${ongoing}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+      },
+      {
+        label: 'Upcoming',
+        value: `${upcoming}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+      },
+      {
+        label: 'Expired',
+        value: `${expired}`,
+        comparisonLabel: 'Current total',
+        comparisonValue: 'Live',
+      },
+    ]
+  }, [promotionRows])
+
+  const showDataState = isLoading || Boolean(error) || authRequired || noShop
 
   return (
     <section
@@ -46,7 +158,21 @@ function DiscountPage({
         onCreateTool={onCreateTool}
         onEditPromotion={onEditPromotion}
         onViewPromotion={onViewPromotion}
+        onDeletePromotion={handleDeletePromotion}
       />
+      {showDataState ? (
+        <div className="mb-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 sm:hidden">
+          {isLoading ? (
+            <p>Loading promotions...</p>
+          ) : error ? (
+            <p>{error}</p>
+          ) : authRequired ? (
+            <p>Sign in to view discount promotions.</p>
+          ) : noShop ? (
+            <p>No shop found for this account.</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="hidden sm:block">
         <button
@@ -68,6 +194,20 @@ function DiscountPage({
         </div>
 
         <div className="mt-4 space-y-4">
+          {showDataState ? (
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              {isLoading ? (
+                <p>Loading promotions...</p>
+              ) : error ? (
+                <p>{error}</p>
+              ) : authRequired ? (
+                <p>Sign in to view discount promotions.</p>
+              ) : noShop ? (
+                <p>No shop found for this account.</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <DiscountCreateSection
             tools={discountCreationTools}
             onCreateTool={onCreateTool}
@@ -105,6 +245,7 @@ function DiscountPage({
             promotions={tabPromotions}
             onEditPromotion={onEditPromotion}
             onViewPromotion={onViewPromotion}
+            onDeletePromotion={handleDeletePromotion}
           />
         </div>
       </div>

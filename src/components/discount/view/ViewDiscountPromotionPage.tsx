@@ -11,25 +11,12 @@ type ProductMeta = {
   price: number
 }
 
-const productMetaByName: Record<string, ProductMeta> = {
-  'Fetsup Freeze-Dried Cat Food 1kg': { category: 'Cat Food', price: 29.7 },
-  'Fetsup Freeze-Dried Meat Pet Treats': { category: 'Pet Treats', price: 9.8 },
-  "Nature's Protection Cat Food with Fish": { category: 'Cat Food', price: 6.1 },
-  'Natures Protection Cat Food Pouch': { category: 'Cat Food', price: 6.2 },
-  'Pedigree Puppy Chicken Flavour': { category: 'Dog Food', price: 8.2 },
-  'PawGuard Flea & Tick Collar': { category: 'Dog Care', price: 12.5 },
-  'Cloud Nap Orthopedic Pet Bed': { category: 'Pet Bed', price: 34.9 },
-  'Whisker Bowl Automatic Water Fountain': { category: 'Pet Accessories', price: 21.3 },
-  'Purrfect Clumping Cat Litter 10L': { category: 'Cat Litter', price: 13.4 },
-  'BuddyLeash Reflective Dog Harness': { category: 'Dog Accessories', price: 15.9 },
-}
-
 function toCurrency(value: number) {
   return `₱${value.toFixed(2)}`
 }
 
 function getProductMeta(name: string): ProductMeta {
-  return productMetaByName[name] ?? { category: 'Pet Product', price: 12.9 }
+  return { category: 'Product', price: Math.max(name.length, 1) }
 }
 
 function ProductPreviewShape({ label }: { label: string }) {
@@ -258,3 +245,4 @@ function ViewDiscountPromotionPage({
 }
 
 export default ViewDiscountPromotionPage
+

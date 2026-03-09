@@ -25,10 +25,13 @@ export type PromotionMetric = {
 export type PromotionStatus = 'Ongoing' | 'Upcoming' | 'Expired'
 
 export type PromotionRow = {
+  id: string
   status: PromotionStatus
   name: string
   type: Exclude<DiscountPromotionTab, 'All'>
   products: string[]
+  productDiscounts: Record<string, string>
+  maxUses: number | null
   period: {
     start: string
     end: string

@@ -11,7 +11,14 @@ import {
 } from 'phosphor-react'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import CreateFlashDealBreadcrumb from './CreateFlashDealBreadcrumb'
-import FlashDealProductsModal from './FlashDealProductsModal'
+import FlashDealProductsModal, {
+  type FlashDealSelectableProduct,
+} from './FlashDealProductsModal'
+import {
+  listShopCategories,
+  listShopProducts,
+  type ShopCategory,
+} from '../../../services/market/products.repo'
 
 type FlashDealCriteriaCategory = {
   id: string
@@ -21,7 +28,7 @@ type FlashDealCriteriaCategory = {
 
 type CreateFlashDealPageProps = {
   onBack: () => void
-  onConfirm?: () => void
+  onConfirm?: (form: CreateFlashDealForm) => Promise<void> | void
 }
 
 type MobileFlashDealStep = 'setup' | 'products' | 'discount'
@@ -34,7 +41,23 @@ type FlashDealProductState = {
   enabled: boolean
 }
 
+export type CreateFlashDealForm = {
+  startAt: string
+  endAt: string
+  products: Array<{
+    productId: string
+    originalPrice: number
+    flashPrice: number
+    flashQuantity: number
+    purchaseLimit: number | null
+    isActive: boolean
+  }>
+}
+
 type FlashDealCatalogEntry = {
+  id: string
+  name: string
+  category: string
   originalPrice: number
   stock: number
   variations: string[]
@@ -58,95 +81,44 @@ const defaultRules = [
   'Repetition Control: No Limit',
 ]
 
-const criteriaCategories: FlashDealCriteriaCategory[] = [
-  {
-    id: 'all',
-    label: 'All',
-    rules: defaultRules,
-  },
-  {
-    id: 'litter',
-    label: 'Litter & Toilet',
-    rules: defaultRules,
-  },
-  {
-    id: 'food',
-    label: 'Pet Food',
-    rules: defaultRules,
-  },
-  {
-    id: 'diapering',
-    label: 'Diapering & Potty',
-    rules: defaultRules,
-  },
-  {
-    id: 'grooming',
-    label: 'Pet Grooming',
-    rules: defaultRules,
-  },
-  {
-    id: 'accessories',
-    label: 'Pet Accessories',
-    rules: defaultRules,
-  },
-  {
-    id: 'healthcare',
-    label: 'Pet Healthcare',
-    rules: defaultRules,
-  },
+const defaultCriteriaCategories: FlashDealCriteriaCategory[] = [
+  { id: 'all', label: 'All', rules: defaultRules },
 ]
 
-const flashDealProductCatalog: Record<string, FlashDealCatalogEntry> = {
-  'Petsup Freeze-Dried Cat Food 1kg': {
-    originalPrice: 297,
-    stock: 3,
-    variations: ['Tuna', 'Chicken', 'Beef Liver'],
-  },
-  'Petsup Freeze-Dried Meat Pet Treats 30g': {
-    originalPrice: 98,
-    stock: 22,
-    variations: ['Duck', 'Chicken Heart', 'Chicken'],
-  },
-  "Nature's Protection Cat Food with Fish": {
-    originalPrice: 61,
-    stock: 6,
-    variations: ['Adult', 'Kitten'],
-  },
-  'Natures Protection Cat Food Pouch Fish': {
-    originalPrice: 62,
-    stock: 6,
-    variations: ['Salmon', 'Ocean Fish'],
-  },
-  'Pedigree Puppy Chicken Flavour': {
-    originalPrice: 82,
-    stock: 2,
-    variations: ['1kg', '3kg'],
-  },
-  'PetSoft Clumping Cat Litter 10L': {
-    originalPrice: 149,
-    stock: 18,
-    variations: ['Lavender', 'Unscented'],
-  },
-  'PawCare Ear Cleaner 100ml': {
-    originalPrice: 75,
-    stock: 9,
-    variations: ['Default'],
-  },
-  'Glow Fur Gentle Shampoo 500ml': {
-    originalPrice: 109,
-    stock: 7,
-    variations: ['Aloe', 'Oatmeal'],
-  },
+function mapCriteriaCategories(items: ShopCategory[]): FlashDealCriteriaCategory[] {
+  const mapped = items.map((item) => ({
+    id: item.id,
+    label: item.name,
+    rules: defaultRules,
+  }))
+
+  return [{ id: 'all', label: 'All', rules: defaultRules }, ...mapped]
 }
 
-function getCatalogEntry(productName: string): FlashDealCatalogEntry {
-  return (
-    flashDealProductCatalog[productName] ?? {
-      originalPrice: 99,
-      stock: 5,
-      variations: ['Default'],
+function getCatalogEntry(
+  productId: string,
+  productsById: Map<string, FlashDealSelectableProduct>,
+): FlashDealCatalogEntry {
+  const product = productsById.get(productId)
+  if (product) {
+    return {
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      originalPrice: product.price,
+      stock: product.stock,
+      variations: [product.category || 'Default'],
     }
-  )
+  }
+
+  return {
+    id: productId,
+    name: 'Unknown product',
+    category: 'Unknown',
+    originalPrice: 0,
+    stock: 0,
+    variations: ['Default'],
+  }
 }
 
 function ProductImagePlaceholder({ name }: { name: string }) {
@@ -211,8 +183,7 @@ function deriveDiscountPercent(originalPrice: number, discountedPrice: string) {
   return `${Math.round(normalized)}`
 }
 
-function createProductState(productName: string): FlashDealProductState {
-  const catalogEntry = getCatalogEntry(productName)
+function createProductState(catalogEntry: FlashDealCatalogEntry): FlashDealProductState {
 
   return {
     discountedPrice: toPriceInput(catalogEntry.originalPrice),
@@ -323,15 +294,48 @@ function getInitialSlotStartDate() {
   return date
 }
 
+function toSubmitErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    try {
+      const serialized = JSON.stringify(error)
+      if (serialized && serialized !== '{}') {
+        return serialized
+      }
+    } catch {
+      return 'Unable to save flash deal.'
+    }
+  }
+
+  return 'Unable to save flash deal.'
+}
+
 function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   const [slotStartDateTime, setSlotStartDateTime] = useState(() =>
     toLocalDateTimeInputValue(getInitialSlotStartDate()),
   )
-  const [activeCriteriaId, setActiveCriteriaId] = useState(criteriaCategories[0]?.id ?? 'all')
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [criteriaCategories, setCriteriaCategories] = useState<FlashDealCriteriaCategory[]>(
+    defaultCriteriaCategories,
+  )
+  const [activeCriteriaId, setActiveCriteriaId] = useState('all')
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [availableProducts, setAvailableProducts] = useState<FlashDealSelectableProduct[]>([])
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+  const [productsError, setProductsError] = useState('')
+  const [productsAuthRequired, setProductsAuthRequired] = useState(false)
+  const [productsNoShop, setProductsNoShop] = useState(false)
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
+  const [categoriesError, setCategoriesError] = useState('')
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
   const [isProductsModalOpen, setIsProductsModalOpen] = useState(false)
-  const [productStateByName, setProductStateByName] = useState<
+  const [productStateById, setProductStateById] = useState<
     Record<string, FlashDealProductState>
   >({})
   const [batchDiscountPercent, setBatchDiscountPercent] = useState('')
@@ -350,6 +354,8 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   const [mobileBulkPurchaseLimit, setMobileBulkPurchaseLimit] = useState('')
   const [mobileBulkNoLimit, setMobileBulkNoLimit] = useState(false)
   const [mobileBulkEnabledOnly, setMobileBulkEnabledOnly] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const slotStartDate = useMemo(
     () => fromLocalDateTimeInputValue(slotStartDateTime),
@@ -359,20 +365,74 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     () => (slotStartDate ? addHours(slotStartDate, SLOT_DURATION_HOURS) : null),
     [slotStartDate],
   )
+  const productsById = useMemo(
+    () => new Map(availableProducts.map((product) => [product.id, product])),
+    [availableProducts],
+  )
+
+  const loadProducts = async () => {
+    setIsLoadingProducts(true)
+    setProductsError('')
+
+    try {
+      const result = await listShopProducts()
+      setAvailableProducts(
+        result.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          sales: item.sales ?? 0,
+          price: item.price,
+          stock: item.stock,
+          status: item.status,
+        })),
+      )
+      setProductsAuthRequired(result.authRequired)
+      setProductsNoShop(result.noShop)
+    } catch (error) {
+      setAvailableProducts([])
+      setProductsAuthRequired(false)
+      setProductsNoShop(false)
+      setProductsError(error instanceof Error ? error.message : 'Unable to load products.')
+    } finally {
+      setIsLoadingProducts(false)
+    }
+  }
+
+  const loadCategories = async () => {
+    setIsLoadingCategories(true)
+    setCategoriesError('')
+
+    try {
+      const result = await listShopCategories()
+      setCriteriaCategories(mapCriteriaCategories(result.items))
+      if (
+        activeCriteriaId !== 'all' &&
+        !result.items.some((category) => category.id === activeCriteriaId)
+      ) {
+        setActiveCriteriaId('all')
+      }
+    } catch (error) {
+      setCriteriaCategories(defaultCriteriaCategories)
+      setCategoriesError(error instanceof Error ? error.message : 'Unable to load categories.')
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }
 
   const activeCategoryRules = useMemo(() => {
     const activeCategory = criteriaCategories.find((category) => category.id === activeCriteriaId)
     return activeCategory?.rules ?? defaultRules
-  }, [activeCriteriaId])
+  }, [activeCriteriaId, criteriaCategories])
   const activeCategoryLabel = useMemo(
     () =>
       criteriaCategories.find((category) => category.id === activeCriteriaId)?.label ?? 'All',
-    [activeCriteriaId],
+    [activeCriteriaId, criteriaCategories],
   )
   const enabledProductCount = useMemo(
     () =>
-      selectedProducts.filter((productName) => productStateByName[productName]?.enabled).length,
-    [productStateByName, selectedProducts],
+      selectedProductIds.filter((productId) => productStateById[productId]?.enabled).length,
+    [productStateById, selectedProductIds],
   )
   const slotSummaryLabel = useMemo(() => {
     if (!slotStartDate || !slotEndDate) {
@@ -437,16 +497,17 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     return `${formatDateTime(slotStartDate)} - ${formatTime(slotEndDate)}`
   }, [slotEndDate, slotStartDate])
   const mobileStepTwoProducts = useMemo(() => {
-    return selectedProducts.map((name) => {
-      const catalogEntry = getCatalogEntry(name)
+    return selectedProductIds.map((productId) => {
+      const catalogEntry = getCatalogEntry(productId, productsById)
 
       return {
-        name,
+        id: productId,
+        name: catalogEntry.name,
         originalPrice: catalogEntry.originalPrice,
         stock: catalogEntry.stock,
       }
     })
-  }, [selectedProducts])
+  }, [productsById, selectedProductIds])
   const filteredMobileStepTwoProducts = useMemo(() => {
     const query = mobileStepTwoSearch.trim().toLowerCase()
 
@@ -459,10 +520,10 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     )
   }, [mobileStepTwoProducts, mobileStepTwoSearch])
   const productSummaryLabel =
-    selectedProducts.length === 0
+    selectedProductIds.length === 0
       ? '0 products'
-      : `${enabledProductCount}/${selectedProducts.length} enabled`
-  const canOpenDiscountStep = selectedProducts.length > 0
+      : `${enabledProductCount}/${selectedProductIds.length} enabled`
+  const canOpenDiscountStep = selectedProductIds.length > 0
   const isSetupComplete = Boolean(slotStartDate)
   const visibleCategoryRules = showAllMobileRules
     ? activeCategoryRules
@@ -476,32 +537,39 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     Boolean(mobileBulkCampaignStock) ||
     Boolean(mobileBulkPurchaseLimit) ||
     mobileBulkNoLimit
-  const mobileBulkTargetProductNames = useMemo(() => {
+  const mobileBulkTargetProductIds = useMemo(() => {
     if (!mobileBulkEnabledOnly) {
-      return selectedProducts
+      return selectedProductIds
     }
 
-    return selectedProducts.filter((productName) => {
-      const currentState = productStateByName[productName] ?? createProductState(productName)
+    return selectedProductIds.filter((productId) => {
+      const currentState =
+        productStateById[productId] ?? createProductState(getCatalogEntry(productId, productsById))
       return currentState.enabled
     })
-  }, [mobileBulkEnabledOnly, productStateByName, selectedProducts])
+  }, [mobileBulkEnabledOnly, productStateById, productsById, selectedProductIds])
 
-  const isConfirmDisabled = selectedProducts.length === 0 || !slotStartDate
+  const isConfirmDisabled = selectedProductIds.length === 0 || !slotStartDate
   const isMobileBulkApplyDisabled =
-    mobileBulkTargetProductNames.length === 0 || !hasMobileBulkInputs
+    mobileBulkTargetProductIds.length === 0 || !hasMobileBulkInputs
 
   useEffect(() => {
-    setProductStateByName((previous) => {
+    setProductStateById((previous) => {
       const next: Record<string, FlashDealProductState> = {}
 
-      selectedProducts.forEach((productName) => {
-        next[productName] = previous[productName] ?? createProductState(productName)
+      selectedProductIds.forEach((productId) => {
+        next[productId] =
+          previous[productId] ?? createProductState(getCatalogEntry(productId, productsById))
       })
 
       return next
     })
-  }, [selectedProducts])
+  }, [productsById, selectedProductIds])
+
+  useEffect(() => {
+    void loadProducts()
+    void loadCategories()
+  }, [])
 
   useEffect(() => {
     setShowAllMobileRules(false)
@@ -534,22 +602,22 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   }
 
   const handleProductsConfirm = (products: string[]) => {
-    setSelectedProducts(products)
+    setSelectedProductIds(products)
     setMobileStep('products')
     setIsProductsModalOpen(false)
   }
 
-  const handleRemoveSelectedProduct = (productName: string) => {
-    setSelectedProducts((previous) =>
-      previous.filter((itemName) => itemName !== productName),
+  const handleRemoveSelectedProduct = (productId: string) => {
+    setSelectedProductIds((previous) =>
+      previous.filter((id) => id !== productId),
     )
   }
 
-  const handleToggleMobileStepTwoProduct = (productName: string) => {
-    setSelectedProducts((previous) =>
-      previous.includes(productName)
-        ? previous.filter((itemName) => itemName !== productName)
-        : [...previous, productName],
+  const handleToggleMobileStepTwoProduct = (productId: string) => {
+    setSelectedProductIds((previous) =>
+      previous.includes(productId)
+        ? previous.filter((id) => id !== productId)
+        : [...previous, productId],
     )
   }
 
@@ -576,44 +644,44 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       return
     }
 
-    mobileBulkTargetProductNames.forEach((productName) => {
+    mobileBulkTargetProductIds.forEach((productId) => {
       if (mobileBulkDiscountPercent) {
-        handleDiscountPercentChange(productName, mobileBulkDiscountPercent)
+        handleDiscountPercentChange(productId, mobileBulkDiscountPercent)
       } else if (mobileBulkDiscountedPrice) {
-        handleDiscountedPriceChange(productName, mobileBulkDiscountedPrice)
+        handleDiscountedPriceChange(productId, mobileBulkDiscountedPrice)
       }
 
       if (mobileBulkCampaignStock) {
-        handleCampaignStockChange(productName, mobileBulkCampaignStock)
+        handleCampaignStockChange(productId, mobileBulkCampaignStock)
       }
 
       if (mobileBulkNoLimit) {
-        handlePurchaseLimitChange(productName, '')
+        handlePurchaseLimitChange(productId, '')
       } else if (mobileBulkPurchaseLimit) {
-        handlePurchaseLimitChange(productName, mobileBulkPurchaseLimit)
+        handlePurchaseLimitChange(productId, mobileBulkPurchaseLimit)
       }
     })
   }
 
   const updateProductState = (
-    productName: string,
+    productId: string,
     updates: Partial<FlashDealProductState>,
   ) => {
-    setProductStateByName((previous) => ({
+    setProductStateById((previous) => ({
       ...previous,
-      [productName]: {
-        ...(previous[productName] ?? createProductState(productName)),
+      [productId]: {
+        ...(previous[productId] ?? createProductState(getCatalogEntry(productId, productsById))),
         ...updates,
       },
     }))
   }
 
-  const handleDiscountPercentChange = (productName: string, nextValue: string) => {
+  const handleDiscountPercentChange = (productId: string, nextValue: string) => {
     const sanitized = sanitizeWholeNumber(nextValue)
-    const catalogEntry = getCatalogEntry(productName)
+    const catalogEntry = getCatalogEntry(productId, productsById)
 
     if (!sanitized) {
-      updateProductState(productName, {
+      updateProductState(productId, {
         discountPercent: '',
         discountedPrice: toPriceInput(catalogEntry.originalPrice),
       })
@@ -621,18 +689,18 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     }
 
     const normalizedPercent = `${Math.min(Number(sanitized), 99)}`
-    updateProductState(productName, {
+    updateProductState(productId, {
       discountPercent: normalizedPercent,
       discountedPrice: calculateDiscountedPrice(catalogEntry.originalPrice, normalizedPercent),
     })
   }
 
-  const handleDiscountedPriceChange = (productName: string, nextValue: string) => {
+  const handleDiscountedPriceChange = (productId: string, nextValue: string) => {
     const sanitized = sanitizeDecimal(nextValue)
-    const catalogEntry = getCatalogEntry(productName)
+    const catalogEntry = getCatalogEntry(productId, productsById)
 
     if (!sanitized) {
-      updateProductState(productName, {
+      updateProductState(productId, {
         discountedPrice: '',
         discountPercent: '',
       })
@@ -647,41 +715,43 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     const clampedPrice = Math.min(Math.max(parsed, 0), catalogEntry.originalPrice)
     const normalizedPrice = toPriceInput(clampedPrice)
 
-    updateProductState(productName, {
+    updateProductState(productId, {
       discountedPrice: normalizedPrice,
       discountPercent: deriveDiscountPercent(catalogEntry.originalPrice, normalizedPrice),
     })
   }
 
-  const handleCampaignStockChange = (productName: string, nextValue: string) => {
+  const handleCampaignStockChange = (productId: string, nextValue: string) => {
     const sanitized = sanitizeWholeNumber(nextValue)
-    const catalogEntry = getCatalogEntry(productName)
+    const catalogEntry = getCatalogEntry(productId, productsById)
 
     if (!sanitized) {
-      updateProductState(productName, { campaignStock: '' })
+      updateProductState(productId, { campaignStock: '' })
       return
     }
 
     const normalizedStock = Math.min(Number(sanitized), catalogEntry.stock)
-    updateProductState(productName, { campaignStock: `${normalizedStock}` })
+    updateProductState(productId, { campaignStock: `${normalizedStock}` })
   }
 
-  const handlePurchaseLimitChange = (productName: string, nextValue: string) => {
-    updateProductState(productName, { purchaseLimit: sanitizeWholeNumber(nextValue) })
+  const handlePurchaseLimitChange = (productId: string, nextValue: string) => {
+    updateProductState(productId, { purchaseLimit: sanitizeWholeNumber(nextValue) })
   }
 
-  const handleToggleProductEnabled = (productName: string) => {
-    const current = productStateByName[productName] ?? createProductState(productName)
-    updateProductState(productName, { enabled: !current.enabled })
+  const handleToggleProductEnabled = (productId: string) => {
+    const current =
+      productStateById[productId] ?? createProductState(getCatalogEntry(productId, productsById))
+    updateProductState(productId, { enabled: !current.enabled })
   }
 
   const handleBatchUpdateAll = () => {
-    setProductStateByName((previous) => {
+    setProductStateById((previous) => {
       const next = { ...previous }
 
-      selectedProducts.forEach((productName) => {
-        const catalogEntry = getCatalogEntry(productName)
-        const current = next[productName] ?? createProductState(productName)
+      selectedProductIds.forEach((productId) => {
+        const catalogEntry = getCatalogEntry(productId, productsById)
+        const current =
+          next[productId] ?? createProductState(getCatalogEntry(productId, productsById))
         const updated = { ...current }
 
         if (batchDiscountPercent) {
@@ -702,7 +772,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
           updated.purchaseLimit = batchPurchaseLimit
         }
 
-        next[productName] = updated
+        next[productId] = updated
       })
 
       return next
@@ -716,7 +786,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   }
 
   const handleBatchDelete = () => {
-    setSelectedProducts([])
+    setSelectedProductIds([])
   }
 
   const handleDateTimeConfirm = (date: Date | null) => {
@@ -769,17 +839,101 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     setSlotStartDateTime(toLocalDateTimeInputValue(candidate))
   }
 
-  const handleConfirm = () => {
-    if (isConfirmDisabled) {
+  const handleConfirm = async () => {
+    if (isConfirmDisabled || isSubmitting) {
       return
     }
 
-    if (onConfirm) {
-      onConfirm()
+    if (!slotStartDate || !slotEndDate) {
+      setSubmitError('Select a valid flash deal schedule.')
       return
     }
 
-    onBack()
+    const enabledProductIds = selectedProductIds.filter((productId) => {
+      const state =
+        productStateById[productId] ??
+        createProductState(getCatalogEntry(productId, productsById))
+      return state.enabled
+    })
+
+    if (enabledProductIds.length === 0) {
+      setSubmitError('Enable at least one product before confirming.')
+      return
+    }
+
+    const products: CreateFlashDealForm['products'] = []
+
+    for (const productId of enabledProductIds) {
+      const catalogEntry = getCatalogEntry(productId, productsById)
+      const state =
+        productStateById[productId] ??
+        createProductState(getCatalogEntry(productId, productsById))
+
+      if (catalogEntry.name === 'Unknown product') {
+        setSubmitError('One or more selected products are no longer available. Reload products and try again.')
+        return
+      }
+
+      const flashPrice = Number(state.discountedPrice)
+      if (!Number.isFinite(flashPrice) || flashPrice <= 0) {
+        setSubmitError(`Enter a valid discounted price for ${catalogEntry.name}.`)
+        return
+      }
+      if (flashPrice > catalogEntry.originalPrice) {
+        setSubmitError(`Discounted price cannot exceed original price for ${catalogEntry.name}.`)
+        return
+      }
+
+      const flashQuantity = Number(state.campaignStock)
+      if (!Number.isInteger(flashQuantity) || flashQuantity <= 0) {
+        setSubmitError(`Enter a valid campaign stock for ${catalogEntry.name}.`)
+        return
+      }
+      if (flashQuantity > catalogEntry.stock) {
+        setSubmitError(`Campaign stock cannot exceed available stock for ${catalogEntry.name}.`)
+        return
+      }
+
+      const purchaseLimitRaw = state.purchaseLimit.trim()
+      let purchaseLimit: number | null = null
+      if (purchaseLimitRaw.length > 0) {
+        const parsed = Number(purchaseLimitRaw)
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          setSubmitError(`Enter a valid purchase limit for ${catalogEntry.name}.`)
+          return
+        }
+        purchaseLimit = parsed
+      }
+
+      products.push({
+        productId,
+        originalPrice: catalogEntry.originalPrice,
+        flashPrice,
+        flashQuantity,
+        purchaseLimit,
+        isActive: true,
+      })
+    }
+
+    const payload: CreateFlashDealForm = {
+      startAt: slotStartDate.toISOString(),
+      endAt: slotEndDate.toISOString(),
+      products,
+    }
+
+    setSubmitError('')
+    setIsSubmitting(true)
+
+    try {
+      if (onConfirm) {
+        await onConfirm(payload)
+      }
+      onBack()
+    } catch (error) {
+      setSubmitError(toSubmitErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const selectedMobileDayForSlots = selectedMobileDay ?? getStartOfDay(new Date())
@@ -792,6 +946,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       className="motion-rise relative min-h-[calc(100vh-2.5rem)] overflow-hidden bg-[linear-gradient(165deg,_#f0f7ff_0%,_#f7fbff_40%,_#fdfefe_100%)] pb-32 sm:rounded-3xl sm:border sm:border-[#d6e7ff] sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_52px_-45px_rgba(30,64,175,0.5)]"
       style={{ animationDelay: '80ms' }}
     >
+      {submitError ? (
+        <p className="mx-4 mt-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c] sm:mx-0 sm:mt-0 sm:mb-4">
+          {submitError}
+        </p>
+      ) : null}
       <div className="pointer-events-none absolute -left-24 top-20 hidden h-72 w-72 rounded-full bg-[#c7e2ff]/45 blur-3xl sm:block" />
       <div className="pointer-events-none absolute -bottom-24 right-[-60px] hidden h-80 w-80 rounded-full bg-[#bae6fd]/45 blur-3xl sm:block" />
 
@@ -1189,6 +1348,13 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       )
                     })}
                   </div>
+                  {isLoadingCategories ? (
+                    <p className="mt-2 text-xs text-slate-500">Loading categories...</p>
+                  ) : categoriesError ? (
+                    <p className="mt-2 text-xs text-amber-700">
+                      {categoriesError}. Showing default profile only.
+                    </p>
+                  ) : null}
 
                   <ul className="mt-4 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
                     {activeCategoryRules.map((rule) => (
@@ -1232,10 +1398,29 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             <button
               type="button"
               onClick={handleAddProducts}
+              disabled={isLoadingProducts || productsAuthRequired || productsNoShop}
               className="mt-3 hidden h-9 items-center rounded-lg border border-[#2563eb] bg-white px-3 text-sm font-medium text-[#1d4ed8] transition hover:bg-[#eff6ff] sm:inline-flex"
             >
               + Add Products
             </button>
+            {isLoadingProducts ? (
+              <p className="mt-2 text-xs text-slate-500">Loading products...</p>
+            ) : productsAuthRequired ? (
+              <p className="mt-2 text-xs text-slate-500">Sign in to load shop products.</p>
+            ) : productsNoShop ? (
+              <p className="mt-2 text-xs text-slate-500">No shop found for this account.</p>
+            ) : productsError ? (
+              <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                <span>{productsError}</span>
+                <button
+                  type="button"
+                  onClick={() => void loadProducts()}
+                  className="font-semibold text-[#1d4ed8] hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
 
             {mobileStep === 'products' ? (
               <>
@@ -1243,11 +1428,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   <button
                     type="button"
                     onClick={handleAddProducts}
+                    disabled={isLoadingProducts || productsAuthRequired || productsNoShop}
                     className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#2563eb] bg-white px-3 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
                   >
                     + Add Products
                   </button>
-                  {selectedProducts.length > 0 ? (
+                  {selectedProductIds.length > 0 ? (
                     <label className="flex min-h-11 items-center rounded-sm border border-[#dbeafe] bg-white px-3">
                       <MagnifyingGlass size={16} className="mr-2 text-slate-400" />
                       <input
@@ -1261,17 +1447,17 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   ) : null}
                 </div>
 
-                {selectedProducts.length > 0 ? (
+                {selectedProductIds.length > 0 ? (
                   <div className="mt-2 sm:hidden">
                     <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
                       {filteredMobileStepTwoProducts.length > 0 ? (
                         <ul className="divide-y divide-slate-200">
                           {filteredMobileStepTwoProducts.map((product, index) => {
-                            const selected = selectedProducts.includes(product.name)
+                            const selected = selectedProductIds.includes(product.id)
                             const checkboxId = `mobile-step-two-checkbox-${index}`
 
                             return (
-                              <li key={`mobile-step-two-${product.name}`}>
+                              <li key={`mobile-step-two-${product.id}`}>
                                 <label
                                   htmlFor={checkboxId}
                                   className={`flex w-full items-center gap-3 px-3 py-3 transition focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#93c5fd] ${
@@ -1289,7 +1475,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                       id={checkboxId}
                                       type="checkbox"
                                       checked={selected}
-                                      onChange={() => handleToggleMobileStepTwoProduct(product.name)}
+                                      onChange={() => handleToggleMobileStepTwoProduct(product.id)}
                                       aria-label={`Select ${product.name}`}
                                       className="h-5 w-5 rounded border-[#94a3b8] text-[#2563eb] focus:ring-[#93c5fd]"
                                     />
@@ -1327,7 +1513,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
             {mobileStep === 'discount' ? (
               <div className="mt-3 space-y-3 sm:hidden">
-                {selectedProducts.length > 0 ? (
+                {selectedProductIds.length > 0 ? (
                   <>
                     <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#dbeafe]">
                       <div className="flex items-start justify-between gap-3">
@@ -1341,7 +1527,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           </p>
                         </div>
                         <span className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-2.5 py-1 text-[11px] font-semibold text-[#1d4ed8]">
-                          {mobileBulkTargetProductNames.length} target
+                          {mobileBulkTargetProductIds.length} target
                         </span>
                       </div>
 
@@ -1466,29 +1652,30 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2563eb] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
                         >
                           {mobileBulkEnabledOnly
-                            ? `Apply to enabled (${mobileBulkTargetProductNames.length})`
-                            : `Apply to all selected (${selectedProducts.length})`}
+                            ? `Apply to enabled (${mobileBulkTargetProductIds.length})`
+                            : `Apply to all selected (${selectedProductIds.length})`}
                         </button>
                       </form>
                     </article>
 
                     <div className="space-y-3">
-                      {selectedProducts.map((productName) => {
-                        const catalogEntry = getCatalogEntry(productName)
+                      {selectedProductIds.map((productId) => {
+                        const catalogEntry = getCatalogEntry(productId, productsById)
                         const productState =
-                          productStateByName[productName] ?? createProductState(productName)
+                          productStateById[productId] ??
+                          createProductState(getCatalogEntry(productId, productsById))
 
                         return (
                           <article
-                            key={`mobile-discount-${productName}`}
+                            key={`mobile-discount-${productId}`}
                             className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#dbeafe]"
                           >
                             <div className="flex items-start gap-3">
-                              <ProductImagePlaceholder name={productName} />
+                              <ProductImagePlaceholder name={catalogEntry.name} />
 
                               <div className="min-w-0 flex-1">
                                 <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
-                                  {productName}
+                                  {catalogEntry.name}
                                 </p>
                                 <p className="mt-1 line-clamp-1 text-xs text-slate-500">
                                   {catalogEntry.variations.join(' • ')}
@@ -1504,9 +1691,9 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                               <div className="flex flex-col items-end gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => handleRemoveSelectedProduct(productName)}
+                                  onClick={() => handleRemoveSelectedProduct(productId)}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#bfdbfe] text-[#1d4ed8] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
-                                  aria-label={`Remove ${productName}`}
+                                  aria-label={`Remove ${catalogEntry.name}`}
                                 >
                                   <X size={14} weight="bold" />
                                 </button>
@@ -1515,14 +1702,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                   type="button"
                                   role="switch"
                                   aria-checked={productState.enabled}
-                                  onClick={() => handleToggleProductEnabled(productName)}
+                                  onClick={() => handleToggleProductEnabled(productId)}
                                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
                                     productState.enabled ? 'bg-[#2563eb]' : 'bg-slate-300'
                                   }`}
                                   aria-label={
                                     productState.enabled
-                                      ? `Disable ${productName}`
-                                      : `Enable ${productName}`
+                                      ? `Disable ${catalogEntry.name}`
+                                      : `Enable ${catalogEntry.name}`
                                   }
                                 >
                                   <span
@@ -1554,7 +1741,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                       inputMode="numeric"
                                       value={productState.discountPercent}
                                       onChange={(event) =>
-                                        handleDiscountPercentChange(productName, event.target.value)
+                                        handleDiscountPercentChange(productId, event.target.value)
                                       }
                                       className="w-full border-0 bg-transparent text-sm text-slate-900 focus:outline-none"
                                     />
@@ -1573,7 +1760,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                       inputMode="decimal"
                                       value={productState.discountedPrice}
                                       onChange={(event) =>
-                                        handleDiscountedPriceChange(productName, event.target.value)
+                                        handleDiscountedPriceChange(productId, event.target.value)
                                       }
                                       className="ml-2 w-full border-0 bg-transparent text-sm text-slate-900 focus:outline-none"
                                     />
@@ -1591,7 +1778,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                     inputMode="numeric"
                                     value={productState.campaignStock}
                                     onChange={(event) =>
-                                      handleCampaignStockChange(productName, event.target.value)
+                                      handleCampaignStockChange(productId, event.target.value)
                                     }
                                     className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
                                   />
@@ -1606,7 +1793,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                     inputMode="numeric"
                                     value={productState.purchaseLimit}
                                     onChange={(event) =>
-                                      handlePurchaseLimitChange(productName, event.target.value)
+                                      handlePurchaseLimitChange(productId, event.target.value)
                                     }
                                     placeholder="No Limit"
                                     className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
@@ -1628,7 +1815,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             ) : null}
 
             <div className="hidden sm:block">
-              {selectedProducts.length > 0 ? (
+              {selectedProductIds.length > 0 ? (
               <div className="mt-3 space-y-3">
                 <div className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] px-3 py-2 text-xs text-slate-600">
                   You have enabled {enabledProductCount} out of 50 product(s) for this Flash Deals
@@ -1731,18 +1918,19 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedProducts.map((productName) => {
-                        const catalogEntry = getCatalogEntry(productName)
+                      {selectedProductIds.map((productId) => {
+                        const catalogEntry = getCatalogEntry(productId, productsById)
                         const productState =
-                          productStateByName[productName] ?? createProductState(productName)
+                          productStateById[productId] ??
+                          createProductState(getCatalogEntry(productId, productsById))
 
                         return (
-                          <tr key={productName} className="border-t border-slate-100 text-sm text-slate-700">
+                          <tr key={productId} className="border-t border-slate-100 text-sm text-slate-700">
                             <td className="px-3 py-3 align-top">
                               <div className="flex items-start gap-2.5">
-                                <ProductImagePlaceholder name={productName} />
+                                <ProductImagePlaceholder name={catalogEntry.name} />
                                 <div className="min-w-0">
-                                  <p className="font-medium text-slate-900">{productName}</p>
+                                  <p className="font-medium text-slate-900">{catalogEntry.name}</p>
                                   <p className="mt-0.5 text-xs text-slate-500">
                                     {catalogEntry.variations.join(' | ')}
                                   </p>
@@ -1758,7 +1946,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                   inputMode="decimal"
                                   value={productState.discountedPrice}
                                   onChange={(event) =>
-                                    handleDiscountedPriceChange(productName, event.target.value)
+                                    handleDiscountedPriceChange(productId, event.target.value)
                                   }
                                   className="ml-1 w-20 border-0 bg-transparent text-sm text-slate-900 focus:outline-none"
                                 />
@@ -1771,7 +1959,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                   inputMode="numeric"
                                   value={productState.discountPercent}
                                   onChange={(event) =>
-                                    handleDiscountPercentChange(productName, event.target.value)
+                                    handleDiscountPercentChange(productId, event.target.value)
                                   }
                                   className="w-14 border-0 bg-transparent text-sm text-slate-900 focus:outline-none"
                                 />
@@ -1784,7 +1972,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 inputMode="numeric"
                                 value={productState.campaignStock}
                                 onChange={(event) =>
-                                  handleCampaignStockChange(productName, event.target.value)
+                                  handleCampaignStockChange(productId, event.target.value)
                                 }
                                 className="h-9 w-20 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
                               />
@@ -1796,7 +1984,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 inputMode="numeric"
                                 value={productState.purchaseLimit}
                                 onChange={(event) =>
-                                  handlePurchaseLimitChange(productName, event.target.value)
+                                  handlePurchaseLimitChange(productId, event.target.value)
                                 }
                                 placeholder="No Limit"
                                 className="h-9 w-24 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
@@ -1805,14 +1993,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             <td className="px-3 py-3 align-top">
                               <button
                                 type="button"
-                                onClick={() => handleToggleProductEnabled(productName)}
+                                onClick={() => handleToggleProductEnabled(productId)}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                                   productState.enabled ? 'bg-[#2563eb]' : 'bg-slate-300'
                                 }`}
                                 aria-label={
                                   productState.enabled
-                                    ? `Disable ${productName}`
-                                    : `Enable ${productName}`
+                                    ? `Disable ${catalogEntry.name}`
+                                    : `Enable ${catalogEntry.name}`
                                 }
                               >
                                 <span
@@ -1825,9 +2013,9 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             <td className="px-3 py-3 align-top">
                               <button
                                 type="button"
-                                onClick={() => handleRemoveSelectedProduct(productName)}
+                                onClick={() => handleRemoveSelectedProduct(productId)}
                                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#bfdbfe] text-[#1d4ed8] transition hover:bg-[#eff6ff]"
-                                aria-label={`Remove ${productName}`}
+                                aria-label={`Remove ${catalogEntry.name}`}
                               >
                                 <X size={14} weight="bold" />
                               </button>
@@ -1927,11 +2115,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               </button>
               <button
                 type="button"
-                onClick={handleConfirm}
-                disabled={isConfirmDisabled}
+                onClick={() => void handleConfirm()}
+                disabled={isConfirmDisabled || isSubmitting}
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563eb] px-5 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
               >
-                Confirm
+                {isSubmitting ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           )}
@@ -1941,17 +2129,18 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
           <button
             type="button"
             onClick={onBack}
+            disabled={isSubmitting}
             className="inline-flex h-9 items-center justify-center rounded border border-[#d1d5db] bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
-            disabled={isConfirmDisabled}
+            onClick={() => void handleConfirm()}
+            disabled={isConfirmDisabled || isSubmitting}
             className="inline-flex h-9 items-center justify-center rounded bg-[#2563eb] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
           >
-            Confirm
+            {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
         </div>
       </div>
@@ -1969,7 +2158,13 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
       <FlashDealProductsModal
         isOpen={isProductsModalOpen}
-        selectedProducts={selectedProducts}
+        selectedProductIds={selectedProductIds}
+        products={availableProducts}
+        isLoadingProducts={isLoadingProducts}
+        productsError={productsError}
+        authRequired={productsAuthRequired}
+        noShop={productsNoShop}
+        onRetryLoadProducts={() => void loadProducts()}
         onClose={() => setIsProductsModalOpen(false)}
         onConfirm={handleProductsConfirm}
       />
@@ -1978,3 +2173,5 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 }
 
 export default CreateFlashDealPage
+
+

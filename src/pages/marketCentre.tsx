@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -9,12 +9,25 @@ import type { DiscountToolType, PromotionRow } from '../components/discount/type
 import ViewDiscountPromotionPage from '../components/discount/view/ViewDiscountPromotionPage'
 import FlashDealsPage from '../components/flash-deals/FlashDealsPage'
 import CreateFlashDealPage from '../components/flash-deals/create/CreateFlashDealPage'
+import type { CreateFlashDealForm } from '../components/flash-deals/create/CreateFlashDealPage'
 import VouchersPage from '../components/vouchers/VouchersPage'
 import CreateVoucherPage from '../components/vouchers/create/CreateVoucherPage'
 import type { VoucherItem } from '../components/vouchers/types'
 import type { CreateVoucherForm } from '../components/vouchers/create/types'
 import type { CreateDiscountPromotionForm } from '../components/discount/create/types'
 import Sidebar from '../sidebar/sidebar'
+import {
+  createVoucher,
+  deleteVoucher,
+  listVouchers,
+  updateVoucher,
+} from '../services/market/vouchers.repo'
+import {
+  createDiscountPromotion,
+  deleteDiscountPromotion,
+  updateDiscountPromotion,
+} from '../services/market/discounts.repo'
+import { createFlashDeals } from '../services/market/flashDeals.repo'
 
 export type MarketCentreView =
   | 'dashboard'
@@ -155,9 +168,13 @@ function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
       createVoucherDefaults.maxDistributionPerBuyer,
     ),
     displaySetting: createVoucherDefaults.displaySetting,
-    productScope: voucher.type.toLowerCase().includes('specific')
-      ? 'specific-products'
-      : 'all-products',
+    productScope:
+      voucher.type.toLowerCase().includes('product') ||
+      voucher.type.toLowerCase().includes('private') ||
+      voucher.type.toLowerCase().includes('live') ||
+      voucher.type.toLowerCase().includes('video')
+        ? 'specific-products'
+        : 'all-products',
   }
 }
 
@@ -172,9 +189,10 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
     parsedEnd ?? (parsedStart ? new Date(parsedStart.getTime() + 60 * 60 * 1000) : oneHourLater),
   )
 
-  const productDiscounts = promotion.products.reduce<Record<string, string>>(
-    (accumulator, productName) => {
-      accumulator[productName] = ''
+  const selectedProductIds = Object.keys(promotion.productDiscounts)
+  const productDiscounts = selectedProductIds.reduce<Record<string, string>>(
+    (accumulator, productId) => {
+      accumulator[productId] = promotion.productDiscounts[productId] ?? ''
       return accumulator
     },
     {},
@@ -184,9 +202,8 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
     promotionName: promotion.name,
     startDateTime,
     endDateTime,
-    discountRate: '',
-    purchaseLimit: '',
-    products: promotion.products,
+    purchaseLimit: promotion.maxUses === null ? '' : `${promotion.maxUses}`,
+    products: selectedProductIds,
     productDiscounts,
   }
 }
@@ -221,6 +238,11 @@ function MarketCentrePage() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const wasSidebarOpenRef = useRef(false)
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
+  const [voucherItems, setVoucherItems] = useState<VoucherItem[]>([])
+  const [voucherLoading, setVoucherLoading] = useState(false)
+  const [voucherError, setVoucherError] = useState<string | null>(null)
+  const [voucherAuthRequired, setVoucherAuthRequired] = useState(false)
+  const [voucherNoShop, setVoucherNoShop] = useState(false)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
   const [viewingPromotion, setViewingPromotion] = useState<PromotionRow | null>(null)
   const editInitialForm = useMemo(
@@ -265,6 +287,49 @@ function MarketCentrePage() {
     setActiveView('vouchers')
   }
 
+  const loadVouchers = useCallback(async () => {
+    setVoucherLoading(true)
+    setVoucherError(null)
+
+    try {
+      const result = await listVouchers()
+      setVoucherItems(result.items)
+      setVoucherAuthRequired(result.authRequired)
+      setVoucherNoShop(result.noShop)
+    } catch (error) {
+      setVoucherItems([])
+      setVoucherAuthRequired(false)
+      setVoucherNoShop(false)
+      setVoucherError(error instanceof Error ? error.message : 'Unable to load vouchers.')
+    } finally {
+      setVoucherLoading(false)
+    }
+  }, [])
+
+  const handleVoucherConfirm = async (form: CreateVoucherForm) => {
+    if (editingVoucher?.id) {
+      await updateVoucher(editingVoucher.id, form)
+    } else {
+      await createVoucher(form)
+    }
+
+    await loadVouchers()
+  }
+
+  const handleDeleteVoucher = async (voucher: VoucherItem) => {
+    const shouldDelete = window.confirm(`Delete voucher ${voucher.code}?`)
+    if (!shouldDelete) {
+      return
+    }
+
+    try {
+      await deleteVoucher(voucher.id)
+      await loadVouchers()
+    } catch (error) {
+      setVoucherError(error instanceof Error ? error.message : 'Unable to delete voucher.')
+    }
+  }
+
   const handleCreateDiscountTool = (type: DiscountToolType) => {
     setEditingPromotion(null)
     setViewingPromotion(null)
@@ -294,6 +359,19 @@ function MarketCentrePage() {
     setActiveView('discount')
   }
 
+  const handleDiscountConfirm = async (form: CreateDiscountPromotionForm) => {
+    if (editingPromotion?.id) {
+      await updateDiscountPromotion(editingPromotion.id, form)
+    } else {
+      await createDiscountPromotion(form)
+    }
+    setEditingPromotion(null)
+  }
+
+  const handleDeleteDiscountPromotion = async (promotion: PromotionRow) => {
+    await deleteDiscountPromotion(promotion.id)
+  }
+
   const handleViewDiscountBack = () => {
     setViewingPromotion(null)
     setActiveView('discount')
@@ -305,6 +383,10 @@ function MarketCentrePage() {
 
   const handleCreateFlashDealBack = () => {
     setActiveView('flash-deals')
+  }
+
+  const handleFlashDealConfirm = async (form: CreateFlashDealForm) => {
+    await createFlashDeals(form)
   }
 
   const handleSidebarSelectView = (view: MarketCentreView) => {
@@ -376,6 +458,12 @@ function MarketCentrePage() {
       setIsSidebarOpen(false)
     }
   }, [isMobileViewport])
+
+  useEffect(() => {
+    if (activeView === 'vouchers') {
+      void loadVouchers()
+    }
+  }, [activeView, loadVouchers])
 
   useEffect(() => {
     if (!isMobileViewport || !isSidebarOpen) {
@@ -770,6 +858,7 @@ function MarketCentrePage() {
                 onCreateTool={handleCreateDiscountTool}
                 onEditPromotion={handleEditDiscountPromotion}
                 onViewPromotion={handleViewDiscountPromotion}
+                onDeletePromotion={handleDeleteDiscountPromotion}
               />
             ) : activeView === 'flash-deals' ? (
               <FlashDealsPage
@@ -777,11 +866,15 @@ function MarketCentrePage() {
                 onCreate={handleCreateFlashDeal}
               />
             ) : activeView === 'create-flash-deal' ? (
-              <CreateFlashDealPage onBack={handleCreateFlashDealBack} />
+              <CreateFlashDealPage
+                onBack={handleCreateFlashDealBack}
+                onConfirm={handleFlashDealConfirm}
+              />
             ) : activeView === 'create-discount-promotion' ? (
               <CreateDiscountPromotionPage
                 key={discountFormKey}
                 onBack={handleDiscountFormBack}
+                onConfirm={handleDiscountConfirm}
                 mode={editingPromotion ? 'edit' : 'create'}
                 initialForm={editDiscountInitialForm}
               />
@@ -797,11 +890,20 @@ function MarketCentrePage() {
                     onBack={() => setActiveView('marketing')}
                     onCreate={handleCreateVoucher}
                     onEdit={handleEditVoucher}
+                    onDelete={handleDeleteVoucher}
+                    vouchers={voucherItems}
+                    isLoading={voucherLoading}
+                    error={voucherError}
+                    isAuthRequired={voucherAuthRequired}
+                    hasNoShop={voucherNoShop}
+                    onRetry={() => void loadVouchers()}
+                    canManage={!voucherAuthRequired && !voucherNoShop}
                   />
                 ) : (
                   <CreateVoucherPage
                     key={voucherFormKey}
                     onBack={handleVoucherFormBack}
+                    onConfirm={handleVoucherConfirm}
                     mode={editingVoucher ? 'edit' : 'create'}
                     initialForm={editInitialForm}
                   />
