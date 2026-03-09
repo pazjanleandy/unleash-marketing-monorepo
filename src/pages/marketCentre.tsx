@@ -5,6 +5,8 @@ import { toolSections } from '../components/marketing/data'
 import type { ToolCard } from '../components/marketing/types'
 import DiscountPage from '../components/discount/DiscountPage'
 import CreateDiscountPromotionPage from '../components/discount/create/CreateDiscountPromotionPage'
+import CreateBundleDealPage from '../components/discount/create/CreateBundleDealPage'
+import CreateAddOnDealPage from '../components/discount/create/CreateAddOnDealPage'
 import type { DiscountToolType, PromotionRow } from '../components/discount/types'
 import ViewDiscountPromotionPage from '../components/discount/view/ViewDiscountPromotionPage'
 import FlashDealsPage from '../components/flash-deals/FlashDealsPage'
@@ -42,6 +44,8 @@ export type MarketCentreView =
   | 'flash-deals'
   | 'create-flash-deal'
   | 'create-discount-promotion'
+  | 'create-bundle-deal'
+  | 'create-add-on-deal'
   | 'view-discount-promotion'
   | 'vouchers'
   | 'create-voucher'
@@ -82,6 +86,8 @@ const marketingViews: Set<MarketCentreView> = new Set([
   'flash-deals',
   'create-flash-deal',
   'create-discount-promotion',
+  'create-bundle-deal',
+  'create-add-on-deal',
   'view-discount-promotion',
   'vouchers',
   'create-voucher',
@@ -336,7 +342,15 @@ function MarketCentrePage() {
 
     if (type === 'discount-promotions') {
       setActiveView('create-discount-promotion')
+      return
     }
+
+    if (type === 'bundle-deal') {
+      setActiveView('create-bundle-deal')
+      return
+    }
+
+    setActiveView('create-add-on-deal')
   }
 
   const handleEditDiscountPromotion = (promotion: PromotionRow) => {
@@ -413,6 +427,8 @@ function MarketCentrePage() {
       active:
         activeView === 'discount' ||
         activeView === 'create-discount-promotion' ||
+        activeView === 'create-bundle-deal' ||
+        activeView === 'create-add-on-deal' ||
         activeView === 'view-discount-promotion',
     },
     {
@@ -443,9 +459,12 @@ function MarketCentrePage() {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
     const handleChange = (event: MediaQueryListEvent) => {
       setIsMobileViewport(event.matches)
+
+      if (!event.matches) {
+        setIsSidebarOpen(false)
+      }
     }
 
-    setIsMobileViewport(mediaQuery.matches)
     mediaQuery.addEventListener('change', handleChange)
 
     return () => {
@@ -878,6 +897,10 @@ function MarketCentrePage() {
                 mode={editingPromotion ? 'edit' : 'create'}
                 initialForm={editDiscountInitialForm}
               />
+            ) : activeView === 'create-bundle-deal' ? (
+              <CreateBundleDealPage onBack={handleDiscountFormBack} />
+            ) : activeView === 'create-add-on-deal' ? (
+              <CreateAddOnDealPage onBack={handleDiscountFormBack} />
             ) : activeView === 'view-discount-promotion' && viewingPromotion ? (
               <ViewDiscountPromotionPage
                 promotion={viewingPromotion}

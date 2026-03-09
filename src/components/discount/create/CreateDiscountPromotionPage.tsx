@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
+import type { DiscountToolType } from '../types'
 import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
 import DiscountPromotionBasicInformationCard from './DiscountPromotionBasicInformationCard'
 import DiscountPromotionProductsCard from './DiscountPromotionProductsCard'
@@ -10,6 +11,21 @@ type CreateDiscountPromotionPageProps = {
   onConfirm?: (form: CreateDiscountPromotionForm) => Promise<void> | void
   mode?: 'create' | 'edit'
   initialForm?: CreateDiscountPromotionForm
+  toolType?: DiscountToolType
+}
+
+type CreateDiscountWorkflowCopy = {
+  sectionLabel: string
+  mobileCreateTitle: string
+  desktopCreateTitle: string
+  editTitle: string
+  createSubtitle: string
+  editSubtitle: string
+  nameLabel: string
+  namePlaceholder: string
+  discountLabel: string
+  emptyStateMobile: string
+  emptyStateDesktop: string
 }
 
 function toLocalDateTimeInputValue(date: Date) {
@@ -116,11 +132,60 @@ function getInitialForm(initialForm?: CreateDiscountPromotionForm): CreateDiscou
   }
 }
 
+const createDiscountWorkflowCopy: Record<DiscountToolType, CreateDiscountWorkflowCopy> = {
+  'discount-promotions': {
+    sectionLabel: 'Discount Promotions',
+    mobileCreateTitle: 'Create New Discount',
+    desktopCreateTitle: 'Create New Discount Promotion',
+    editTitle: 'Edit Discount',
+    createSubtitle: 'Build a promotion for pet products on Unleash.',
+    editSubtitle: 'Update your selected product discounts on Unleash.',
+    nameLabel: 'Discount Name',
+    namePlaceholder: 'Enter your discount name here',
+    discountLabel: 'Discount',
+    emptyStateMobile:
+      'Select at least 1 product first. Discount name, date range, and percentage fields will appear after product selection.',
+    emptyStateDesktop:
+      'Select at least 1 product first. Discount promotion name and date range will appear here after product selection.',
+  },
+  'bundle-deal': {
+    sectionLabel: 'Bundle Deal',
+    mobileCreateTitle: 'Create Bundle Deal',
+    desktopCreateTitle: 'Create Bundle Deal',
+    editTitle: 'Edit Bundle Deal',
+    createSubtitle: 'Set discounted bundles to increase average basket size.',
+    editSubtitle: 'Update your selected bundle products on Unleash.',
+    nameLabel: 'Bundle Deal Name',
+    namePlaceholder: 'Enter your bundle deal name here',
+    discountLabel: 'Bundle Discount',
+    emptyStateMobile:
+      'Select at least 1 product first. Bundle deal details and date range will appear after product selection.',
+    emptyStateDesktop:
+      'Select at least 1 product first. Bundle deal details and date range will appear here after product selection.',
+  },
+  'add-on-deal': {
+    sectionLabel: 'Add-on Deal',
+    mobileCreateTitle: 'Create Add-on Deal',
+    desktopCreateTitle: 'Create Add-on Deal',
+    editTitle: 'Edit Add-on Deal',
+    createSubtitle: 'Set discounted add-on combinations for complementary products.',
+    editSubtitle: 'Update your selected add-on products on Unleash.',
+    nameLabel: 'Add-on Deal Name',
+    namePlaceholder: 'Enter your add-on deal name here',
+    discountLabel: 'Add-on Discount',
+    emptyStateMobile:
+      'Select at least 1 product first. Add-on deal details and date range will appear after product selection.',
+    emptyStateDesktop:
+      'Select at least 1 product first. Add-on deal details and date range will appear here after product selection.',
+  },
+}
+
 function CreateDiscountPromotionPage({
   onBack,
   onConfirm,
   mode = 'create',
   initialForm,
+  toolType = 'discount-promotions',
 }: CreateDiscountPromotionPageProps) {
   const [form, setForm] = useState<CreateDiscountPromotionForm>(() =>
     getInitialForm(initialForm),
@@ -131,11 +196,10 @@ function CreateDiscountPromotionPage({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const hasSelectedProducts = form.products.length > 0
   const isEditMode = mode === 'edit'
-  const mobileTitle = isEditMode ? 'Edit Discount' : 'Create New Discount'
-  const desktopTitle = isEditMode ? 'Edit Discount' : 'Create New Discount Promotion'
-  const subtitle = isEditMode
-    ? 'Update your selected product discounts on Unleash.'
-    : 'Build a promotion for pet products on Unleash.'
+  const copy = createDiscountWorkflowCopy[toolType]
+  const mobileTitle = isEditMode ? copy.editTitle : copy.mobileCreateTitle
+  const desktopTitle = isEditMode ? copy.editTitle : copy.desktopCreateTitle
+  const subtitle = isEditMode ? copy.editSubtitle : copy.createSubtitle
 
   const setField = <K extends keyof CreateDiscountPromotionForm>(
     field: K,
@@ -302,7 +366,7 @@ function CreateDiscountPromotionPage({
           <div className="mt-3 border-y border-slate-200 bg-white">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between">
-                <p className="text-[13px] font-medium text-slate-700">Discount Name</p>
+                <p className="text-[13px] font-medium text-slate-700">{copy.nameLabel}</p>
                 <span className="text-xs text-slate-400">{form.promotionName.length}/150</span>
               </div>
               <input
@@ -310,7 +374,7 @@ function CreateDiscountPromotionPage({
                 maxLength={150}
                 value={form.promotionName}
                 onChange={(event) => setField('promotionName', event.target.value)}
-                placeholder="Enter your discount name here"
+                placeholder={copy.namePlaceholder}
                 className="mt-2 h-10 w-full border-0 border-b border-[#e2e8f0] px-0 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
               />
             </div>
@@ -369,6 +433,23 @@ function CreateDiscountPromotionPage({
 
             <div className="border-t border-slate-200 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] font-medium text-slate-700">{copy.discountLabel}</p>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.discountRate}
+                    onChange={(event) => setField('discountRate', event.target.value)}
+                    placeholder="0"
+                    className="h-9 w-16 border-0 bg-transparent text-right text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  />
+                  <span className="text-xs font-semibold text-slate-400">% OFF</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
                 <p className="text-[13px] font-medium text-slate-700">Purchase Limit</p>
                 <input
                   type="text"
@@ -383,14 +464,19 @@ function CreateDiscountPromotionPage({
           </div>
         ) : (
           <div className="mx-4 mt-3 rounded-lg border border-dashed border-[#bfdbfe] bg-white px-4 py-3 text-xs text-slate-500">
-            Select at least 1 product first. Discount name, date range, and percentage
-            fields will appear after product selection.
+            {copy.emptyStateMobile}
           </div>
         )}
       </div>
 
       <div className="hidden sm:block">
-        <CreateDiscountPromotionBreadcrumb onBack={onBack} mode={mode} />
+        <CreateDiscountPromotionBreadcrumb
+          onBack={onBack}
+          mode={mode}
+          sectionLabel={copy.sectionLabel}
+          createTitle={copy.desktopCreateTitle}
+          editTitle={copy.editTitle}
+        />
         <header className="mt-2 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4">
           <h1 className="text-3xl font-semibold text-[#1E40AF]">{desktopTitle}</h1>
         </header>
@@ -407,8 +493,7 @@ function CreateDiscountPromotionPage({
           />
         ) : (
           <article className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] p-5 text-sm text-slate-600">
-            Select at least 1 product first. Discount promotion name and date range
-            will appear here after product selection.
+            {copy.emptyStateDesktop}
           </article>
         )}
       </div>

@@ -1,13 +1,19 @@
 type CreateDiscountPromotionBreadcrumbProps = {
   onBack: () => void
   mode?: 'create' | 'edit'
+  sectionLabel?: string
+  createTitle?: string
+  editTitle?: string
 }
 
 function CreateDiscountPromotionBreadcrumb({
   onBack,
   mode = 'create',
+  sectionLabel = 'Discount Promotions',
+  createTitle = 'Create New Discount Promotion',
+  editTitle = 'Edit Discount',
 }: CreateDiscountPromotionBreadcrumbProps) {
-  const title = mode === 'edit' ? 'Edit Discount' : 'Create New Discount Promotion'
+  const title = mode === 'edit' ? editTitle : createTitle
 
   return (
     <nav
@@ -35,7 +41,7 @@ function CreateDiscountPromotionBreadcrumb({
         onClick={onBack}
         className="max-w-[170px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
       >
-        Discount Promotions
+        {sectionLabel}
       </button>
       <span className="text-slate-400">&gt;</span>
       <span className="truncate font-semibold text-slate-700">
