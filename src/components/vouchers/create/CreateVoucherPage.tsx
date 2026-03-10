@@ -20,6 +20,16 @@ const stepTitles = [
   'Preview',
 ] as const
 
+function toLocalDateTimeInputValue(date: Date) {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 type FormErrorMap = Partial<Record<keyof CreateVoucherForm, string>>
 
 const fieldElementIds: Partial<Record<keyof CreateVoucherForm, string>> = {
@@ -29,6 +39,8 @@ const fieldElementIds: Partial<Record<keyof CreateVoucherForm, string>> = {
   usageQuantity: 'create-voucher-usage-quantity',
   maxDistributionPerBuyer: 'create-voucher-max-distribution-per-buyer',
   displaySetting: 'create-voucher-display-all-pages',
+  startDateTime: 'create-voucher-start-time',
+  endDateTime: 'create-voucher-end-time',
 }
 
 const defaultForm: CreateVoucherForm = {
@@ -40,6 +52,13 @@ const defaultForm: CreateVoucherForm = {
   maxDistributionPerBuyer: '',
   displaySetting: 'all-pages',
   productScope: 'all-products',
+  startDateTime: toLocalDateTimeInputValue(new Date()),
+  endDateTime: toLocalDateTimeInputValue(new Date(Date.now() + 60 * 60 * 1000)),
+}
+
+function parseDateTime(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 function CreateVoucherPage({
@@ -115,6 +134,8 @@ function CreateVoucherPage({
         'minimumBasketPrice',
         'usageQuantity',
         'maxDistributionPerBuyer',
+        'startDateTime',
+        'endDateTime',
       )
 
       if (!form.discountAmount.trim()) {
@@ -132,6 +153,21 @@ function CreateVoucherPage({
       if (!form.maxDistributionPerBuyer.trim()) {
         nextErrors.maxDistributionPerBuyer =
           'Max distribution per buyer is required.'
+      }
+
+      const start = parseDateTime(form.startDateTime)
+      const end = parseDateTime(form.endDateTime)
+
+      if (!start) {
+        nextErrors.startDateTime = 'Start time is required.'
+      }
+
+      if (!end) {
+        nextErrors.endDateTime = 'End time is required.'
+      }
+
+      if (start && end && end.getTime() <= start.getTime()) {
+        nextErrors.endDateTime = 'End time must be later than start time.'
       }
     }
 

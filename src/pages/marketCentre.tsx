@@ -114,6 +114,8 @@ const createVoucherDefaults: CreateVoucherForm = {
   maxDistributionPerBuyer: '1',
   displaySetting: 'all-pages',
   productScope: 'all-products',
+  startDateTime: toLocalDateTimeInputValue(new Date()),
+  endDateTime: toLocalDateTimeInputValue(new Date(Date.now() + 60 * 60 * 1000)),
 }
 
 function toLocalDateTimeInputValue(date: Date) {
@@ -157,6 +159,9 @@ function toWholeNumberInputValue(value: number | string, fallback: string) {
 }
 
 function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
+  const now = new Date()
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+
   return {
     rewardType: 'discount',
     discountType: voucher.icon === 'percent' ? 'percentage' : 'fixed-amount',
@@ -181,6 +186,8 @@ function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
       voucher.type.toLowerCase().includes('video')
         ? 'specific-products'
         : 'all-products',
+    startDateTime: createVoucherDefaults.startDateTime || toLocalDateTimeInputValue(now),
+    endDateTime: createVoucherDefaults.endDateTime || toLocalDateTimeInputValue(oneHourLater),
   }
 }
 

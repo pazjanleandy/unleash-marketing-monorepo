@@ -15,4 +15,6 @@ export type CreateVoucherForm = {
   maxDistributionPerBuyer: string
   displaySetting: VoucherDisplaySetting
   productScope: ProductScope
+  startDateTime: string
+  endDateTime: string
 }

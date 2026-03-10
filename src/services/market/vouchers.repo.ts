@@ -94,7 +94,6 @@ function resolveVoucherType(
     toLowerToken(metadataRecord.voucherType),
     toLowerToken(metadataRecord.channel),
     toLowerToken(row.name),
-    toLowerToken(row.description),
   ]
 
   const matchedKey = (Object.keys(VOUCHER_TYPE_LABELS) as Array<keyof typeof VOUCHER_TYPE_LABELS>)
@@ -128,7 +127,7 @@ function toVoucherItem(row: VoucherRowWithRelations): VoucherItem {
   return {
     id: row.id,
     code: row.code,
-    name: row.name?.trim() || row.description?.trim() || row.code,
+    name: row.name?.trim() || row.code,
     type: voucherTypeLabel,
     discountAmount: isPercentage ? `${discountNumeric}%` : formatMoney(discountNumeric),
     quantity: usageQuantity,
@@ -174,7 +173,12 @@ function buildVoucherPayload(form: CreateVoucherForm, shopId: string): VoucherIn
         : form.productScope === 'specific-products'
           ? 'Product Voucher'
           : 'Shop Voucher',
-    description: form.displaySetting === 'voucher-code' ? 'Voucher Code Campaign' : 'Shop Voucher',
+    voucher_type:
+      form.displaySetting === 'voucher-code'
+        ? 'private'
+        : form.productScope === 'specific-products'
+          ? 'product'
+          : 'shop',
     discount_type: form.discountType === 'percentage' ? 'percentage' : 'fixed',
     discount_value: discountAmount,
     discount_amount: discountAmount,
@@ -184,10 +188,14 @@ function buildVoucherPayload(form: CreateVoucherForm, shopId: string): VoucherIn
     usage_per_user: usagePerUser,
     used_count: 0,
     total_used: 0,
-    start_at: now.toISOString(),
-    end_at: end.toISOString(),
-    claim_start_at: now.toISOString(),
-    claim_end_at: end.toISOString(),
+    start_at: form.startDateTime ? new Date(form.startDateTime).toISOString() : now.toISOString(),
+    end_at: form.endDateTime ? new Date(form.endDateTime).toISOString() : end.toISOString(),
+    claim_start_at: form.startDateTime
+      ? new Date(form.startDateTime).toISOString()
+      : now.toISOString(),
+    claim_end_at: form.endDateTime
+      ? new Date(form.endDateTime).toISOString()
+      : end.toISOString(),
     is_active: true,
     metadata: {
       voucher_category:
@@ -237,7 +245,7 @@ export async function listVouchers(filters: VoucherListFilters = {}): Promise<Vo
   const { data, error } = await supabase
     .from('vouchers')
     .select(
-      'id,shop_id,code,description,name,voucher_type,discount_type,discount_value,discount_amount,min_spend,max_discount,usage_limit,usage_quantity,usage_per_user,used_count,total_used,start_at,end_at,claim_start_at,claim_end_at,is_active,metadata,created_at,updated_at,voucher_products(product_id)',
+      'id,shop_id,code,name,voucher_type,discount_type,discount_value,discount_amount,min_spend,max_discount,usage_limit,usage_quantity,usage_per_user,used_count,total_used,start_at,end_at,claim_start_at,claim_end_at,is_active,metadata,created_at,updated_at,voucher_products(product_id)',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
@@ -297,7 +305,12 @@ export async function updateVoucher(voucherId: string, form: CreateVoucherForm) 
         : form.productScope === 'specific-products'
           ? 'Product Voucher'
           : 'Shop Voucher',
-    description: form.displaySetting === 'voucher-code' ? 'Voucher Code Campaign' : 'Shop Voucher',
+    voucher_type:
+      form.displaySetting === 'voucher-code'
+        ? 'private'
+        : form.productScope === 'specific-products'
+          ? 'product'
+          : 'shop',
     discount_type: form.discountType === 'percentage' ? 'percentage' : 'fixed',
     discount_value: discountAmount,
     discount_amount: discountAmount,
@@ -305,6 +318,10 @@ export async function updateVoucher(voucherId: string, form: CreateVoucherForm) 
     usage_limit: usageQuantity,
     usage_quantity: usageQuantity,
     usage_per_user: usagePerUser,
+    start_at: form.startDateTime ? new Date(form.startDateTime).toISOString() : undefined,
+    end_at: form.endDateTime ? new Date(form.endDateTime).toISOString() : undefined,
+    claim_start_at: form.startDateTime ? new Date(form.startDateTime).toISOString() : undefined,
+    claim_end_at: form.endDateTime ? new Date(form.endDateTime).toISOString() : undefined,
     metadata: {
       voucher_category:
         form.displaySetting === 'voucher-code'

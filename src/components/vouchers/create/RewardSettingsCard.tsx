@@ -1,6 +1,7 @@
-import { useId } from 'react'
+import { useId, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { CreateVoucherForm, DiscountType, RewardType } from './types'
+import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 
 type RewardSettingsCardProps = {
   value: CreateVoucherForm
@@ -99,6 +100,55 @@ function CurrencyInput({
   )
 }
 
+type VoucherDateTimeField = 'startDateTime' | 'endDateTime'
+
+function fromLocalDateTimeInputValue(value: string) {
+  if (!value) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+
+  if (!match) {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+
+  return new Date(year, month, day, hour, minute, 0, 0)
+}
+
+function toLocalDateTimeInputValue(date: Date) {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+function formatDateTimeLabel(value: string) {
+  const date = fromLocalDateTimeInputValue(value)
+
+  if (!date) {
+    return 'Select date & time'
+  }
+
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
+
 function RewardSettingsCard({
   value,
   onChange,
@@ -106,6 +156,8 @@ function RewardSettingsCard({
   fieldIds,
 }: RewardSettingsCardProps) {
   const rewardTypeGroupName = useId()
+  const [activePickerField, setActivePickerField] =
+    useState<VoucherDateTimeField | null>(null)
 
   const setField = <K extends keyof CreateVoucherForm>(
     field: K,
@@ -120,6 +172,57 @@ function RewardSettingsCard({
 
   const handleDiscountTypeChange = (discountType: DiscountType) => {
     setField('discountType', discountType)
+  }
+
+  const activePickerValue = useMemo(() => {
+    if (!activePickerField) {
+      return null
+    }
+
+    return fromLocalDateTimeInputValue(value[activePickerField])
+  }, [activePickerField, value])
+
+  const handleDateTimeConfirm = (date: Date | null) => {
+    if (!activePickerField) {
+      return
+    }
+
+    if (!date) {
+      setField(activePickerField, '')
+      return
+    }
+
+    const nextValue = toLocalDateTimeInputValue(date)
+
+    if (activePickerField === 'startDateTime') {
+      const currentEnd = fromLocalDateTimeInputValue(value.endDateTime)
+
+      if (!currentEnd || currentEnd.getTime() < date.getTime()) {
+        const oneHourAfterStart = new Date(date.getTime() + 60 * 60 * 1000)
+        onChange({
+          ...value,
+          startDateTime: nextValue,
+          endDateTime: toLocalDateTimeInputValue(oneHourAfterStart),
+        })
+        return
+      }
+    }
+
+    if (activePickerField === 'endDateTime') {
+      const currentStart = fromLocalDateTimeInputValue(value.startDateTime)
+
+      if (!currentStart || currentStart.getTime() > date.getTime()) {
+        const oneHourBeforeEnd = new Date(date.getTime() - 60 * 60 * 1000)
+        onChange({
+          ...value,
+          startDateTime: toLocalDateTimeInputValue(oneHourBeforeEnd),
+          endDateTime: nextValue,
+        })
+        return
+      }
+    }
+
+    setField(activePickerField, nextValue)
   }
 
   return (
@@ -239,7 +342,70 @@ function RewardSettingsCard({
             />
           </FieldRow>
         </div>
+
+        <FieldRow
+          label="Voucher Promotion Period"
+          error={fieldErrors?.startDateTime || fieldErrors?.endDateTime}
+        >
+          <div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                id={fieldIds?.startDateTime}
+                type="button"
+                onClick={() => setActivePickerField('startDateTime')}
+                className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
+                  activePickerField === 'startDateTime'
+                    ? 'border-[#2563EB] bg-[#eff6ff]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                }`}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Start
+                </span>
+                <span className="mt-0.5 text-[14px] text-slate-900">
+                  {formatDateTimeLabel(value.startDateTime)}
+                </span>
+              </button>
+
+              <button
+                id={fieldIds?.endDateTime}
+                type="button"
+                onClick={() => setActivePickerField('endDateTime')}
+                className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
+                  activePickerField === 'endDateTime'
+                    ? 'border-[#2563EB] bg-[#eff6ff]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                }`}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  End
+                </span>
+                <span className="mt-0.5 text-[14px] text-slate-900">
+                  {formatDateTimeLabel(value.endDateTime)}
+                </span>
+              </button>
+            </div>
+            <p className="mt-1.5 text-[13px] text-slate-600">
+              Voucher period must be less than 180 days.
+            </p>
+          </div>
+        </FieldRow>
       </div>
+
+      <MobileDateTimePicker
+        isOpen={activePickerField !== null}
+        value={activePickerValue}
+        onClose={() => setActivePickerField(null)}
+        onChange={handleDateTimeConfirm}
+        mode="datetime"
+        disablePast
+        minuteStep={5}
+        title={
+          activePickerField === 'endDateTime'
+            ? 'Select end date & time'
+            : 'Select start date & time'
+        }
+      />
     </article>
   )
 }

@@ -19,7 +19,6 @@ export type Database = {
           id: string
           shop_id: string
           code: string
-          description: string | null
           name: string | null
           voucher_type: string | null
           discount_type: 'percentage' | 'fixed'
@@ -44,7 +43,6 @@ export type Database = {
         Insert: {
           shop_id: string
           code: string
-          description?: string | null
           name?: string | null
           voucher_type?: string | null
           discount_type: 'percentage' | 'fixed'
@@ -66,7 +64,6 @@ export type Database = {
         }
         Update: {
           code?: string
-          description?: string | null
           name?: string | null
           voucher_type?: string | null
           discount_type?: 'percentage' | 'fixed'

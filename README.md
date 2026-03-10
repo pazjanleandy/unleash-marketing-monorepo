@@ -1,7 +1,7 @@
 # Unleash Marketing Centre (Frontend)
 
 Frontend-only Marketing Centre built with React + TypeScript + Vite + Tailwind.
-Last Updated: 2026-03-02
+Last Updated: 2026-02-23
 
 ## Tech Stack
 - React 19
@@ -21,10 +21,6 @@ Last Updated: 2026-03-02
   - Discount promotions dashboard.
 - `create-discount-promotion`
   - Create/Edit discount promotion flow.
-- `create-bundle-deal`
-  - Create/Edit bundle deal flow.
-- `create-add-on-deal`
-  - Create/Edit add-on deal flow.
 - `view-discount-promotion`
   - Read-only discount promotion detail view.
 - `flash-deals`
@@ -51,45 +47,12 @@ Authentication currently uses browser local storage via `src/lib/usersStore.ts`:
 Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal module flows:
 - Clicking `Discount`, `Flash Deals`, or `Vouchers` from Marketing Tools opens their pages.
 - Flash Deals `Create` opens the create flow (`create-flash-deal`).
-- Discount `Create` actions open dedicated create flows for:
-  - Discount Promotions (`create-discount-promotion`)
-  - Bundle Deal (`create-bundle-deal`)
-  - Add-on Deal (`create-add-on-deal`)
 - Discount `Edit` on Discount Promotion rows opens prefilled edit form (`create-discount-promotion` in edit mode).
 - Discount `View` opens read-only detail page (`view-discount-promotion`).
 - Voucher `Edit` opens prefilled voucher edit form.
 - Back/Cancel actions return to the previous parent view.
 
 ## Daily Update
-### 2026-03-02
-
-#### 1) Bundle Deal + Add-on Deal Create Pages
-- Added two new discount create views in `src/pages/marketCentre.tsx`:
-  - `create-bundle-deal`
-  - `create-add-on-deal`
-- Wired `Create` actions from Discount create cards (desktop + mobile) so each card opens its own flow.
-
-#### 2) Reused Create Discount Flow Structure (Desktop + Mobile)
-- Refactored `CreateBundleDealPage` and `CreateAddOnDealPage` to reuse the same structure and behavior as `CreateDiscountPromotionPage`.
-- Added configurable copy by deal type (`discount-promotions`, `bundle-deal`, `add-on-deal`) so headers, labels, empty states, and breadcrumb text adapt without duplicating the flow.
-- Preserved existing mobile integration including bottom action bar and `MobileDateTimePicker`.
-
-#### 3) Navigation State Alignment
-- Updated marketing active-view sets in:
-  - `src/pages/marketCentre.tsx`
-  - `src/sidebar/sidebar.tsx`
-- Discount remains highlighted in sidebar/quick links for:
-  - `create-discount-promotion`
-  - `create-bundle-deal`
-  - `create-add-on-deal`
-  - `view-discount-promotion`
-
-### 2026-02-26
-
-#### 1) Top Navigation Settings Icon Update
-- Updated the desktop top navigation middle utility icon (between Notifications and User Profile) to a clear gear icon in `src/pages/marketCentre.tsx`.
-- Keeps the existing button behavior and layout unchanged while improving settings icon recognizability.
-
 ### 2026-02-23
 
 #### 1) Sidebar Navigation Enhancements
@@ -366,7 +329,7 @@ Inside `src/pages/marketCentre.tsx`, view-state navigation remains for internal 
   - now `2` columns on very small widths, `3` columns from ~380px up
 
 ## Component Map
-As of: 2026-03-02
+As of: 2026-02-23
 
 ### App Shell
 - `src/App.tsx`
@@ -417,8 +380,6 @@ As of: 2026-03-02
 ### Create Discount Components
 - `src/components/discount/create/CreateDiscountPromotionPage.tsx`
 - `src/components/discount/create/CreateDiscountPromotionBreadcrumb.tsx`
-- `src/components/discount/create/CreateBundleDealPage.tsx`
-- `src/components/discount/create/CreateAddOnDealPage.tsx`
 - `src/components/discount/create/DiscountPromotionBasicInformationCard.tsx`
 - `src/components/discount/create/DiscountPromotionProductsCard.tsx`
 - `src/components/discount/create/types.ts`
@@ -471,23 +432,10 @@ npm install @supabase/supabase-js
 
 ```
 
-##backend updates
-- Added executable Supabase SQL migrations in `supabase/migrations/`:
-- `001_marketing_core_schema.sql` for core marketing tables (`shops`, `categories`, `products`, `vouchers`, `voucher_products`, `voucher_usages`, `product_discounts`, `flash_deals`) plus constraints and indexes.
-- `002_marketing_rls_policies.sql` for owner-scoped RLS policies using `auth.uid()` and `shops.owner_id`.
-- Added typed Supabase client entry `src/supabase.ts` and DB type scaffold `src/types/database.ts`.
-- Added vouchers backend service `src/services/market/vouchers.repo.ts` with owner-scoped shop resolution and voucher list/create/update/delete methods.
-- Integrated vouchers UI with backend states in:
-- `src/pages/marketCentre.tsx`
-- `src/components/vouchers/VouchersPage.tsx`
-- `src/components/vouchers/create/CreateVoucherPage.tsx`
-- Added products backend service `src/services/market/products.repo.ts`.
-- Updated `src/components/discount/create/DiscountPromotionProductsCard.tsx` to load products from `public.products` (owner-scoped), use `product_id` as selection identity, and support loading/auth/no-shop/error+retry states.
-- Added future service stubs:
-- `src/services/market/discounts.repo.ts`
-- `src/services/market/flashDeals.repo.ts`
-
 ## Scope Notes
 - Marketing tools data remains frontend sample data.
-- Login and sign-up now use Supabase Auth.
-- Discount list/performance modules and flash deals modules still use frontend sample data.
+- Current auth flow is localStorage-based (`public.users`) for development/demo.
+- Passwords in local storage are not production-safe and should be replaced by backend auth.
+- `src/supabase.js` exists for integration prep, but runtime auth is not yet using Supabase.
+
+## Backend Updates
