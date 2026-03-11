@@ -78,23 +78,23 @@ function toDatabaseError(error: unknown, action: string) {
   const lowerMessage = message.toLowerCase()
 
   if (
-    lowerMessage.includes('relation "discount_promotions" does not exist') ||
-    lowerMessage.includes("table 'discount_promotions' not found")
+    lowerMessage.includes('relation "discount_section" does not exist') ||
+    lowerMessage.includes("table 'discount_section' not found")
   ) {
     return new Error(
-      `${message}. The database schema is not up to date. Apply migration 003_discount_promotions.sql to the same Supabase project used by this app.`,
+      `${message}. The database schema is not up to date. Apply migration 003_discount_section.sql to the same Supabase project used by this app.`,
     )
   }
 
   if (lowerMessage.includes('promotion_id') && lowerMessage.includes('does not exist')) {
     return new Error(
-      `${message}. Column product_discounts.promotion_id is missing. Apply migration 003_discount_promotions.sql.`,
+      `${message}. Column product_discounts.promotion_id is missing. Apply migration 003_discount_section.sql.`,
     )
   }
 
   if (lowerMessage.includes('row-level security') || lowerMessage.includes('permission denied')) {
     return new Error(
-      `${message}. RLS may be blocking this action. Verify discount_promotions/product_discounts owner policies in your live DB.`,
+      `${message}. RLS may be blocking this action. Verify discount_section/product_discounts owner policies in your live DB.`,
     )
   }
 
@@ -243,11 +243,12 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
   }
 
   const { data, error } = await supabase
-    .from('discount_promotions')
+    .from('discount_section')
     .select(
       'id,name,start_at,end_at,max_uses,is_active,product_discounts(id,product_id,discount_type,discount_value,products:products!product_discounts_product_fkey(prodname))',
     )
     .eq('shop_id', shopId)
+    .eq('campaign_type', 'promotion')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -299,7 +300,7 @@ export async function createDiscountPromotion(form: CreateDiscountPromotionForm)
 
   const payload = validatePromotionForm(form)
   const { data: promotion, error: promotionError } = await supabase
-    .from('discount_promotions')
+    .from('discount_section')
     .insert({
       shop_id: shopId,
       name: payload.promotionName,
@@ -307,6 +308,7 @@ export async function createDiscountPromotion(form: CreateDiscountPromotionForm)
       end_at: payload.endAtIso,
       max_uses: payload.maxUses,
       is_active: true,
+      campaign_type: 'promotion',
     })
     .select('id')
     .single()
@@ -355,13 +357,14 @@ export async function updateDiscountPromotion(
 
   const payload = validatePromotionForm(form)
   const { error: promotionError } = await supabase
-    .from('discount_promotions')
+    .from('discount_section')
     .update({
       name: payload.promotionName,
       start_at: payload.startAtIso,
       end_at: payload.endAtIso,
       max_uses: payload.maxUses,
       is_active: true,
+      campaign_type: 'promotion',
       updated_at: new Date().toISOString(),
     })
     .eq('id', promotionId)
@@ -412,7 +415,7 @@ export async function deleteDiscountPromotion(promotionId: string) {
   }
 
   const { error } = await supabase
-    .from('discount_promotions')
+    .from('discount_section')
     .delete()
     .eq('id', promotionId)
     .eq('shop_id', shopId)

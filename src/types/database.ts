@@ -118,7 +118,7 @@ export type Database = {
           product_id?: string
         }
       }
-      discount_promotions: {
+      discount_section: {
         Row: {
           id: string
           shop_id: string
@@ -130,6 +130,7 @@ export type Database = {
           is_active: boolean
           created_at: string | null
           updated_at: string | null
+          campaign_type: 'promotion' | 'bundle' | 'add-on'
         }
         Insert: {
           shop_id: string
@@ -139,6 +140,7 @@ export type Database = {
           max_uses?: number | null
           used_count?: number
           is_active?: boolean
+          campaign_type?: 'promotion' | 'bundle' | 'add-on'
         }
         Update: {
           name?: string
@@ -148,6 +150,7 @@ export type Database = {
           used_count?: number
           is_active?: boolean
           updated_at?: string
+          campaign_type?: 'promotion' | 'bundle' | 'add-on'
         }
       }
       product_discounts: {

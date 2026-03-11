@@ -1,7 +1,7 @@
 -- Run this in Supabase SQL Editor against the same project used by VITE_SUPABASE_URL.
 
--- 1) Verify discount_promotions table exists.
-select to_regclass('public.discount_promotions') as discount_promotions_table;
+-- 1) Verify discount_section table exists.
+select to_regclass('public.discount_section') as discount_section_table;
 
 -- 2) Verify product_discounts.promotion_id exists.
 select
@@ -22,7 +22,7 @@ select
   cmd
 from pg_policies4
 where schemaname = 'public'
-  and tablename in ('discount_promotions', 'product_discounts')
+  and tablename in ('discount_section', 'product_discounts')
 order by tablename, policyname;
 
 -- 4) Verify RLS is enabled.
@@ -31,5 +31,5 @@ select
   relrowsecurity
 from pg_class
 where relnamespace = 'public'::regnamespace
-  and relname in ('discount_promotions', 'product_discounts')
+  and relname in ('discount_section', 'product_discounts')
 order by relname;

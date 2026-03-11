@@ -190,6 +190,7 @@ function CreateDiscountPromotionPage({
   const [form, setForm] = useState<CreateDiscountPromotionForm>(() =>
     getInitialForm(initialForm),
   )
+  const [bulkDiscountRate, setBulkDiscountRate] = useState('')
   const [activePickerField, setActivePickerField] =
     useState<DiscountDateTimeField | null>(null)
   const [submitError, setSubmitError] = useState('')
@@ -324,6 +325,37 @@ function CreateDiscountPromotionPage({
     }
   }
 
+  const sanitizeDiscountRate = (value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, '')
+    if (!cleaned) {
+      return ''
+    }
+
+    const parsed = Number(cleaned)
+    if (Number.isNaN(parsed)) {
+      return ''
+    }
+
+    const clamped = Math.min(Math.max(parsed, 0), 100)
+    return clamped.toString()
+  }
+
+  const applyBulkDiscountRate = (nextValue: string) => {
+    if (form.products.length === 0) {
+      return
+    }
+
+    setForm((previous) => {
+      const updatedDiscounts = { ...previous.productDiscounts }
+
+      previous.products.forEach((productId) => {
+        updatedDiscounts[productId] = nextValue
+      })
+
+      return { ...previous, productDiscounts: updatedDiscounts }
+    })
+  }
+
   return (
     <section
       className="motion-rise min-h-[calc(100vh-2.5rem)] bg-[#f1f5f9] pb-24 sm:rounded-3xl sm:border sm:border-slate-200/80 sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)]"
@@ -438,8 +470,12 @@ function CreateDiscountPromotionPage({
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.discountRate}
-                    onChange={(event) => setField('discountRate', event.target.value)}
+                    value={bulkDiscountRate}
+                    onChange={(event) => {
+                      const sanitized = sanitizeDiscountRate(event.target.value)
+                      setBulkDiscountRate(sanitized)
+                      applyBulkDiscountRate(sanitized)
+                    }}
                     placeholder="0"
                     className="h-9 w-16 border-0 bg-transparent text-right text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                   />
