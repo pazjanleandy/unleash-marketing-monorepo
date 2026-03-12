@@ -3,7 +3,7 @@ import CreateVoucherBreadcrumb from './CreateVoucherBreadcrumb'
 import RewardSettingsCard from './RewardSettingsCard'
 import VoucherDisplayCard from './VoucherDisplayCard'
 import VoucherPreviewPanel from './VoucherPreviewPanel'
-import type { CreateVoucherForm } from './types'
+import type { CreateVoucherForm, VoucherType } from './types'
 
 type VoucherFormMode = 'create' | 'edit'
 
@@ -12,6 +12,15 @@ type CreateVoucherPageProps = {
   onConfirm?: (form: CreateVoucherForm) => Promise<void> | void
   mode?: VoucherFormMode
   initialForm?: CreateVoucherForm
+  voucherType?: VoucherType
+}
+
+const VOUCHER_TYPE_LABELS: Record<VoucherType, string> = {
+  shop: 'Shop Voucher',
+  product: 'Product Voucher',
+  private: 'Private Voucher',
+  live: 'Live Voucher',
+  video: 'Video Voucher',
 }
 
 const stepTitles = [
@@ -43,17 +52,23 @@ const fieldElementIds: Partial<Record<keyof CreateVoucherForm, string>> = {
   endDateTime: 'create-voucher-end-time',
 }
 
-const defaultForm: CreateVoucherForm = {
-  rewardType: 'discount',
-  discountType: 'fixed-amount',
-  discountAmount: '',
-  minimumBasketPrice: '',
-  usageQuantity: '',
-  maxDistributionPerBuyer: '',
-  displaySetting: 'all-pages',
-  productScope: 'all-products',
-  startDateTime: toLocalDateTimeInputValue(new Date()),
-  endDateTime: toLocalDateTimeInputValue(new Date(Date.now() + 60 * 60 * 1000)),
+function getDefaultForm(voucherType: VoucherType): CreateVoucherForm {
+  return {
+    voucherType,
+    rewardType: 'discount',
+    discountType: 'fixed-amount',
+    discountAmount: '',
+    minimumBasketPrice: '',
+    usageQuantity: '',
+    maxDistributionPerBuyer: '',
+    displaySetting: voucherType === 'private' ? 'voucher-code' : 'all-pages',
+    productScope: voucherType === 'product' ? 'specific-products' : 'all-products',
+    startDateTime: toLocalDateTimeInputValue(new Date()),
+    endDateTime: toLocalDateTimeInputValue(new Date(Date.now() + 60 * 60 * 1000)),
+    selectedProductIds: [],
+    livestreamUrl: '',
+    videoUrl: '',
+  }
 }
 
 function parseDateTime(value: string) {
@@ -61,17 +76,33 @@ function parseDateTime(value: string) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function getStepTitle(step: number, voucherType: VoucherType) {
+  if (step === 1) {
+    const titles: Record<VoucherType, string> = {
+      shop: 'Voucher Display & Applicable Products',
+      product: 'Product Selection',
+      private: 'Private Distribution',
+      live: 'Livestream Settings',
+      video: 'Video Settings',
+    }
+    return titles[voucherType]
+  }
+  return stepTitles[step]
+}
+
 function CreateVoucherPage({
   onBack,
   onConfirm,
   mode = 'create',
   initialForm,
+  voucherType = 'shop',
 }: CreateVoucherPageProps) {
   const isEditMode = mode === 'edit'
-  const pageLabel = isEditMode ? 'Edit Voucher' : 'Create New Voucher'
+  const typeLabel = VOUCHER_TYPE_LABELS[voucherType]
+  const pageLabel = isEditMode ? `Edit ${typeLabel}` : `Create ${typeLabel}`
   const desktopConfirmLabel = isEditMode ? 'Save Changes' : 'Confirm'
-  const mobileStepActionLabel = isEditMode ? 'Save Changes' : 'Create Voucher'
-  const startingForm = initialForm ?? defaultForm
+  const mobileStepActionLabel = isEditMode ? 'Save Changes' : `Create ${typeLabel}`
+  const startingForm = initialForm ?? getDefaultForm(voucherType)
   const [form, setForm] = useState<CreateVoucherForm>(() => ({ ...startingForm }))
   const [currentStep, setCurrentStep] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<FormErrorMap>({})
@@ -172,10 +203,18 @@ function CreateVoucherPage({
     }
 
     if (step === 1) {
-      stepFields.push('displaySetting')
+      if (voucherType === 'shop') {
+        stepFields.push('displaySetting')
+        if (!form.displaySetting) {
+          nextErrors.displaySetting = 'Choose a voucher display setting.'
+        }
+      }
 
-      if (!form.displaySetting) {
-        nextErrors.displaySetting = 'Choose a voucher display setting.'
+      if (voucherType === 'product') {
+        stepFields.push('selectedProductIds')
+        if (form.selectedProductIds.length === 0) {
+          nextErrors.selectedProductIds = 'Select at least one product.'
+        }
       }
     }
 
@@ -247,7 +286,7 @@ function CreateVoucherPage({
               Step {currentStep + 1} of {stepTitles.length}
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
-              {stepTitles[currentStep]}
+              {getStepTitle(currentStep, voucherType)}
             </p>
           </div>
           <button
@@ -272,6 +311,7 @@ function CreateVoucherPage({
 
         <div className={`${currentStep === 1 ? 'block' : 'hidden'}`}>
           <VoucherDisplayCard
+            voucherType={voucherType}
             value={form}
             onChange={setForm}
             onProductScopeChange={(productScope) => setForm((previous) => ({ ...previous, productScope }))}
@@ -297,6 +337,7 @@ function CreateVoucherPage({
             fieldIds={fieldElementIds}
           />
           <VoucherDisplayCard
+            voucherType={voucherType}
             value={form}
             onChange={setForm}
             onProductScopeChange={(productScope) => setForm((previous) => ({ ...previous, productScope }))}

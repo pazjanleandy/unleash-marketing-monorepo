@@ -6,7 +6,10 @@ export type ProductScope = 'all-products' | 'specific-products'
 
 export type VoucherDisplaySetting = 'all-pages' | 'voucher-code'
 
+export type VoucherType = 'shop' | 'product' | 'private' | 'live' | 'video'
+
 export type CreateVoucherForm = {
+  voucherType: VoucherType
   rewardType: RewardType
   discountType: DiscountType
   discountAmount: string
@@ -17,4 +20,7 @@ export type CreateVoucherForm = {
   productScope: ProductScope
   startDateTime: string
   endDateTime: string
+  selectedProductIds: string[]
+  livestreamUrl: string
+  videoUrl: string
 }

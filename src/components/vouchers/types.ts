@@ -1,3 +1,5 @@
+import type { VoucherType } from './create/types'
+
 export type VoucherStatus = 'Upcoming' | 'Ongoing' | 'Expired'
 
 export type VoucherIcon = 'money' | 'percent'
@@ -12,6 +14,7 @@ export type VoucherItem = {
   code: string
   name: string
   type: string
+  voucherType: VoucherType
   discountAmount: string
   quantity: number
   usageLimit: string
@@ -25,4 +28,3 @@ export type VoucherItem = {
   actions: VoucherAction[]
   icon: VoucherIcon
 }
-    

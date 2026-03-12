@@ -6,10 +6,11 @@ import type {
   VoucherItem,
   VoucherStatus,
 } from './types'
+import type { VoucherType } from './create/types'
 
 type VouchersPageProps = {
   onBack: () => void
-  onCreate: () => void
+  onCreate: (voucherType: VoucherType) => void
   onEdit: (voucher: VoucherItem) => void
   onDelete?: (voucher: VoucherItem) => void
   vouchers?: VoucherItem[]
@@ -56,6 +57,7 @@ const quickFilters = ['All Products', 'Specific Products'] as const
 type VoucherCreateTypeCard = {
   title: string
   description: string
+  voucherType: VoucherType
 }
 
 type VoucherCreateGroup = {
@@ -69,10 +71,12 @@ const voucherCreateGroups: VoucherCreateGroup[] = [
     cards: [
       {
         title: 'Shop Voucher',
+        voucherType: 'shop',
         description: 'Vouchers applicable for all your products to boost shopwide sales.',
       },
       {
         title: 'Product Voucher',
+        voucherType: 'product',
         description: 'Vouchers applicable for selected products to run specific promotions.',
       },
     ],
@@ -82,20 +86,31 @@ const voucherCreateGroups: VoucherCreateGroup[] = [
     cards: [
       {
         title: 'Private Voucher',
+        voucherType: 'private',
         description: 'Vouchers that are only sharable via code to targeted customers.',
       },
       {
         title: 'Live Voucher',
+        voucherType: 'live',
         description: 'Exclusive vouchers applicable for your products in Live to improve conversion.',
       },
       {
         title: 'Video Voucher',
+        voucherType: 'video',
         description:
           'Exclusive vouchers applicable for your products in Video to increase sales.',
       },
     ],
   },
 ]
+
+const voucherTypeBadgeColors: Record<VoucherType, { bg: string; text: string }> = {
+  shop: { bg: 'bg-[#eff6ff]', text: 'text-[#2563EB]' },
+  product: { bg: 'bg-[#f0fdf4]', text: 'text-[#16a34a]' },
+  private: { bg: 'bg-[#f5f3ff]', text: 'text-[#7c3aed]' },
+  live: { bg: 'bg-[#fffbeb]', text: 'text-[#d97706]' },
+  video: { bg: 'bg-[#fdf2f8]', text: 'text-[#db2777]' },
+}
 
 const monthLabels = [
   'Jan',
@@ -324,7 +339,8 @@ function MobileVoucherCard({
             </p>
 
             <p className="mt-0.5 text-[12px] leading-snug text-slate-600">
-              {voucher.type} | Min spend {minimumSpend}
+              <span className={`mr-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''}`}>{voucher.type}</span>
+              | Min spend {minimumSpend}
             </p>
           </div>
 
@@ -411,9 +427,11 @@ function VoucherRow({
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 text-slate-600">{voucher.type}</td>
+      <td className="px-4 py-4">
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''}`}>{voucher.type}</span>
+      </td>
       <td className="px-4 py-4 text-slate-600">{productScope}</td>
-      <td className="px-4 py-4 text-slate-600">All Buyers</td>
+      <td className="px-4 py-4 text-slate-600">{voucher.voucherType === 'private' ? 'Targeted' : 'All Buyers'}</td>
       <td className="px-4 py-4 font-medium text-slate-900">{voucher.discountAmount}</td>
       <td className="px-4 py-4">{voucher.quantity}</td>
       <td className="px-4 py-4">{voucher.usage}</td>
@@ -437,9 +455,8 @@ function VoucherRow({
                   }
                 }}
                 disabled={!canManage}
-                className={`text-sm font-medium transition hover:underline ${
-                  action.danger ? 'text-[#dc4f1f]' : 'text-[#2f70db]'
-                }`}
+                className={`text-sm font-medium transition hover:underline ${action.danger ? 'text-[#dc4f1f]' : 'text-[#2f70db]'
+                  }`}
               >
                 {action.label}
               </button>
@@ -457,7 +474,7 @@ function DesktopCreateVoucherTypeCard({
   canManage = true,
 }: {
   card: VoucherCreateTypeCard
-  onCreate: () => void
+  onCreate: (voucherType: VoucherType) => void
   canManage?: boolean
 }) {
   return (
@@ -467,7 +484,7 @@ function DesktopCreateVoucherTypeCard({
       <div className="mt-3 flex justify-end">
         <button
           type="button"
-          onClick={onCreate}
+          onClick={() => onCreate(card.voucherType)}
           disabled={!canManage}
           className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-4 text-xs font-semibold text-[#2563EB] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
         >
@@ -514,6 +531,7 @@ function VouchersPage({
     useState<(typeof quickFilters)[number]>('All Products')
   const [desktopTab, setDesktopTab] = useState<(typeof voucherTabs)[number]>('All')
   const [desktopSearch, setDesktopSearch] = useState('')
+  const [showMobileTypePicker, setShowMobileTypePicker] = useState(false)
   const sourceVouchers = useMemo(() => vouchers ?? [], [vouchers])
 
   const mobileVouchers =
@@ -638,9 +656,8 @@ function VouchersPage({
                   key={tab}
                   type="button"
                   onClick={() => setMobileTab(tab)}
-                  className={`z-10 inline-flex h-11 items-center justify-center rounded-full px-2 text-[13px] font-semibold transition-colors ${
-                    isActive ? 'text-white' : 'text-slate-600'
-                  }`}
+                  className={`z-10 inline-flex h-11 items-center justify-center rounded-full px-2 text-[13px] font-semibold transition-colors ${isActive ? 'text-white' : 'text-slate-600'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -655,11 +672,10 @@ function VouchersPage({
               key={chip}
               type="button"
               onClick={() => setQuickFilter(chip)}
-              className={`inline-flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[12px] font-semibold transition ${
-                quickFilter === chip
+              className={`inline-flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[12px] font-semibold transition ${quickFilter === chip
                   ? 'bg-[#2563EB] text-white shadow-[0_10px_18px_-12px_rgba(30,64,175,0.95)]'
                   : 'border border-slate-200 bg-white text-slate-700'
-              }`}
+                }`}
             >
               {chip}
             </button>
@@ -689,7 +705,7 @@ function VouchersPage({
           <div className="mx-auto w-full max-w-6xl px-4 py-3">
             <button
               type="button"
-              onClick={onCreate}
+              onClick={() => setShowMobileTypePicker(true)}
               disabled={!canManage}
               className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
               aria-label="Create new voucher"
@@ -698,6 +714,50 @@ function VouchersPage({
             </button>
           </div>
         </div>
+
+        {/* Mobile Voucher Type Picker */}
+        {showMobileTypePicker ? (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowMobileTypePicker(false)}
+            />
+            <div className="relative w-full max-w-lg rounded-t-2xl border-t border-slate-200 bg-white p-4 pb-8 shadow-xl">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300" />
+              <h3 className="text-lg font-semibold text-slate-900">Choose Voucher Type</h3>
+              <div className="mt-3 space-y-2">
+                {voucherCreateGroups.flatMap((group) =>
+                  group.cards.map((card) => (
+                    <button
+                      key={card.voucherType}
+                      type="button"
+                      onClick={() => {
+                        setShowMobileTypePicker(false)
+                        onCreate(card.voucherType)
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:bg-slate-50 active:scale-[0.99]"
+                    >
+                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold ${voucherTypeBadgeColors[card.voucherType].bg} ${voucherTypeBadgeColors[card.voucherType].text}`}>
+                        {card.title.charAt(0)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-800">{card.title}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{card.description}</p>
+                      </div>
+                    </button>
+                  )),
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileTypePicker(false)}
+                className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg border border-slate-200 text-sm font-medium text-slate-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="hidden sm:block">
@@ -748,9 +808,8 @@ function VouchersPage({
               <div key={group.title}>
                 <h2 className="text-[17px] font-medium text-slate-700">{group.title}</h2>
                 <div
-                  className={`mt-2.5 grid gap-3 ${
-                    group.cards.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
-                  }`}
+                  className={`mt-2.5 grid gap-3 ${group.cards.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
+                    }`}
                 >
                   {group.cards.map((card) => (
                     <DesktopCreateVoucherTypeCard
@@ -822,9 +881,8 @@ function VouchersPage({
                   key={tab}
                   type="button"
                   onClick={() => setDesktopTab(tab)}
-                  className={`relative pb-2 text-sm font-medium transition ${
-                    active ? 'text-[#2563EB]' : 'text-slate-500 hover:text-[#2563EB]'
-                  }`}
+                  className={`relative pb-2 text-sm font-medium transition ${active ? 'text-[#2563EB]' : 'text-slate-500 hover:text-[#2563EB]'
+                    }`}
                 >
                   {tab}
                   {active ? (
