@@ -1,13 +1,9 @@
 import { supabase } from '../../supabase'
-import type {
-  CreateDiscountPromotionForm,
-} from '../../components/discount/create/types'
-import type { PromotionRow, PromotionStatus, DiscountCampaignRow } from '../../components/discount/types'
-import { listBundleDeals } from './bundles.repo'
-import { listAddOnDeals } from './addons.repo'
+import type { CreateBundleDealForm } from '../../components/discount/create/types'
+import type { BundleDealRow, PromotionStatus } from '../../components/discount/types'
 
-type DiscountListResult = {
-  items: PromotionRow[]
+type BundleListResult = {
+  items: BundleDealRow[]
   authRequired: boolean
   noShop: boolean
 }
@@ -18,32 +14,42 @@ type ShopContext = {
   noShop: boolean
 }
 
-type ProductDiscountDbRow = {
+type BundleItemDbRow = {
   id: string
   product_id: string
-  discount_value: number
-  discount_type: 'percentage' | 'fixed'
+  quantity: number | null
   products?: {
     prodname?: string | null
   } | null
 }
 
-type DiscountPromotionDbRow = {
+type BundleDbRow = {
   id: string
-  name: string
-  start_at: string
-  end_at: string
+  promotion_id: string
+  name: string | null
+  price: number | null
+  currency: string | null
   max_uses: number | null
   is_active: boolean | null
-  product_discounts?: ProductDiscountDbRow[] | null
+  discount_section?: {
+    id: string
+    name: string
+    start_at: string
+    end_at: string
+    max_uses: number | null
+    is_active: boolean | null
+  } | null
+  bundle_items?: BundleItemDbRow[] | null
 }
 
-type ValidatedDiscountPayload = {
+type ValidatedBundlePayload = {
   promotionName: string
   startAtIso: string
   endAtIso: string
   maxUses: number | null
-  productDiscounts: Array<{ productId: string; discountValue: number }>
+  bundlePrice: number
+  currency: string
+  items: Array<{ productId: string; quantity: number }>
 }
 
 const MAX_PROMOTION_DURATION_MS = 180 * 24 * 60 * 60 * 1000
@@ -80,23 +86,17 @@ function toDatabaseError(error: unknown, action: string) {
   const lowerMessage = message.toLowerCase()
 
   if (
-    lowerMessage.includes('relation "discount_section" does not exist') ||
-    lowerMessage.includes("table 'discount_section' not found")
+    lowerMessage.includes('relation "bundles" does not exist') ||
+    lowerMessage.includes("table 'bundles' not found")
   ) {
     return new Error(
-      `${message}. The database schema is not up to date. Apply migration 003_discount_section.sql to the same Supabase project used by this app.`,
-    )
-  }
-
-  if (lowerMessage.includes('promotion_id') && lowerMessage.includes('does not exist')) {
-    return new Error(
-      `${message}. Column product_discounts.promotion_id is missing. Apply migration 003_discount_section.sql.`,
+      `${message}. The database schema is not up to date. Apply the bundles migration to the same Supabase project used by this app.`,
     )
   }
 
   if (lowerMessage.includes('row-level security') || lowerMessage.includes('permission denied')) {
     return new Error(
-      `${message}. RLS may be blocking this action. Verify discount_section/product_discounts owner policies in your live DB.`,
+      `${message}. RLS may be blocking this action. Verify bundles/bundle_items policies in your live DB.`,
     )
   }
 
@@ -185,14 +185,14 @@ function formatDecimal(value: number) {
   return Number.isInteger(value) ? `${value}` : `${value}`
 }
 
-function validatePromotionForm(form: CreateDiscountPromotionForm): ValidatedDiscountPayload {
+function validateBundleForm(form: CreateBundleDealForm): ValidatedBundlePayload {
   const promotionName = form.promotionName.trim()
   if (!promotionName) {
-    throw new Error('Promotion name is required.')
+    throw new Error('Bundle deal name is required.')
   }
 
-  if (!Array.isArray(form.products) || form.products.length === 0) {
-    throw new Error('Select at least one product.')
+  if (!Array.isArray(form.items) || form.items.length === 0) {
+    throw new Error('Select at least one bundle item.')
   }
 
   const startAt = parseLocalDateTimeInput(form.startDateTime)
@@ -202,7 +202,7 @@ function validatePromotionForm(form: CreateDiscountPromotionForm): ValidatedDisc
   }
 
   if (endAt.getTime() - startAt.getTime() > MAX_PROMOTION_DURATION_MS) {
-    throw new Error('Promotion period must be less than or equal to 180 days.')
+    throw new Error('Bundle deal period must be less than or equal to 180 days.')
   }
 
   let maxUses: number | null = null
@@ -214,19 +214,25 @@ function validatePromotionForm(form: CreateDiscountPromotionForm): ValidatedDisc
     maxUses = Number(trimmedLimit)
   }
 
-  const uniqueProductIds = Array.from(new Set(form.products))
-  const productDiscounts = uniqueProductIds.map((productId) => {
-    const rawDiscount = form.productDiscounts[productId]?.trim() ?? ''
-    if (!rawDiscount) {
-      throw new Error('Each selected product must have a discount.')
-    }
+  const rawPrice = form.bundlePrice.trim()
+  const bundlePrice = Number(rawPrice)
+  if (!rawPrice || Number.isNaN(bundlePrice) || bundlePrice <= 0) {
+    throw new Error('Bundle price must be greater than 0.')
+  }
 
-    const discountValue = Number(rawDiscount)
-    if (Number.isNaN(discountValue) || discountValue <= 0 || discountValue > 100) {
-      throw new Error('Discount values must be greater than 0 and at most 100.')
-    }
+  const currency = form.currency.trim().toUpperCase()
+  if (!currency) {
+    throw new Error('Currency is required.')
+  }
 
-    return { productId, discountValue }
+  const items = form.items.map((item) => {
+    if (!item.productId) {
+      throw new Error('Bundle items must include a product.')
+    }
+    if (!Number.isFinite(item.quantity) || item.quantity < 1) {
+      throw new Error('Bundle item quantities must be at least 1.')
+    }
+    return { productId: item.productId, quantity: Math.floor(item.quantity) }
   })
 
   return {
@@ -234,56 +240,63 @@ function validatePromotionForm(form: CreateDiscountPromotionForm): ValidatedDisc
     startAtIso: startAt.toISOString(),
     endAtIso: endAt.toISOString(),
     maxUses,
-    productDiscounts,
+    bundlePrice,
+    currency,
+    items,
   }
 }
 
-export async function listDiscountPromotions(): Promise<DiscountListResult> {
+export async function listBundleDeals(): Promise<BundleListResult> {
   const { authRequired, shopId, noShop } = await getCurrentUserShopId()
   if (authRequired || !shopId) {
     return { items: [], authRequired, noShop }
   }
 
   const { data, error } = await supabase
-    .from('discount_section')
+    .from('bundles')
     .select(
-      'id,name,start_at,end_at,max_uses,is_active,product_discounts(id,product_id,discount_type,discount_value,products:products!product_discounts_product_fkey(prodname))',
+      'id,promotion_id,name,price,currency,max_uses,is_active,discount_section:discount_section!bundles_promotion_id_fkey(id,name,start_at,end_at,max_uses,is_active),bundle_items(id,product_id,quantity,products:products!bundle_items_product_id_fkey(prodname))',
     )
     .eq('shop_id', shopId)
-    .eq('campaign_type', 'promotion')
     .order('created_at', { ascending: false })
 
   if (error) {
-    throw toDatabaseError(error, 'Failed to load discount promotions')
+    throw toDatabaseError(error, 'Failed to load bundle deals')
   }
 
-  const rows = (data ?? []) as DiscountPromotionDbRow[]
-  const items: PromotionRow[] = rows.map((row, rowIndex) => {
-    const children = row.product_discounts ?? []
+  const rows = (data ?? []) as BundleDbRow[]
+  const items: BundleDealRow[] = rows.map((row, rowIndex) => {
+    const section = row.discount_section
+    const children = row.bundle_items ?? []
     const names = children.map((child, childIndex) => {
       const name = child.products?.prodname?.trim()
       return name && name.length > 0 ? name : `Product ${childIndex + 1}`
     })
 
-    const productDiscounts = children.reduce<Record<string, string>>((accumulator, child) => {
-      accumulator[child.product_id] = formatDecimal(child.discount_value)
-      return accumulator
-    }, {})
+    const bundleItems = children.map((child, childIndex) => ({
+      productId: child.product_id,
+      name: child.products?.prodname?.trim() || `Product ${childIndex + 1}`,
+      quantity: typeof child.quantity === 'number' && child.quantity > 0 ? child.quantity : 1,
+    }))
 
-    const status = toPromotionStatus(row.start_at, row.end_at, row.is_active ?? true)
+    const status = section
+      ? toPromotionStatus(section.start_at, section.end_at, section.is_active ?? true)
+      : 'Expired'
 
     return {
-      id: row.id || `promotion-${rowIndex + 1}`,
+      id: row.promotion_id || row.id || `bundle-${rowIndex + 1}`,
       status,
-      name: row.name,
-      type: 'Discount Promotions',
-      campaignType: 'promotion',
+      name: row.name || section?.name || `Bundle Deal ${rowIndex + 1}`,
+      type: 'Bundle Deal',
+      campaignType: 'bundle',
       products: names,
-      productDiscounts,
-      maxUses: row.max_uses ?? null,
+      bundlePrice: row.price !== null && typeof row.price === 'number' ? formatDecimal(row.price) : '0',
+      currency: row.currency?.trim() || 'USD',
+      bundleItems,
+      maxUses: section?.max_uses ?? row.max_uses ?? null,
       period: {
-        start: formatPeriod(row.start_at),
-        end: formatPeriod(row.end_at),
+        start: section ? formatPeriod(section.start_at) : '',
+        end: section ? formatPeriod(section.end_at) : '',
       },
       actions: status === 'Expired' ? ['View', 'Delete'] : ['Edit', 'Delete'],
     }
@@ -292,40 +305,16 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
   return { items, authRequired: false, noShop: false }
 }
 
-export async function listDiscountCampaigns(): Promise<{
-  items: DiscountCampaignRow[]
-  authRequired: boolean
-  noShop: boolean
-}> {
-  const promotionResult = await listDiscountPromotions()
-  const bundleResult = await listBundleDeals()
-  const addOnResult = await listAddOnDeals()
-
-  if (promotionResult.authRequired || bundleResult.authRequired || addOnResult.authRequired) {
-    return { items: [], authRequired: true, noShop: false }
-  }
-
-  if (promotionResult.noShop || bundleResult.noShop || addOnResult.noShop) {
-    return { items: [], authRequired: false, noShop: true }
-  }
-
-  return {
-    items: [...promotionResult.items, ...bundleResult.items, ...addOnResult.items],
-    authRequired: false,
-    noShop: false,
-  }
-}
-
-export async function createDiscountPromotion(form: CreateDiscountPromotionForm) {
+export async function createBundleDeal(form: CreateBundleDealForm) {
   const { authRequired, shopId, noShop } = await getCurrentUserShopId()
   if (authRequired) {
-    throw new Error('Sign in to create discount promotions.')
+    throw new Error('Sign in to create bundle deals.')
   }
   if (!shopId || noShop) {
     throw new Error('No shop found for this account.')
   }
 
-  const payload = validatePromotionForm(form)
+  const payload = validateBundleForm(form)
   const { data: promotion, error: promotionError } = await supabase
     .from('discount_section')
     .insert({
@@ -335,54 +324,69 @@ export async function createDiscountPromotion(form: CreateDiscountPromotionForm)
       end_at: payload.endAtIso,
       max_uses: payload.maxUses,
       is_active: true,
-      campaign_type: 'promotion',
+      campaign_type: 'bundle',
     })
     .select('id')
     .single()
 
   if (promotionError) {
-    throw toDatabaseError(promotionError, 'Failed to create discount promotion')
+    throw toDatabaseError(promotionError, 'Failed to create bundle deal')
   }
 
   const promotionId = promotion?.id
   if (!promotionId) {
-    throw new Error('Unable to create discount promotion.')
+    throw new Error('Unable to create bundle deal.')
   }
 
-  const rows = payload.productDiscounts.map((item) => ({
-    promotion_id: promotionId,
+  const { data: bundle, error: bundleError } = await supabase
+    .from('bundles')
+    .insert({
+      promotion_id: promotionId,
+      shop_id: shopId,
+      name: payload.promotionName,
+      price: payload.bundlePrice,
+      currency: payload.currency,
+      max_uses: payload.maxUses,
+      is_active: true,
+    })
+    .select('id')
+    .single()
+
+  if (bundleError) {
+    throw toDatabaseError(bundleError, 'Failed to create bundle deal')
+  }
+
+  const bundleId = bundle?.id
+  if (!bundleId) {
+    throw new Error('Unable to create bundle deal.')
+  }
+
+  const rows = payload.items.map((item) => ({
+    bundle_id: bundleId,
     product_id: item.productId,
-    shop_id: shopId,
-    discount_type: 'percentage' as const,
-    discount_value: item.discountValue,
-    start_at: payload.startAtIso,
-    end_at: payload.endAtIso,
-    is_active: true,
+    quantity: item.quantity,
   }))
 
-  const { error: discountsError } = await supabase.from('product_discounts').insert(rows)
-  if (discountsError) {
-    throw toDatabaseError(discountsError, 'Failed to add products to discount promotion')
+  const { error: itemsError } = await supabase.from('bundle_items').insert(rows)
+  if (itemsError) {
+    throw toDatabaseError(itemsError, 'Failed to add bundle items')
   }
 }
 
-export async function updateDiscountPromotion(
-  promotionId: string,
-  form: CreateDiscountPromotionForm,
-) {
+export async function updateBundleDeal(promotionId: string, form: CreateBundleDealForm) {
   if (!promotionId) {
-    throw new Error('Promotion ID is required.')
+    throw new Error('Bundle deal ID is required.')
   }
 
   const { authRequired, shopId, noShop } = await getCurrentUserShopId()
   if (authRequired) {
-    throw new Error('Sign in to update discount promotions.')
+    throw new Error('Sign in to update bundle deals.')
   }
   if (!shopId || noShop) {
     throw new Error('No shop found for this account.')
   }
 
-  const payload = validatePromotionForm(form)
+  const payload = validateBundleForm(form)
   const { error: promotionError } = await supabase
     .from('discount_section')
     .update({
@@ -391,51 +395,78 @@ export async function updateDiscountPromotion(
       end_at: payload.endAtIso,
       max_uses: payload.maxUses,
       is_active: true,
-      campaign_type: 'promotion',
+      campaign_type: 'bundle',
       updated_at: new Date().toISOString(),
     })
     .eq('id', promotionId)
     .eq('shop_id', shopId)
 
   if (promotionError) {
-    throw toDatabaseError(promotionError, 'Failed to update discount promotion')
+    throw toDatabaseError(promotionError, 'Failed to update bundle deal')
+  }
+
+  const { data: bundleRow, error: bundleFetchError } = await supabase
+    .from('bundles')
+    .select('id')
+    .eq('promotion_id', promotionId)
+    .eq('shop_id', shopId)
+    .single()
+
+  if (bundleFetchError) {
+    throw toDatabaseError(bundleFetchError, 'Failed to load bundle deal')
+  }
+
+  const bundleId = bundleRow?.id
+  if (!bundleId) {
+    throw new Error('Unable to locate bundle deal.')
+  }
+
+  const { error: bundleError } = await supabase
+    .from('bundles')
+    .update({
+      name: payload.promotionName,
+      price: payload.bundlePrice,
+      currency: payload.currency,
+      max_uses: payload.maxUses,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bundleId)
+    .eq('shop_id', shopId)
+
+  if (bundleError) {
+    throw toDatabaseError(bundleError, 'Failed to update bundle deal')
   }
 
   const { error: deleteError } = await supabase
-    .from('product_discounts')
+    .from('bundle_items')
     .delete()
-    .eq('promotion_id', promotionId)
-    .eq('shop_id', shopId)
+    .eq('bundle_id', bundleId)
 
   if (deleteError) {
-    throw toDatabaseError(deleteError, 'Failed to replace promotion products')
+    throw toDatabaseError(deleteError, 'Failed to replace bundle items')
   }
 
-  const rows = payload.productDiscounts.map((item) => ({
-    promotion_id: promotionId,
+  const rows = payload.items.map((item) => ({
+    bundle_id: bundleId,
     product_id: item.productId,
-    shop_id: shopId,
-    discount_type: 'percentage' as const,
-    discount_value: item.discountValue,
-    start_at: payload.startAtIso,
-    end_at: payload.endAtIso,
-    is_active: true,
+    quantity: item.quantity,
   }))
 
-  const { error: insertError } = await supabase.from('product_discounts').insert(rows)
+  const { error: insertError } = await supabase.from('bundle_items').insert(rows)
   if (insertError) {
-    throw toDatabaseError(insertError, 'Failed to save updated promotion products')
+    throw toDatabaseError(insertError, 'Failed to save bundle items')
   }
 }
 
-export async function deleteDiscountPromotion(promotionId: string) {
+export async function deleteBundleDeal(promotionId: string) {
   if (!promotionId) {
-    throw new Error('Promotion ID is required.')
+    throw new Error('Bundle deal ID is required.')
   }
 
   const { authRequired, shopId, noShop } = await getCurrentUserShopId()
   if (authRequired) {
-    throw new Error('Sign in to delete discount promotions.')
+    throw new Error('Sign in to delete bundle deals.')
   }
   if (!shopId || noShop) {
     throw new Error('No shop found for this account.')
@@ -448,6 +479,6 @@ export async function deleteDiscountPromotion(promotionId: string) {
     .eq('shop_id', shopId)
 
   if (error) {
-    throw toDatabaseError(error, 'Failed to delete discount promotion')
+    throw toDatabaseError(error, 'Failed to delete bundle deal')
   }
 }

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { DiscountToolType, PromotionRow, PromotionStatus } from './types'
+import type { DiscountToolType, DiscountCampaignRow, PromotionStatus } from './types'
 
 type DiscountMobilePanelProps = {
   onBack: () => void
-  promotions: PromotionRow[]
+  promotions: DiscountCampaignRow[]
   onCreateTool?: (type: DiscountToolType) => void
-  onEditPromotion?: (promotion: PromotionRow) => void
-  onViewPromotion?: (promotion: PromotionRow) => void
-  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
+  onEditPromotion?: (promotion: DiscountCampaignRow) => void
+  onViewPromotion?: (promotion: DiscountCampaignRow) => void
+  onDeletePromotion?: (promotion: DiscountCampaignRow) => Promise<void> | void
 }
 
 const mobileStatusTabs: PromotionStatus[] = ['Upcoming', 'Ongoing', 'Expired']
@@ -57,10 +57,10 @@ function StatusActions({
   onViewPromotion,
   onDeletePromotion,
 }: {
-  promotion: PromotionRow
-  onEditPromotion?: (promotion: PromotionRow) => void
-  onViewPromotion?: (promotion: PromotionRow) => void
-  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
+  promotion: DiscountCampaignRow
+  onEditPromotion?: (promotion: DiscountCampaignRow) => void
+  onViewPromotion?: (promotion: DiscountCampaignRow) => void
+  onDeletePromotion?: (promotion: DiscountCampaignRow) => Promise<void> | void
 }) {
   const { status } = promotion
 

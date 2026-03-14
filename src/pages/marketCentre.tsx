@@ -7,8 +7,16 @@ import DiscountPage from '../components/discount/DiscountPage'
 import CreateDiscountPromotionPage from '../components/discount/create/CreateDiscountPromotionPage'
 import CreateBundleDealPage from '../components/discount/create/CreateBundleDealPage'
 import CreateAddOnDealPage from '../components/discount/create/CreateAddOnDealPage'
-import type { DiscountToolType, PromotionRow } from '../components/discount/types'
+import type {
+  DiscountCampaignRow,
+  DiscountToolType,
+  PromotionRow,
+  BundleDealRow,
+  AddOnDealRow,
+} from '../components/discount/types'
 import ViewDiscountPromotionPage from '../components/discount/view/ViewDiscountPromotionPage'
+import ViewBundleDealPage from '../components/discount/view/ViewBundleDealPage'
+import ViewAddOnDealPage from '../components/discount/view/ViewAddOnDealPage'
 import FlashDealsPage from '../components/flash-deals/FlashDealsPage'
 import CreateFlashDealPage from '../components/flash-deals/create/CreateFlashDealPage'
 import type { CreateFlashDealForm } from '../components/flash-deals/create/CreateFlashDealPage'
@@ -16,7 +24,11 @@ import VouchersPage from '../components/vouchers/VouchersPage'
 import CreateVoucherPage from '../components/vouchers/create/CreateVoucherPage'
 import type { VoucherItem } from '../components/vouchers/types'
 import type { CreateVoucherForm, VoucherType } from '../components/vouchers/create/types'
-import type { CreateDiscountPromotionForm } from '../components/discount/create/types'
+import type {
+  CreateAddOnDealForm,
+  CreateBundleDealForm,
+  CreateDiscountPromotionForm,
+} from '../components/discount/create/types'
 import Sidebar from '../sidebar/sidebar'
 import {
   createVoucher,
@@ -29,6 +41,16 @@ import {
   deleteDiscountPromotion,
   updateDiscountPromotion,
 } from '../services/market/discounts.repo'
+import {
+  createBundleDeal,
+  deleteBundleDeal,
+  updateBundleDeal,
+} from '../services/market/bundles.repo'
+import {
+  createAddOnDeal,
+  deleteAddOnDeal,
+  updateAddOnDeal,
+} from '../services/market/addons.repo'
 import { createFlashDeals } from '../services/market/flashDeals.repo'
 
 export type MarketCentreView =
@@ -47,6 +69,8 @@ export type MarketCentreView =
   | 'create-bundle-deal'
   | 'create-add-on-deal'
   | 'view-discount-promotion'
+  | 'view-bundle-deal'
+  | 'view-add-on-deal'
   | 'vouchers'
   | 'create-voucher'
 
@@ -89,6 +113,8 @@ const marketingViews: Set<MarketCentreView> = new Set([
   'create-bundle-deal',
   'create-add-on-deal',
   'view-discount-promotion',
+  'view-bundle-deal',
+  'view-add-on-deal',
   'vouchers',
   'create-voucher',
 ])
@@ -223,6 +249,53 @@ function mapPromotionToCreateForm(promotion: PromotionRow): CreateDiscountPromot
   }
 }
 
+function mapBundleToCreateForm(bundle: BundleDealRow): CreateBundleDealForm {
+  const now = new Date()
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+  const parsedStart = parsePromotionDateTime(bundle.period.start)
+  const parsedEnd = parsePromotionDateTime(bundle.period.end)
+
+  const startDateTime = toLocalDateTimeInputValue(parsedStart ?? now)
+  const endDateTime = toLocalDateTimeInputValue(
+    parsedEnd ?? (parsedStart ? new Date(parsedStart.getTime() + 60 * 60 * 1000) : oneHourLater),
+  )
+
+  return {
+    promotionName: bundle.name,
+    startDateTime,
+    endDateTime,
+    purchaseLimit: bundle.maxUses === null ? '' : `${bundle.maxUses}`,
+    bundlePrice: bundle.bundlePrice ?? '',
+    currency: 'PHP',
+    items: bundle.bundleItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+  }
+}
+
+function mapAddOnToCreateForm(addon: AddOnDealRow): CreateAddOnDealForm {
+  const now = new Date()
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+  const parsedStart = parsePromotionDateTime(addon.period.start)
+  const parsedEnd = parsePromotionDateTime(addon.period.end)
+
+  const startDateTime = toLocalDateTimeInputValue(parsedStart ?? now)
+  const endDateTime = toLocalDateTimeInputValue(
+    parsedEnd ?? (parsedStart ? new Date(parsedStart.getTime() + 60 * 60 * 1000) : oneHourLater),
+  )
+
+  return {
+    promotionName: addon.name,
+    startDateTime,
+    endDateTime,
+    purchaseLimit: addon.maxUses === null ? '' : `${addon.maxUses}`,
+    triggerProductId: addon.triggerProductId,
+    addonProductId: addon.addonProductId,
+    discountValue: addon.discountValue ?? '',
+  }
+}
+
 function PlaceholderView({
   title,
   description,
@@ -261,6 +334,10 @@ function MarketCentrePage() {
   const [voucherNoShop, setVoucherNoShop] = useState(false)
   const [editingPromotion, setEditingPromotion] = useState<PromotionRow | null>(null)
   const [viewingPromotion, setViewingPromotion] = useState<PromotionRow | null>(null)
+  const [editingBundle, setEditingBundle] = useState<BundleDealRow | null>(null)
+  const [viewingBundle, setViewingBundle] = useState<BundleDealRow | null>(null)
+  const [editingAddOn, setEditingAddOn] = useState<AddOnDealRow | null>(null)
+  const [viewingAddOn, setViewingAddOn] = useState<AddOnDealRow | null>(null)
   const editInitialForm = useMemo(
     () => (editingVoucher ? mapVoucherToCreateForm(editingVoucher) : undefined),
     [editingVoucher],
@@ -269,8 +346,18 @@ function MarketCentrePage() {
     () => (editingPromotion ? mapPromotionToCreateForm(editingPromotion) : undefined),
     [editingPromotion],
   )
+  const editBundleInitialForm = useMemo(
+    () => (editingBundle ? mapBundleToCreateForm(editingBundle) : undefined),
+    [editingBundle],
+  )
+  const editAddOnInitialForm = useMemo(
+    () => (editingAddOn ? mapAddOnToCreateForm(editingAddOn) : undefined),
+    [editingAddOn],
+  )
   const voucherFormKey = editingVoucher ? `edit-${editingVoucher.code}` : 'create'
   const discountFormKey = editingPromotion ? `edit-${editingPromotion.name}` : 'create'
+  const bundleFormKey = editingBundle ? `edit-${editingBundle.name}` : 'create'
+  const addOnFormKey = editingAddOn ? `edit-${editingAddOn.name}` : 'create'
 
   const handleToolSelect = (tool: ToolCard) => {
     if (tool.id === 'vouchers') {
@@ -351,6 +438,10 @@ function MarketCentrePage() {
   const handleCreateDiscountTool = (type: DiscountToolType) => {
     setEditingPromotion(null)
     setViewingPromotion(null)
+    setEditingBundle(null)
+    setViewingBundle(null)
+    setEditingAddOn(null)
+    setViewingAddOn(null)
 
     if (type === 'discount-promotions') {
       setActiveView('create-discount-promotion')
@@ -371,17 +462,74 @@ function MarketCentrePage() {
     }
 
     setEditingPromotion(promotion)
+    setEditingBundle(null)
+    setEditingAddOn(null)
     setViewingPromotion(null)
+    setViewingBundle(null)
+    setViewingAddOn(null)
     setActiveView('create-discount-promotion')
   }
 
   const handleViewDiscountPromotion = (promotion: PromotionRow) => {
     setViewingPromotion(promotion)
+    setViewingBundle(null)
+    setViewingAddOn(null)
+    setActiveView('view-discount-promotion')
+  }
+
+  const handleEditDiscountCampaign = (campaign: DiscountCampaignRow) => {
+    if (campaign.campaignType === 'promotion') {
+      handleEditDiscountPromotion(campaign)
+      return
+    }
+
+    if (campaign.campaignType === 'bundle') {
+      setEditingBundle(campaign)
+      setEditingPromotion(null)
+      setViewingPromotion(null)
+      setViewingBundle(null)
+      setEditingAddOn(null)
+      setViewingAddOn(null)
+      setActiveView('create-bundle-deal')
+      return
+    }
+
+    if (campaign.campaignType === 'add-on') {
+      setEditingAddOn(campaign)
+      setEditingPromotion(null)
+      setEditingBundle(null)
+      setViewingPromotion(null)
+      setViewingBundle(null)
+      setViewingAddOn(null)
+      setActiveView('create-add-on-deal')
+    }
+  }
+
+  const handleViewDiscountCampaign = (campaign: DiscountCampaignRow) => {
+    if (campaign.campaignType === 'bundle') {
+      setViewingBundle(campaign)
+      setViewingPromotion(null)
+      setViewingAddOn(null)
+      setActiveView('view-bundle-deal')
+      return
+    }
+
+    if (campaign.campaignType === 'add-on') {
+      setViewingAddOn(campaign)
+      setViewingBundle(null)
+      setViewingPromotion(null)
+      setActiveView('view-add-on-deal')
+      return
+    }
+
+    setViewingPromotion(campaign)
     setActiveView('view-discount-promotion')
   }
 
   const handleDiscountFormBack = () => {
     setEditingPromotion(null)
+    setEditingBundle(null)
+    setEditingAddOn(null)
     setActiveView('discount')
   }
 
@@ -394,12 +542,40 @@ function MarketCentrePage() {
     setEditingPromotion(null)
   }
 
-  const handleDeleteDiscountPromotion = async (promotion: PromotionRow) => {
+  const handleBundleConfirm = async (form: CreateBundleDealForm) => {
+    if (editingBundle?.id) {
+      await updateBundleDeal(editingBundle.id, form)
+    } else {
+      await createBundleDeal(form)
+    }
+    setEditingBundle(null)
+  }
+
+  const handleAddOnConfirm = async (form: CreateAddOnDealForm) => {
+    if (editingAddOn?.id) {
+      await updateAddOnDeal(editingAddOn.id, form)
+    } else {
+      await createAddOnDeal(form)
+    }
+    setEditingAddOn(null)
+  }
+
+  const handleDeleteDiscountPromotion = async (promotion: DiscountCampaignRow) => {
+    if (promotion.campaignType === 'bundle') {
+      await deleteBundleDeal(promotion.id)
+      return
+    }
+    if (promotion.campaignType === 'add-on') {
+      await deleteAddOnDeal(promotion.id)
+      return
+    }
     await deleteDiscountPromotion(promotion.id)
   }
 
   const handleViewDiscountBack = () => {
     setViewingPromotion(null)
+    setViewingBundle(null)
+    setViewingAddOn(null)
     setActiveView('discount')
   }
 
@@ -441,7 +617,9 @@ function MarketCentrePage() {
           activeView === 'create-discount-promotion' ||
           activeView === 'create-bundle-deal' ||
           activeView === 'create-add-on-deal' ||
-          activeView === 'view-discount-promotion',
+          activeView === 'view-discount-promotion' ||
+          activeView === 'view-bundle-deal' ||
+          activeView === 'view-add-on-deal',
       },
       {
         label: 'Flash Deals',
@@ -883,8 +1061,8 @@ function MarketCentrePage() {
               <DiscountPage
                 onBack={() => setActiveView('marketing')}
                 onCreateTool={handleCreateDiscountTool}
-                onEditPromotion={handleEditDiscountPromotion}
-                onViewPromotion={handleViewDiscountPromotion}
+                onEditPromotion={handleEditDiscountCampaign}
+                onViewPromotion={handleViewDiscountCampaign}
                 onDeletePromotion={handleDeleteDiscountPromotion}
               />
             ) : activeView === 'flash-deals' ? (
@@ -906,14 +1084,30 @@ function MarketCentrePage() {
                 initialForm={editDiscountInitialForm}
               />
             ) : activeView === 'create-bundle-deal' ? (
-              <CreateBundleDealPage onBack={handleDiscountFormBack} />
+              <CreateBundleDealPage
+                key={bundleFormKey}
+                onBack={handleDiscountFormBack}
+                onConfirm={handleBundleConfirm}
+                mode={editingBundle ? 'edit' : 'create'}
+                initialForm={editBundleInitialForm}
+              />
             ) : activeView === 'create-add-on-deal' ? (
-              <CreateAddOnDealPage onBack={handleDiscountFormBack} />
+              <CreateAddOnDealPage
+                key={addOnFormKey}
+                onBack={handleDiscountFormBack}
+                onConfirm={handleAddOnConfirm}
+                mode={editingAddOn ? 'edit' : 'create'}
+                initialForm={editAddOnInitialForm}
+              />
             ) : activeView === 'view-discount-promotion' && viewingPromotion ? (
               <ViewDiscountPromotionPage
                 promotion={viewingPromotion}
                 onBack={handleViewDiscountBack}
               />
+            ) : activeView === 'view-bundle-deal' && viewingBundle ? (
+              <ViewBundleDealPage bundle={viewingBundle} onBack={handleViewDiscountBack} />
+            ) : activeView === 'view-add-on-deal' && viewingAddOn ? (
+              <ViewAddOnDealPage addon={viewingAddOn} onBack={handleViewDiscountBack} />
             ) : (
               <>
                 {activeView === 'vouchers' ? (

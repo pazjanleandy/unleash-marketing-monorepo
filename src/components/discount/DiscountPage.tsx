@@ -3,15 +3,21 @@ import DiscountCreateSection from './DiscountCreateSection'
 import DiscountMobilePanel from './DiscountMobilePanel'
 import DiscountPerformanceSection from './DiscountPerformanceSection'
 import DiscountPromotionListSection from './DiscountPromotionListSection'
-import type { DiscountCreateTool, DiscountPromotionTab, DiscountToolType, PromotionMetric, PromotionRow } from './types'
-import { listDiscountPromotions } from '../../services/market/discounts.repo'
+import type {
+  DiscountCreateTool,
+  DiscountPromotionTab,
+  DiscountToolType,
+  PromotionMetric,
+  DiscountCampaignRow,
+} from './types'
+import { listDiscountCampaigns } from '../../services/market/discounts.repo'
 
 type DiscountPageProps = {
   onBack: () => void
   onCreateTool?: (type: DiscountToolType) => void
-  onEditPromotion?: (promotion: PromotionRow) => void
-  onViewPromotion?: (promotion: PromotionRow) => void
-  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
+  onEditPromotion?: (promotion: DiscountCampaignRow) => void
+  onViewPromotion?: (promotion: DiscountCampaignRow) => void
+  onDeletePromotion?: (promotion: DiscountCampaignRow) => Promise<void> | void
 }
 
 const discountCreationTools: DiscountCreateTool[] = [
@@ -47,7 +53,7 @@ function DiscountPage({
   onDeletePromotion,
 }: DiscountPageProps) {
   const [activeTab, setActiveTab] = useState<DiscountPromotionTab>('All')
-  const [promotionRows, setPromotionRows] = useState<PromotionRow[]>([])
+  const [promotionRows, setPromotionRows] = useState<DiscountCampaignRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [authRequired, setAuthRequired] = useState(false)
@@ -57,7 +63,7 @@ function DiscountPage({
     setIsLoading(true)
     setError(null)
     try {
-      const result = await listDiscountPromotions()
+      const result = await listDiscountCampaigns()
       setPromotionRows(result.items)
       setAuthRequired(result.authRequired)
       setNoShop(result.noShop)
@@ -75,7 +81,7 @@ function DiscountPage({
     void loadPromotions()
   }, [loadPromotions])
 
-  const handleDeletePromotion = async (promotion: PromotionRow) => {
+  const handleDeletePromotion = async (promotion: DiscountCampaignRow) => {
     const shouldDelete = window.confirm(`Delete promotion "${promotion.name}"?`)
     if (!shouldDelete) {
       return

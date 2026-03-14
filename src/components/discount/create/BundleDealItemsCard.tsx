@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CreateDiscountPromotionForm } from './types'
+import type { BundleDealItem, CreateBundleDealForm } from './types'
 import { listShopProducts, type ShopProduct } from '../../../services/market/products.repo'
 import ProductPickerModal from './ProductPickerModal'
 
-type DiscountPromotionProductsCardProps = {
-  value: CreateDiscountPromotionForm
-  onChange: (value: CreateDiscountPromotionForm) => void
+type BundleDealItemsCardProps = {
+  value: CreateBundleDealForm
+  onChange: (value: CreateBundleDealForm) => void
   mobileVariant?: boolean
 }
 
@@ -33,11 +33,7 @@ function ProductImagePlaceholder({
   )
 }
 
-function DiscountPromotionProductsCard({
-  value,
-  onChange,
-  mobileVariant = false,
-}: DiscountPromotionProductsCardProps) {
+function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleDealItemsCardProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [catalogItems, setCatalogItems] = useState<DisplayProduct[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -70,16 +66,16 @@ function DiscountPromotionProductsCard({
 
   const selectedProducts = useMemo<DisplayProduct[]>(
     () =>
-      value.products.map((productId, index) => {
-        const foundProduct = catalogItems.find((product) => product.id === productId)
+      value.items.map((item, index) => {
+        const foundProduct = catalogItems.find((product) => product.id === item.productId)
 
         if (foundProduct) {
           return foundProduct
         }
 
         return {
-          id: productId || `LEGACY-${index + 1}`,
-          name: productId || `Legacy Product ${index + 1}`,
+          id: item.productId || `LEGACY-${index + 1}`,
+          name: item.productId || `Legacy Product ${index + 1}`,
           category: 'Legacy Product',
           price: 0,
           stock: 0,
@@ -88,7 +84,7 @@ function DiscountPromotionProductsCard({
           image: null,
         }
       }),
-    [catalogItems, value.products],
+    [catalogItems, value.items],
   )
 
   const handleAddProducts = () => {
@@ -100,79 +96,30 @@ function DiscountPromotionProductsCard({
   }
 
   const handleConfirmSelection = (nextSelection: string[]) => {
-    const nextDiscounts = nextSelection.reduce<Record<string, string>>(
-      (accumulator, productId) => {
-        accumulator[productId] = value.productDiscounts[productId] ?? ''
-        return accumulator
-      },
-      {},
-    )
+    const nextItems = nextSelection.map<BundleDealItem>((productId) => {
+      const existing = value.items.find((item) => item.productId === productId)
+      return existing ?? { productId, quantity: 1 }
+    })
 
     onChange({
       ...value,
-      products: nextSelection,
-      productDiscounts: nextDiscounts,
+      items: nextItems,
     })
     setIsPickerOpen(false)
   }
 
   const handleRemoveProduct = (index: number) => {
-    const nextProducts = value.products.filter((_, productIndex) => productIndex !== index)
-    const nextDiscounts = nextProducts.reduce<Record<string, string>>(
-      (accumulator, productId) => {
-        accumulator[productId] = value.productDiscounts[productId] ?? ''
-        return accumulator
-      },
-      {},
+    const nextItems = value.items.filter((_, itemIndex) => itemIndex !== index)
+    onChange({ ...value, items: nextItems })
+  }
+
+  const handleQuantityChange = (index: number, nextValue: string) => {
+    const sanitized = nextValue.replace(/\D/g, '')
+    const parsed = sanitized ? Math.max(Number(sanitized), 1) : 1
+    const nextItems = value.items.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, quantity: parsed } : item,
     )
-
-    onChange({
-      ...value,
-      products: nextProducts,
-      productDiscounts: nextDiscounts,
-    })
-  }
-
-  const handleDiscountInputChange = (productId: string, nextValue: string) => {
-    let sanitized = nextValue.replace(/[^\d.]/g, '')
-    const firstDot = sanitized.indexOf('.')
-
-    if (firstDot !== -1) {
-      sanitized = sanitized.slice(0, firstDot + 1) + sanitized.slice(firstDot + 1).replace(/\./g, '')
-    }
-
-    if (sanitized.startsWith('.')) {
-      sanitized = `0${sanitized}`
-    }
-
-    if (sanitized) {
-      const parsed = Number(sanitized)
-      if (!Number.isNaN(parsed) && parsed > 100) {
-        sanitized = '100'
-      }
-    }
-
-    onChange({
-      ...value,
-      productDiscounts: {
-        ...value.productDiscounts,
-        [productId]: sanitized,
-      },
-    })
-  }
-
-  const getDiscountedPrice = (price: number, discountText: string) => {
-    if (!discountText) {
-      return price
-    }
-
-    const parsedDiscount = Number(discountText)
-    if (Number.isNaN(parsedDiscount)) {
-      return price
-    }
-
-    const normalizedDiscount = Math.min(Math.max(parsedDiscount, 0), 100)
-    return price * (1 - normalizedDiscount / 100)
+    onChange({ ...value, items: nextItems })
   }
 
   const canManageProducts = !isAuthRequired && !hasNoShop
@@ -181,7 +128,7 @@ function DiscountPromotionProductsCard({
     return (
       <article className="px-4 py-3">
         <div className="flex items-start justify-between gap-4">
-          <p className="pt-1 text-[13px] font-medium text-slate-700">Products</p>
+          <p className="pt-1 text-[13px] font-medium text-slate-700">Bundle Items</p>
           <button
             type="button"
             onClick={handleAddProducts}
@@ -189,7 +136,7 @@ function DiscountPromotionProductsCard({
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#f8fbff] active:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <span className="text-base leading-none">+</span>
-            <span>Add Product(s)</span>
+            <span>Add Item(s)</span>
           </button>
         </div>
         {isLoading ? (
@@ -214,8 +161,7 @@ function DiscountPromotionProductsCard({
         {selectedProducts.length > 0 ? (
           <div className="mt-3 space-y-2.5">
             {selectedProducts.map((product, index) => {
-              const discountValue = value.productDiscounts[product.id] ?? ''
-              const discountedPrice = getDiscountedPrice(product.price, discountValue)
+              const item = value.items[index]
 
               return (
                 <div
@@ -231,6 +177,9 @@ function DiscountPromotionProductsCard({
                       <p className="mt-0.5 text-xs text-slate-500">
                         ID: {product.id} | {product.category}
                       </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Price: PHP {toCurrency(product.price)}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -242,24 +191,17 @@ function DiscountPromotionProductsCard({
                   </div>
 
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-xs text-slate-600">
-                      PHP {toCurrency(product.price)} {'->'}{' '}
-                      <span className="font-semibold text-[#1d4ed8]">
-                        PHP {toCurrency(discountedPrice)}
-                      </span>
-                    </p>
+                    <p className="text-xs text-slate-600">Quantity</p>
                     <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
                       <input
                         type="text"
-                        inputMode="decimal"
-                        value={discountValue}
-                        onChange={(event) =>
-                          handleDiscountInputChange(product.id, event.target.value)
-                        }
-                        placeholder="0"
-                        className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                        inputMode="numeric"
+                        value={item?.quantity ?? 1}
+                        onChange={(event) => handleQuantityChange(index, event.target.value)}
+                        placeholder="1"
+                        className="w-12 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                       />
-                      <span className="ml-1 text-[11px] font-semibold text-slate-400">% OFF</span>
+                      <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
                     </div>
                   </div>
                 </div>
@@ -277,9 +219,9 @@ function DiscountPromotionProductsCard({
           isAuthRequired={isAuthRequired}
           hasNoShop={hasNoShop}
           onRetry={() => void loadProducts()}
-          selectedProductIds={value.products}
+          selectedProductIds={value.items.map((item) => item.productId)}
           onConfirmSelection={handleConfirmSelection}
-          subtitle="Choose products for this discount promotion."
+          subtitle="Choose products for this bundle deal."
         />
       </article>
     )
@@ -288,9 +230,9 @@ function DiscountPromotionProductsCard({
   return (
     <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
       <header>
-        <h2 className="text-xl font-semibold text-[#1E40AF]">Discount Promotion Products</h2>
+        <h2 className="text-xl font-semibold text-[#1E40AF]">Bundle Items</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Add products to discount promotion and set discount prices..
+          Add products to include in this bundle and set quantities..
         </p>
       </header>
 
@@ -301,7 +243,7 @@ function DiscountPromotionProductsCard({
           disabled={!canManageProducts || isLoading}
           className="inline-flex h-10 items-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe] disabled:cursor-not-allowed disabled:opacity-45"
         >
-          + Add Products
+          + Add Items
         </button>
       </div>
       {isLoading ? (
@@ -325,23 +267,21 @@ function DiscountPromotionProductsCard({
 
       {selectedProducts.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-lg border border-[#dbeafe]">
-          <div className="grid grid-cols-[minmax(0,1fr)_130px_130px_130px_78px] border-b border-[#dbeafe] bg-[#f8fbff] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+          <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_78px] border-b border-[#dbeafe] bg-[#f8fbff] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
             <p>Product</p>
-            <p>Original</p>
-            <p>Discount</p>
-            <p>Now</p>
+            <p>Price</p>
+            <p>Quantity</p>
             <p>Action</p>
           </div>
 
           <div className="divide-y divide-[#dbeafe] bg-white">
             {selectedProducts.map((product, index) => {
-              const discountValue = value.productDiscounts[product.id] ?? ''
-              const discountedPrice = getDiscountedPrice(product.price, discountValue)
+              const item = value.items[index]
 
               return (
                 <div
                   key={`${product.name}-${index}`}
-                  className="grid grid-cols-[minmax(0,1fr)_130px_130px_130px_78px] items-center gap-2 px-3 py-2.5"
+                  className="grid grid-cols-[minmax(0,1fr)_120px_120px_78px] items-center gap-2 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2.5">
                     <ProductImagePlaceholder name={product.name} compact />
@@ -360,18 +300,14 @@ function DiscountPromotionProductsCard({
                   <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
                     <input
                       type="text"
-                      inputMode="decimal"
-                      value={discountValue}
-                      onChange={(event) => handleDiscountInputChange(product.id, event.target.value)}
-                      placeholder="0"
-                      className="w-16 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                      inputMode="numeric"
+                      value={item?.quantity ?? 1}
+                      onChange={(event) => handleQuantityChange(index, event.target.value)}
+                      placeholder="1"
+                      className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                     />
-                    <span className="ml-1 text-[11px] font-semibold text-slate-400">% OFF</span>
+                    <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
                   </div>
-
-                  <p className="text-sm font-semibold text-[#1d4ed8]">
-                    PHP {toCurrency(discountedPrice)}
-                  </p>
 
                   <button
                     type="button"
@@ -400,12 +336,14 @@ function DiscountPromotionProductsCard({
         isAuthRequired={isAuthRequired}
         hasNoShop={hasNoShop}
         onRetry={() => void loadProducts()}
-        selectedProductIds={value.products}
+        selectedProductIds={value.items.map((item) => item.productId)}
         onConfirmSelection={handleConfirmSelection}
-        subtitle="Choose products for this discount promotion."
+        subtitle="Choose products for this bundle deal."
       />
     </article>
   )
 }
 
-export default DiscountPromotionProductsCard
+export default BundleDealItemsCard
+
+

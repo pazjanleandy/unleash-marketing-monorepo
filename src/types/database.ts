@@ -192,64 +192,75 @@ export type Database = {
           updated_at?: string
         }
       }
-      bundle_deals: {
+      bundles: {
         Row: {
           id: string
+          promotion_id: string
           shop_id: string
-          name: string
-          discount_type: 'percentage' | 'fixed' | 'bundle_price'
-          discount_value: number
-          start_at: string
-          end_at: string
+          name: string | null
+          price: number | null
+          currency: string | null
+          min_quantity: number | null
           max_uses: number | null
-          used_count: number
-          is_active: boolean
+          used_count: number | null
+          is_active: boolean | null
           metadata: Json | null
+          bundle_product_id: string | null
           created_at: string | null
           updated_at: string | null
         }
         Insert: {
+          promotion_id: string
           shop_id: string
-          name: string
-          discount_type: 'percentage' | 'fixed' | 'bundle_price'
-          discount_value: number
-          start_at: string
-          end_at: string
+          name?: string | null
+          price?: number | null
+          currency?: string | null
+          min_quantity?: number | null
           max_uses?: number | null
-          used_count?: number
-          is_active?: boolean
+          used_count?: number | null
+          is_active?: boolean | null
           metadata?: Json | null
+          bundle_product_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
-          name?: string
-          discount_type?: 'percentage' | 'fixed' | 'bundle_price'
-          discount_value?: number
-          start_at?: string
-          end_at?: string
+          promotion_id?: string
+          shop_id?: string
+          name?: string | null
+          price?: number | null
+          currency?: string | null
+          min_quantity?: number | null
           max_uses?: number | null
-          used_count?: number
-          is_active?: boolean
+          used_count?: number | null
+          is_active?: boolean | null
           metadata?: Json | null
-          updated_at?: string
+          bundle_product_id?: string | null
+          updated_at?: string | null
         }
       }
-      bundle_deal_items: {
+      bundle_items: {
         Row: {
           id: string
-          bundle_deal_id: string
+          bundle_id: string
           product_id: string
-          required_quantity: number
+          quantity: number | null
+          position: number | null
+          metadata: Json | null
           created_at: string | null
-          updated_at: string | null
         }
         Insert: {
-          bundle_deal_id: string
+          bundle_id: string
           product_id: string
-          required_quantity?: number
+          quantity?: number | null
+          position?: number | null
+          metadata?: Json | null
+          created_at?: string | null
         }
         Update: {
-          required_quantity?: number
-          updated_at?: string
+          quantity?: number | null
+          position?: number | null
+          metadata?: Json | null
         }
       }
       addon_deals: {

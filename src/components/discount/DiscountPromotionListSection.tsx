@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import type { PromotionRow, PromotionStatus } from './types'
+import type { DiscountCampaignRow, PromotionStatus } from './types'
 
 type DiscountPromotionListSectionProps = {
-  promotions: PromotionRow[]
-  onEditPromotion?: (promotion: PromotionRow) => void
-  onViewPromotion?: (promotion: PromotionRow) => void
-  onDeletePromotion?: (promotion: PromotionRow) => Promise<void> | void
+  promotions: DiscountCampaignRow[]
+  onEditPromotion?: (promotion: DiscountCampaignRow) => void
+  onViewPromotion?: (promotion: DiscountCampaignRow) => void
+  onDeletePromotion?: (promotion: DiscountCampaignRow) => Promise<void> | void
 }
 
 type SearchField = 'Promotion Name' | 'Promotion Type'
@@ -80,8 +80,13 @@ function DiscountPromotionListSection({
     setDateRange('')
   }
 
-  const handleActionClick = (promotion: PromotionRow, action: string) => {
-    if (action === 'Edit' && promotion.type === 'Discount Promotions') {
+  const handleActionClick = (promotion: DiscountCampaignRow, action: string) => {
+    if (
+      action === 'Edit' &&
+      (promotion.type === 'Discount Promotions' ||
+        promotion.type === 'Bundle Deal' ||
+        promotion.type === 'Add-on Deal')
+    ) {
       onEditPromotion?.(promotion)
       return
     }

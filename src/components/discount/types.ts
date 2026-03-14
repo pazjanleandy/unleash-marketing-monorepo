@@ -24,13 +24,14 @@ export type PromotionMetric = {
 
 export type PromotionStatus = 'Ongoing' | 'Upcoming' | 'Expired'
 
-export type PromotionRow = {
+export type DiscountCampaignType = 'promotion' | 'bundle' | 'add-on'
+
+export type BaseCampaignRow = {
   id: string
   status: PromotionStatus
   name: string
   type: Exclude<DiscountPromotionTab, 'All'>
   products: string[]
-  productDiscounts: Record<string, string>
   maxUses: number | null
   period: {
     start: string
@@ -38,3 +39,32 @@ export type PromotionRow = {
   }
   actions: string[]
 }
+
+export type PromotionRow = BaseCampaignRow & {
+  campaignType: 'promotion'
+  productDiscounts: Record<string, string>
+}
+
+export type BundleDealItemRow = {
+  productId: string
+  name: string
+  quantity: number
+}
+
+export type BundleDealRow = BaseCampaignRow & {
+  campaignType: 'bundle'
+  bundlePrice: string
+  currency: string
+  bundleItems: BundleDealItemRow[]
+}
+
+export type AddOnDealRow = BaseCampaignRow & {
+  campaignType: 'add-on'
+  triggerProductId: string
+  triggerProductName: string
+  addonProductId: string
+  addonProductName: string
+  discountValue: string
+}
+
+export type DiscountCampaignRow = PromotionRow | BundleDealRow | AddOnDealRow
