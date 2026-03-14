@@ -86,13 +86,20 @@ function StatusActions({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-4 gap-2">
       <button
         type="button"
         onClick={() => onEditPromotion?.(promotion)}
         className="inline-flex h-8 items-center justify-center rounded border border-[#cbd5e1] bg-white text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
       >
         Edit
+      </button>
+      <button
+        type="button"
+        onClick={() => onViewPromotion?.(promotion)}
+        className="inline-flex h-8 items-center justify-center rounded border border-[#cbd5e1] bg-white text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+      >
+        View
       </button>
       <button
         type="button"

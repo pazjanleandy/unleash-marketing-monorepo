@@ -285,7 +285,7 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
         start: formatPeriod(row.start_at),
         end: formatPeriod(row.end_at),
       },
-      actions: status === 'Expired' ? ['View', 'Delete'] : ['Edit', 'Delete'],
+      actions: status === 'Expired' ? ['View', 'Delete'] : ['Edit', 'View', 'Delete'],
     }
   })
 

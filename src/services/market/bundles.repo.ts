@@ -298,7 +298,7 @@ export async function listBundleDeals(): Promise<BundleListResult> {
         start: section ? formatPeriod(section.start_at) : '',
         end: section ? formatPeriod(section.end_at) : '',
       },
-      actions: status === 'Expired' ? ['View', 'Delete'] : ['Edit', 'Delete'],
+      actions: status === 'Expired' ? ['View', 'Delete'] : ['Edit', 'View', 'Delete'],
     }
   })
 

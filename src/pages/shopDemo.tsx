@@ -6,6 +6,7 @@ import {
   listActiveFlashDeals,
   listClaimableVouchers,
   listActiveBundles,
+  listActiveAddonDeals,
   validateVoucher,
   simulateCheckout,
   resetDemoData,
@@ -13,6 +14,7 @@ import {
   type MarketplaceFlashDeal,
   type MarketplaceVoucher,
   type MarketplaceBundle,
+  type MarketplaceAddonDeal,
   type CartItem,
   type CheckoutResult,
 } from '../services/market/shopDemo.repo'
@@ -39,6 +41,13 @@ function computeDiscountedPrice(product: MarketplaceProduct): number {
     return Math.max(product.price - product.discount.discountValue, 0)
   }
   return product.price
+}
+
+function computeAddonDiscountedPrice(price: number, discountType: 'percentage' | 'fixed', discountValue: number) {
+  if (discountType === 'percentage') {
+    return price * (1 - discountValue / 100)
+  }
+  return Math.max(price - discountValue, 0)
 }
 
 /* ------------------------------------------------------------------ */
@@ -164,6 +173,13 @@ function ProductCard({
   const discPrice = computeDiscountedPrice(product)
   const hasDiscount = discPrice < product.price
   const off = hasDiscount ? discountPercent(product.price, discPrice) : 0
+  const discountLabel = product.discount
+    ? product.discount.discountType === 'percentage'
+      ? `${product.discount.discountValue}% OFF`
+      : `${formatPrice(product.discount.discountValue)} OFF`
+    : product.flashDeal && off > 0
+      ? `${off}% OFF`
+      : ''
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_24px_-8px_rgba(0,0,0,.08)] transition hover:border-blue-200 hover:shadow-[0_8px_32px_-8px_rgba(37,99,235,.12)]">
@@ -201,6 +217,9 @@ function ProductCard({
             <span className="text-xs text-slate-400 line-through">{formatPrice(product.price)}</span>
           )}
         </div>
+        {discountLabel ? (
+          <span className="text-[11px] font-medium text-red-500">Discount: {discountLabel}</span>
+        ) : null}
         <span className="text-[11px] text-slate-400">
           {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}
         </span>
@@ -272,12 +291,28 @@ function BundleCard({
 /*  CartDrawer                                                         */
 /* ------------------------------------------------------------------ */
 
+type AddonSuggestion = {
+  dealId: string
+  dealName: string
+  triggerProductId: string
+  triggerProductName: string
+  addonProductId: string
+  addonProductName: string
+  addonProductImage: string | null
+  addonProductPrice: number
+  discountedPrice: number
+  discountLabel: string
+  requiredQuantity: number
+}
+
 function CartDrawer({
   open,
   items,
   onClose,
   onUpdateQty,
   onRemove,
+  addonSuggestions,
+  onAddAddon,
   voucherCode,
   onVoucherCodeChange,
   onApplyVoucher,
@@ -292,6 +327,8 @@ function CartDrawer({
   onClose: () => void
   onUpdateQty: (productId: string, delta: number) => void
   onRemove: (productId: string) => void
+  addonSuggestions: AddonSuggestion[]
+  onAddAddon: (addon: AddonSuggestion) => void
   voucherCode: string
   onVoucherCodeChange: (v: string) => void
   onApplyVoucher: () => void
@@ -330,6 +367,58 @@ function CartDrawer({
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {addonSuggestions.length > 0 && (
+            <div className="mb-4 rounded-xl border border-emerald-200/80 bg-emerald-50 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Add-ons for Your Cart
+                </p>
+                <span className="text-[11px] text-emerald-600">
+                  {addonSuggestions.length} available
+                </span>
+              </div>
+              <div className="space-y-2">
+                {addonSuggestions.map((addon) => (
+                  <div
+                    key={`${addon.dealId}-${addon.addonProductId}`}
+                    className="flex items-center gap-3 rounded-lg border border-emerald-200/70 bg-white p-2.5"
+                  >
+                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-emerald-100">
+                      {addon.addonProductImage ? (
+                        <img src={addon.addonProductImage} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-lg">🎁</div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-800 line-clamp-1">
+                        {addon.addonProductName}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        With {addon.triggerProductName} · {addon.discountLabel}
+                      </p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <span className="text-sm font-bold text-emerald-700">
+                          {formatPrice(addon.discountedPrice)}
+                        </span>
+                        <span className="text-[11px] text-slate-400 line-through">
+                          {formatPrice(addon.addonProductPrice)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onAddAddon(addon)}
+                      className="inline-flex h-8 items-center justify-center rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-400">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -364,6 +453,11 @@ function CartDrawer({
                         </span>
                       )}
                     </div>
+                    {item.originalPrice > item.price && (
+                      <span className="text-[11px] font-medium text-red-500">
+                        Discount: {discountPercent(item.originalPrice, item.price)}% OFF
+                      </span>
+                    )}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onUpdateQty(item.productId, -1)}
@@ -563,6 +657,7 @@ function ShopDemoPage() {
   const [flashDeals, setFlashDeals] = useState<MarketplaceFlashDeal[]>([])
   const [vouchers, setVouchers] = useState<MarketplaceVoucher[]>([])
   const [bundles, setBundles] = useState<MarketplaceBundle[]>([])
+  const [addonDeals, setAddonDeals] = useState<MarketplaceAddonDeal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -606,6 +701,51 @@ function ShopDemoPage() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
+  const addonSuggestions = useMemo<AddonSuggestion[]>(() => {
+    if (addonDeals.length === 0 || cart.length === 0) return []
+
+    const cartQtyMap = new Map<string, number>()
+    for (const item of cart) {
+      cartQtyMap.set(item.productId, (cartQtyMap.get(item.productId) ?? 0) + item.quantity)
+    }
+
+    const cartProductIds = new Set(cart.map((item) => item.productId))
+
+    return addonDeals.flatMap((deal) => {
+      const triggerQty = cartQtyMap.get(deal.triggerProductId) ?? 0
+      const addonItem = deal.addonItems[0]
+      if (!addonItem) return []
+      if (triggerQty < addonItem.requiredQuantity) return []
+      if (cartProductIds.has(addonItem.productId)) return []
+
+      const discountedPrice = computeAddonDiscountedPrice(
+        addonItem.productPrice,
+        deal.discountType,
+        deal.discountValue,
+      )
+      const discountLabel =
+        deal.discountType === 'percentage'
+          ? `${deal.discountValue}% OFF`
+          : `${formatPrice(deal.discountValue)} OFF`
+
+      return [
+        {
+          dealId: deal.id,
+          dealName: deal.name,
+          triggerProductId: deal.triggerProductId,
+          triggerProductName: deal.triggerProductName,
+          addonProductId: addonItem.productId,
+          addonProductName: addonItem.productName,
+          addonProductImage: addonItem.productImage,
+          addonProductPrice: addonItem.productPrice,
+          discountedPrice,
+          discountLabel,
+          requiredQuantity: addonItem.requiredQuantity,
+        },
+      ]
+    })
+  }, [addonDeals, cart])
+
   // ---- Data loading ----
 
   const loadData = useCallback(async () => {
@@ -614,16 +754,18 @@ function ShopDemoPage() {
     try {
       const sid = await getDemoShopId()
       setShopId(sid)
-      const [prods, fds, vch, bdls] = await Promise.all([
+      const [prods, fds, vch, bdls, addons] = await Promise.all([
         listMarketplaceProducts(sid),
         listActiveFlashDeals(sid),
         listClaimableVouchers(sid),
         listActiveBundles(sid),
+        listActiveAddonDeals(sid),
       ])
       setProducts(prods)
       setFlashDeals(fds)
       setVouchers(vch)
       setBundles(bdls)
+      setAddonDeals(addons)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load marketplace data.')
     } finally {
@@ -684,6 +826,31 @@ function ShopDemoPage() {
           image: product.image,
           flashDealId: product.flashDeal?.id ?? null,
           discountId: product.discount?.id ?? null,
+        },
+      ]
+    })
+    setCartOpen(true)
+  }
+
+  const addAddonToCart = (addon: AddonSuggestion) => {
+    setCart((prev) => {
+      const existing = prev.find((c) => c.productId === addon.addonProductId)
+      if (existing) {
+        return prev.map((c) =>
+          c.productId === addon.addonProductId ? { ...c, quantity: c.quantity + 1 } : c,
+        )
+      }
+      return [
+        ...prev,
+        {
+          productId: addon.addonProductId,
+          name: addon.addonProductName,
+          price: addon.discountedPrice,
+          originalPrice: addon.addonProductPrice,
+          quantity: 1,
+          image: addon.addonProductImage,
+          flashDealId: null,
+          discountId: null,
         },
       ]
     })
@@ -958,6 +1125,8 @@ function ShopDemoPage() {
         onClose={() => setCartOpen(false)}
         onUpdateQty={updateCartQty}
         onRemove={removeFromCart}
+        addonSuggestions={addonSuggestions}
+        onAddAddon={addAddonToCart}
         voucherCode={voucherCode}
         onVoucherCodeChange={setVoucherCode}
         onApplyVoucher={handleApplyVoucher}
