@@ -403,11 +403,22 @@ function VoucherRow({
   onDelete?: (voucher: VoucherItem) => void
   canManage?: boolean
 }) {
-  const productScope = voucher.type.toLowerCase().includes('all')
-    ? 'All products'
-    : voucher.type.toLowerCase().includes('shop')
-      ? 'All products'
+  const isProductVoucher = voucher.voucherType === 'product'
+  const productList =
+    isProductVoucher && voucher.productNames.length > 0
+      ? voucher.productNames
+      : []
+  const productSummary = isProductVoucher
+    ? productList.length > 0
+      ? `Selected products (${voucher.productCount})`
       : 'Selected products'
+    : 'All products'
+  const productDetail =
+    isProductVoucher && productList.length > 0
+      ? productList.length <= 2
+        ? productList.join(', ')
+        : `${productList.slice(0, 2).join(', ')} +${productList.length - 2} more`
+      : null
 
   return (
     <tr className="align-top border-t border-slate-100 text-sm text-slate-700">
@@ -430,7 +441,12 @@ function VoucherRow({
       <td className="px-4 py-4">
         <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''}`}>{voucher.type}</span>
       </td>
-      <td className="px-4 py-4 text-slate-600">{productScope}</td>
+      <td className="px-4 py-4 text-slate-600">
+        <p className="font-medium text-slate-700">{productSummary}</p>
+        {productDetail ? (
+          <p className="mt-1 text-xs text-slate-500">{productDetail}</p>
+        ) : null}
+      </td>
       <td className="px-4 py-4 text-slate-600">{voucher.voucherType === 'private' ? 'Targeted' : 'All Buyers'}</td>
       <td className="px-4 py-4 font-medium text-slate-900">{voucher.discountAmount}</td>
       <td className="px-4 py-4">{voucher.quantity}</td>
@@ -547,7 +563,7 @@ function VouchersPage({
       return mobileVouchers
     }
 
-    return mobileVouchers.filter((voucher) => !voucher.type.toLowerCase().includes('shop'))
+    return mobileVouchers.filter((voucher) => voucher.voucherType === 'product')
   }, [mobileVouchers, quickFilter])
 
   const desktopVouchers = useMemo(() => {

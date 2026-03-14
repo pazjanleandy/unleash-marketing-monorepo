@@ -191,6 +191,12 @@ function toWholeNumberInputValue(value: number | string, fallback: string) {
 function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
   const now = new Date()
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+  const claimStart = voucher.claimStartAtIso ?? voucher.startAtIso
+  const claimEnd = voucher.claimEndAtIso ?? voucher.endAtIso
+  const claimStartDate = claimStart ? new Date(claimStart) : null
+  const claimEndDate = claimEnd ? new Date(claimEnd) : null
+  const hasValidClaimStart = claimStartDate && !Number.isNaN(claimStartDate.getTime())
+  const hasValidClaimEnd = claimEndDate && !Number.isNaN(claimEndDate.getTime())
 
   return {
     voucherType: voucher.voucherType ?? 'shop',
@@ -211,8 +217,12 @@ function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
     ),
     displaySetting: voucher.voucherType === 'private' ? 'voucher-code' : 'all-pages',
     productScope: voucher.voucherType === 'product' ? 'specific-products' : 'all-products',
-    startDateTime: createVoucherDefaults.startDateTime || toLocalDateTimeInputValue(now),
-    endDateTime: createVoucherDefaults.endDateTime || toLocalDateTimeInputValue(oneHourLater),
+    startDateTime: hasValidClaimStart
+      ? toLocalDateTimeInputValue(claimStartDate)
+      : createVoucherDefaults.startDateTime || toLocalDateTimeInputValue(now),
+    endDateTime: hasValidClaimEnd
+      ? toLocalDateTimeInputValue(claimEndDate)
+      : createVoucherDefaults.endDateTime || toLocalDateTimeInputValue(oneHourLater),
     selectedProductIds: [],
     livestreamUrl: '',
     videoUrl: '',

@@ -739,7 +739,7 @@ function ShopDemoPage() {
     if (!shopId || !voucherCode.trim()) return
     setIsApplyingVoucher(true)
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-    const result = await validateVoucher(voucherCode, subtotal, shopId)
+    const result = await validateVoucher(voucherCode, subtotal, shopId, cart)
     setVoucherMessage(result.message)
     setVoucherDiscount(result.discount)
     setAppliedVoucherId(result.voucherId)

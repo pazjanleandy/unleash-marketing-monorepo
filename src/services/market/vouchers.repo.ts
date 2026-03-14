@@ -29,7 +29,10 @@ const VOUCHER_TYPE_LABELS: Record<string, string> = {
 }
 
 type VoucherRowWithRelations = VoucherRow & {
-  voucher_products?: Array<{ product_id?: string | null }> | null
+  voucher_products?: Array<{
+    product_id?: string | null
+    products?: { prodname?: string | null } | null
+  }> | null
 }
 
 function formatMoney(value: number) {
@@ -124,6 +127,9 @@ function toVoucherItem(row: VoucherRowWithRelations): VoucherItem {
   const voucherTypeLabel = VOUCHER_TYPE_LABELS[voucherTypeKey] ?? 'Shop Voucher'
   const claimingStart = row.claim_start_at ?? row.start_at
   const claimingEnd = row.claim_end_at ?? row.end_at
+  const productNames = (row.voucher_products ?? [])
+    .map((item) => item.products?.prodname?.trim())
+    .filter((value): value is string => Boolean(value && value.length > 0))
 
   return {
     id: row.id,
@@ -131,6 +137,12 @@ function toVoucherItem(row: VoucherRowWithRelations): VoucherItem {
     name: row.name?.trim() || row.code,
     type: voucherTypeLabel,
     voucherType: voucherTypeKey,
+    startAtIso: row.start_at,
+    endAtIso: row.end_at,
+    claimStartAtIso: claimingStart,
+    claimEndAtIso: claimingEnd,
+    productNames,
+    productCount: productLinks,
     discountAmount: isPercentage ? `${discountNumeric}%` : formatMoney(discountNumeric),
     quantity: usageQuantity,
     usageLimit: perUserLimit === null ? '-' : `${perUserLimit}`,
@@ -266,7 +278,7 @@ export async function listVouchers(filters: VoucherListFilters = {}): Promise<Vo
   const { data, error } = await supabase
     .from('vouchers')
     .select(
-      'id,shop_id,code,name,voucher_type,discount_type,discount_value,discount_amount,min_spend,max_discount,usage_limit,usage_quantity,usage_per_user,used_count,total_used,start_at,end_at,claim_start_at,claim_end_at,is_active,metadata,created_at,updated_at,voucher_products(product_id)',
+      'id,shop_id,code,name,voucher_type,discount_type,discount_value,discount_amount,min_spend,max_discount,usage_limit,usage_quantity,usage_per_user,used_count,total_used,start_at,end_at,claim_start_at,claim_end_at,is_active,metadata,created_at,updated_at,voucher_products(product_id,products(prodname))',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })

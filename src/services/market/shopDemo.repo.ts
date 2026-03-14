@@ -1,4 +1,4 @@
-import { supabase } from '../../supabase'
+﻿import { supabase } from '../../supabase'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,6 +153,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
     .select('id,product_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at')
     .eq('shop_id', shopId)
     .eq('is_active', true)
+    .or('voucher_type.is.null,voucher_type.neq.private')
     .lte('start_at', now)
     .gte('end_at', now)
 
@@ -253,9 +254,10 @@ export async function listClaimableVouchers(shopId: string): Promise<Marketplace
 
   const { data, error } = await supabase
     .from('vouchers')
-    .select('id,code,name,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at')
+    .select('id,code,name,voucher_type,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at')
     .eq('shop_id', shopId)
     .eq('is_active', true)
+    .or('voucher_type.is.null,voucher_type.neq.private')
     .lte('start_at', now)
     .gte('end_at', now)
     .order('created_at', { ascending: false })
@@ -369,6 +371,7 @@ export async function validateVoucher(
   code: string,
   cartTotal: number,
   shopId: string,
+  cartItems: CartItem[],
 ): Promise<{ valid: boolean; message: string; discount: number; voucherId: string | null }> {
   const trimmedCode = code.trim().toUpperCase()
   if (!trimmedCode) {
@@ -379,7 +382,9 @@ export async function validateVoucher(
 
   const { data, error } = await supabase
     .from('vouchers')
-    .select('id,code,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at')
+    .select(
+      'id,code,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,voucher_products(product_id)',
+    )
     .eq('shop_id', shopId)
     .eq('code', trimmedCode)
     .eq('is_active', true)
@@ -400,8 +405,46 @@ export async function validateVoucher(
     return { valid: false, message: 'This voucher has reached its usage limit.', discount: 0, voucherId: null }
   }
 
+  const voucherType = (() => {
+    const metadata =
+      data && typeof data.metadata === 'object' && data.metadata !== null
+        ? (data.metadata as Record<string, unknown>)
+        : {}
+    const raw =
+      (data.voucher_type as string | null) ??
+      (metadata.voucher_type as string | undefined) ??
+      (metadata.voucherType as string | undefined) ??
+      (metadata.voucher_category as string | undefined) ??
+      ''
+    return typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+  })()
+
+  const isProductVoucher = voucherType === 'product'
+  const linkedProducts = (data.voucher_products ?? [])
+    .map((row: { product_id?: string | null }) => row.product_id)
+    .filter((value): value is string => Boolean(value))
+
+  const eligibleSubtotal = isProductVoucher
+    ? cartItems.reduce(
+        (sum, item) =>
+          linkedProducts.includes(item.productId) ? sum + item.price * item.quantity : sum,
+        0,
+      )
+    : cartTotal
+
+  if (isProductVoucher) {
+    if (linkedProducts.length === 0 || eligibleSubtotal <= 0) {
+      return {
+        valid: false,
+        message: 'This voucher only applies to selected products.',
+        discount: 0,
+        voucherId: null,
+      }
+    }
+  }
+
   const minSpend = data.min_spend ?? 0
-  if (cartTotal < minSpend) {
+  if (eligibleSubtotal < minSpend) {
     return {
       valid: false,
       message: `Minimum spend of ₱${minSpend.toFixed(2)} required.`,
@@ -412,7 +455,7 @@ export async function validateVoucher(
 
   let discount = 0
   if (data.discount_type === 'percentage') {
-    discount = cartTotal * (data.discount_value / 100)
+    discount = eligibleSubtotal * (data.discount_value / 100)
     if (data.max_discount && discount > data.max_discount) {
       discount = data.max_discount
     }
@@ -420,7 +463,7 @@ export async function validateVoucher(
     discount = data.discount_value
   }
 
-  discount = Math.min(discount, cartTotal)
+  discount = Math.min(discount, eligibleSubtotal)
 
   return {
     valid: true,
@@ -610,3 +653,4 @@ export async function resetDemoData(shopId: string): Promise<{ success: boolean;
     }
   }
 }
+

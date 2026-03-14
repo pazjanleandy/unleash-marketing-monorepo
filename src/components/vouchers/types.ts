@@ -15,6 +15,12 @@ export type VoucherItem = {
   name: string
   type: string
   voucherType: VoucherType
+  startAtIso: string
+  endAtIso: string
+  claimStartAtIso: string
+  claimEndAtIso: string
+  productNames: string[]
+  productCount: number
   discountAmount: string
   quantity: number
   usageLimit: string
