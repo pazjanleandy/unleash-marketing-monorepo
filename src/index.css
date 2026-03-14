@@ -90,3 +90,29 @@
     grid-template-columns: 1fr;
   }
 }
+
+@keyframes stock-fill {
+  from { width: 0%; }
+}
+
+@keyframes checkmark-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes cart-slide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@layer components {
+  .stock-bar-animate {
+    animation: stock-fill 800ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .checkmark-animate path {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: checkmark-draw 500ms 200ms ease forwards;
+  }
+}
+

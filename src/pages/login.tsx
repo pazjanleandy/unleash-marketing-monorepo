@@ -1,6 +1,24 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
+
+async function resolvePostLoginRoute(): Promise<string> {
+  try {
+    const { data: userData } = await supabase.auth.getUser()
+    const userId = userData?.user?.id
+    if (!userId) return '/shop-demo'
+
+    const { data: shopRow } = await supabase
+      .from('shops')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle()
+
+    return shopRow?.id ? '/marketing-centre' : '/shop-demo'
+  } catch {
+    return '/shop-demo'
+  }
+}
 const pawMarks = [
   { top: '6%', left: '8%', size: 56, opacity: 0.16 },
   { top: '10%', left: '38%', size: 68, opacity: 0.14 },
@@ -93,7 +111,8 @@ function LoginPage() {
 
     setIsSubmitting(false)
     setErrorMessage('')
-    navigate('/market-centre')
+    const route = await resolvePostLoginRoute()
+    navigate(route)
   }
 
   const handleForgotPassword = async () => {
@@ -229,7 +248,7 @@ function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/market-centre')}
+                onClick={() => navigate('/shop-demo')}
                 className="h-12 w-full rounded-xl border border-[#324c8f] bg-transparent text-sm font-semibold text-slate-200 transition hover:bg-[#0c1d46] active:scale-[0.99]"
               >
                 Skip for now
