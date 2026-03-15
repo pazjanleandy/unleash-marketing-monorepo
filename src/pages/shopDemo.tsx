@@ -311,8 +311,6 @@ function CartDrawer({
   onClose,
   onUpdateQty,
   onRemove,
-  addonSuggestions,
-  onAddAddon,
   voucherCode,
   onVoucherCodeChange,
   onApplyVoucher,
@@ -327,8 +325,6 @@ function CartDrawer({
   onClose: () => void
   onUpdateQty: (productId: string, delta: number) => void
   onRemove: (productId: string) => void
-  addonSuggestions: AddonSuggestion[]
-  onAddAddon: (addon: AddonSuggestion) => void
   voucherCode: string
   onVoucherCodeChange: (v: string) => void
   onApplyVoucher: () => void
@@ -367,58 +363,6 @@ function CartDrawer({
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {addonSuggestions.length > 0 && (
-            <div className="mb-4 rounded-xl border border-emerald-200/80 bg-emerald-50 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                  Add-ons for Your Cart
-                </p>
-                <span className="text-[11px] text-emerald-600">
-                  {addonSuggestions.length} available
-                </span>
-              </div>
-              <div className="space-y-2">
-                {addonSuggestions.map((addon) => (
-                  <div
-                    key={`${addon.dealId}-${addon.addonProductId}`}
-                    className="flex items-center gap-3 rounded-lg border border-emerald-200/70 bg-white p-2.5"
-                  >
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-emerald-100">
-                      {addon.addonProductImage ? (
-                        <img src={addon.addonProductImage} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-lg">🎁</div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800 line-clamp-1">
-                        {addon.addonProductName}
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        With {addon.triggerProductName} · {addon.discountLabel}
-                      </p>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <span className="text-sm font-bold text-emerald-700">
-                          {formatPrice(addon.discountedPrice)}
-                        </span>
-                        <span className="text-[11px] text-slate-400 line-through">
-                          {formatPrice(addon.addonProductPrice)}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onAddAddon(addon)}
-                      className="inline-flex h-8 items-center justify-center rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                    >
-                      Add
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-400">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -553,6 +497,85 @@ function CartDrawer({
   )
 }
 
+function AddonSuggestionModal({
+  open,
+  suggestions,
+  onClose,
+  onAddAddon,
+}: {
+  open: boolean
+  suggestions: AddonSuggestion[]
+  onClose: () => void
+  onAddAddon: (addon: AddonSuggestion) => void
+}) {
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-4 sm:items-center">
+      <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Add-on Suggestions</h3>
+            <p className="text-xs text-slate-500">Discounted add-ons based on your cart.</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 transition hover:text-slate-700">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+          <div className="space-y-3">
+            {suggestions.map((addon) => (
+              <div
+                key={`${addon.dealId}-${addon.addonProductId}`}
+                className="flex items-center gap-3 rounded-xl border border-emerald-200/70 bg-emerald-50/40 p-3"
+              >
+                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-emerald-100">
+                  {addon.addonProductImage ? (
+                    <img src={addon.addonProductImage} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-lg">🎁</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-800 line-clamp-1">
+                    {addon.addonProductName}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    With {addon.triggerProductName} · {addon.discountLabel}
+                  </p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-sm font-bold text-emerald-700">{formatPrice(addon.discountedPrice)}</span>
+                    <span className="text-[11px] text-slate-400 line-through">
+                      {formatPrice(addon.addonProductPrice)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onAddAddon(addon)}
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Add
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+          <button
+            onClick={onClose}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Success Modal                                                      */
 /* ------------------------------------------------------------------ */
@@ -664,6 +687,9 @@ function ShopDemoPage() {
   // Cart
   const [cart, setCart] = useState<CartItem[]>([])
   const [cartOpen, setCartOpen] = useState(false)
+  const [addonModalOpen, setAddonModalOpen] = useState(false)
+  const [addonModalItems, setAddonModalItems] = useState<AddonSuggestion[]>([])
+  const [pendingAddonTriggerIds, setPendingAddonTriggerIds] = useState<string[]>([])
 
   // Voucher input
   const [voucherCode, setVoucherCode] = useState('')
@@ -746,6 +772,17 @@ function ShopDemoPage() {
     })
   }, [addonDeals, cart])
 
+  useEffect(() => {
+    if (pendingAddonTriggerIds.length === 0) return
+    const triggerSet = new Set(pendingAddonTriggerIds)
+    const suggestions = addonSuggestions.filter((suggestion) => triggerSet.has(suggestion.triggerProductId))
+    if (suggestions.length > 0) {
+      setAddonModalItems(suggestions)
+      setAddonModalOpen(true)
+    }
+    setPendingAddonTriggerIds([])
+  }, [addonSuggestions, pendingAddonTriggerIds])
+
   // ---- Data loading ----
 
   const loadData = useCallback(async () => {
@@ -804,6 +841,7 @@ function ShopDemoPage() {
       ]
     })
     setCartOpen(true)
+    setPendingAddonTriggerIds([deal.productId])
   }
 
   const addProductToCart = (product: MarketplaceProduct) => {
@@ -830,6 +868,7 @@ function ShopDemoPage() {
       ]
     })
     setCartOpen(true)
+    setPendingAddonTriggerIds([product.id])
   }
 
   const addAddonToCart = (addon: AddonSuggestion) => {
@@ -855,6 +894,7 @@ function ShopDemoPage() {
       ]
     })
     setCartOpen(true)
+    setAddonModalOpen(false)
   }
 
   const addBundleToCart = (bundle: MarketplaceBundle) => {
@@ -886,6 +926,8 @@ function ShopDemoPage() {
       })
     }
     setCartOpen(true)
+    const triggerIds = Array.from(new Set(bundle.items.map((item) => item.productId)))
+    setPendingAddonTriggerIds(triggerIds)
   }
 
   const updateCartQty = (productId: string, delta: number) => {
@@ -1125,8 +1167,6 @@ function ShopDemoPage() {
         onClose={() => setCartOpen(false)}
         onUpdateQty={updateCartQty}
         onRemove={removeFromCart}
-        addonSuggestions={addonSuggestions}
-        onAddAddon={addAddonToCart}
         voucherCode={voucherCode}
         onVoucherCodeChange={setVoucherCode}
         onApplyVoucher={handleApplyVoucher}
@@ -1135,6 +1175,13 @@ function ShopDemoPage() {
         isApplyingVoucher={isApplyingVoucher}
         onCheckout={handleCheckout}
         isCheckingOut={isCheckingOut}
+      />
+
+      <AddonSuggestionModal
+        open={addonModalOpen}
+        suggestions={addonModalItems}
+        onClose={() => setAddonModalOpen(false)}
+        onAddAddon={addAddonToCart}
       />
 
       {/* ===== Checkout Success Modal ===== */}

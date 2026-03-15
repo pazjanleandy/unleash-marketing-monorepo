@@ -64,6 +64,7 @@ type FlashDealCatalogEntry = {
 }
 
 const SLOT_DURATION_HOURS = 6
+const SLOT_DURATION_OPTIONS = [4, 6, 8, 12, 24, 48]
 const MOBILE_RULES_PREVIEW_COUNT = 4
 const MOBILE_RULES_REGION_ID = 'flash-deal-mobile-rules'
 const MOBILE_DAY_OPTION_COUNT = 5
@@ -318,6 +319,7 @@ function toSubmitErrorMessage(error: unknown) {
 }
 
 function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
+  const [slotDurationHours, setSlotDurationHours] = useState(SLOT_DURATION_HOURS)
   const [slotStartDateTime, setSlotStartDateTime] = useState(() =>
     toLocalDateTimeInputValue(getInitialSlotStartDate()),
   )
@@ -362,8 +364,8 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     [slotStartDateTime],
   )
   const slotEndDate = useMemo(
-    () => (slotStartDate ? addHours(slotStartDate, SLOT_DURATION_HOURS) : null),
-    [slotStartDate],
+    () => (slotStartDate ? addHours(slotStartDate, slotDurationHours) : null),
+    [slotDurationHours, slotStartDate],
   )
   const productsById = useMemo(
     () => new Map(availableProducts.map((product) => [product.id, product])),
@@ -1141,12 +1143,26 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     Time Slots
                   </p>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-slate-500">Duration</span>
+                    <select
+                      value={slotDurationHours}
+                      onChange={(event) => setSlotDurationHours(Number(event.target.value))}
+                      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 focus:border-[#93c5fd] focus:outline-none"
+                    >
+                      {SLOT_DURATION_OPTIONS.map((hours) => (
+                        <option key={hours} value={hours}>
+                          {hours} hrs
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div className="space-y-2">
                     {MOBILE_SLOT_START_HOURS.map((slotHour) => {
                       const slotStart = new Date(selectedMobileDayForSlots)
                       slotStart.setHours(slotHour, 0, 0, 0)
-                      const slotEnd = addHours(slotStart, SLOT_DURATION_HOURS)
+                      const slotEnd = addHours(slotStart, slotDurationHours)
                       const isDisabled = slotStart < new Date()
                       const selected =
                         !isDisabled &&
@@ -1287,11 +1303,24 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
               <div className="mt-5 divide-y divide-[#e2e8f0]">
                 <section className="pb-5">
-                  <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-base font-semibold text-slate-800">Schedule</h3>
-                    <span className="rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-semibold text-[#1d4ed8]">
-                      {SLOT_DURATION_HOURS}-hour slot
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-semibold text-[#1d4ed8]">
+                        {slotDurationHours}-hour slot
+                      </span>
+                      <select
+                        value={slotDurationHours}
+                        onChange={(event) => setSlotDurationHours(Number(event.target.value))}
+                        className="h-9 rounded-lg border border-[#bfdbfe] bg-white px-2 text-xs font-semibold text-[#1d4ed8] focus:border-[#93c5fd] focus:outline-none"
+                      >
+                        {SLOT_DURATION_OPTIONS.map((hours) => (
+                          <option key={hours} value={hours}>
+                            {hours} hrs
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <button

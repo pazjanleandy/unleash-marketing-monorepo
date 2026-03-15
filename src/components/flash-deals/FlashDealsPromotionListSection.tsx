@@ -838,18 +838,6 @@ function FlashDealsPromotionListSection({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff]"
-            >
-              Bulk Add
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-9 items-center rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff]"
-            >
-              Bulk Manage
-            </button>
-            <button
-              type="button"
               onClick={() => onCreate?.()}
               className="inline-flex h-9 items-center rounded-md bg-[#2563EB] px-3.5 text-xs font-semibold text-white transition hover:bg-[#1d4ed8]"
             >
