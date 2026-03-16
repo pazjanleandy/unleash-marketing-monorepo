@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -52,6 +53,7 @@ import {
   updateAddOnDeal,
 } from '../services/market/addons.repo'
 import { createFlashDeals } from '../services/market/flashDeals.repo'
+import { supabase } from '../supabase'
 
 export type MarketCentreView =
   | 'dashboard'
@@ -330,9 +332,11 @@ function getIsMobileViewport() {
 }
 
 function MarketCentrePage() {
+  const navigate = useNavigate()
   const [activeView, setActiveView] = useState<MarketCentreView>('dashboard')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const wasSidebarOpenRef = useRef(false)
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null)
@@ -606,6 +610,20 @@ function MarketCentrePage() {
 
     if (isMobileViewport) {
       setIsSidebarOpen(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      navigate('/', { replace: true })
     }
   }
 
@@ -972,28 +990,67 @@ function MarketCentrePage() {
                   <circle cx="12" cy="12.04" r="3.1" stroke="currentColor" strokeWidth="1.6" />
                 </svg>
               </button>
-              <button
-                type="button"
-                aria-label="User profile"
-                className="inline-flex h-full w-11 items-center justify-center rounded-md bg-white text-slate-600 transition hover:bg-slate-50"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+              <div className="group relative flex h-full items-center">
+                <button
+                  type="button"
+                  aria-label="User profile"
+                  className="inline-flex h-full w-11 items-center justify-center rounded-md bg-white text-slate-600 transition hover:bg-slate-50"
                 >
-                  <path
-                    d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M4 22C4 18.6863 7.58172 16 12 16C16.4183 16 20 18.6863 20 22"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M4 22C4 18.6863 7.58172 16 12 16C16.4183 16 20 18.6863 20 22"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+                <div className="pointer-events-none absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1 opacity-0 shadow-[0_26px_48px_-30px_rgba(15,23,42,0.6)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M14 7L9 12L14 17"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 12H20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M4 4H10V20H4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
           </div>

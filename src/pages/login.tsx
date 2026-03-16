@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 
@@ -64,6 +64,33 @@ function LoginPage() {
   const signupPendingConfirmation = searchParams.get('confirmation') === 'pending'
   const signupEmail = searchParams.get('email') ?? ''
 
+  useEffect(() => {
+    let isActive = true
+
+    const redirectAuthenticatedUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!isActive || !session) {
+        return
+      }
+
+      const route = await resolvePostLoginRoute()
+      if (!isActive) {
+        return
+      }
+
+      navigate(route, { replace: true })
+    }
+
+    void redirectAuthenticatedUser()
+
+    return () => {
+      isActive = false
+    }
+  }, [navigate])
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (isSubmitting) {
@@ -112,7 +139,7 @@ function LoginPage() {
     setIsSubmitting(false)
     setErrorMessage('')
     const route = await resolvePostLoginRoute()
-    navigate(route)
+    navigate(route, { replace: true })
   }
 
   const handleForgotPassword = async () => {
