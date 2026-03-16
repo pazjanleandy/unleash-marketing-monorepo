@@ -373,6 +373,43 @@ function MarketCentrePage() {
   const bundleFormKey = editingBundle ? `edit-${editingBundle.name}` : 'create'
   const addOnFormKey = editingAddOn ? `edit-${editingAddOn.name}` : 'create'
 
+  useEffect(() => {
+    let isActive = true
+
+    const redirectIfNoShop = async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (!isActive || error) {
+        return
+      }
+
+      const userId = data.user?.id
+      if (!userId) {
+        navigate('/shop-demo', { replace: true })
+        return
+      }
+
+      const { data: shopRow, error: shopError } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', userId)
+        .maybeSingle()
+
+      if (!isActive || shopError) {
+        return
+      }
+
+      if (!shopRow?.id) {
+        navigate('/shop-demo', { replace: true })
+      }
+    }
+
+    void redirectIfNoShop()
+
+    return () => {
+      isActive = false
+    }
+  }, [navigate])
+
   const handleToolSelect = (tool: ToolCard) => {
     if (tool.id === 'vouchers') {
       setActiveView('vouchers')
