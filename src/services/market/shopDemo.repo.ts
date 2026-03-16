@@ -1,4 +1,4 @@
-﻿import { supabase } from '../../supabase'
+import { supabase } from '../../supabase'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -11,6 +11,9 @@ export type MarketplaceProduct = {
   image: string | null
   category: string
   quantity: number
+  shopId: string
+  shopName: string
+  shopOwnerId: string | null
   flashDeal: {
     id: string
     flashPrice: number
@@ -40,6 +43,9 @@ export type MarketplaceFlashDeal = {
   startAt: string
   endAt: string
   purchaseLimit: number | null
+  shopId: string
+  shopName: string
+  shopOwnerId: string | null
 }
 
 export type MarketplaceVoucher = {
@@ -54,6 +60,9 @@ export type MarketplaceVoucher = {
   usedCount: number
   startAt: string
   endAt: string
+  shopId: string
+  shopName: string
+  shopOwnerId: string | null
 }
 
 export type MarketplaceBundle = {
@@ -61,6 +70,9 @@ export type MarketplaceBundle = {
   name: string | null
   price: number | null
   currency: string
+  shopId: string
+  shopName: string
+  shopOwnerId: string | null
   items: Array<{
     productId: string
     productName: string
@@ -111,21 +123,16 @@ export type CheckoutResult = {
 // ---------------------------------------------------------------------------
 
 let cachedShopId: string | null = null
+const DEMO_SHOP_ID = 'public-market'
+
+function isDemoShop(shopId: string) {
+  return shopId === DEMO_SHOP_ID
+}
 
 export async function getDemoShopId(): Promise<string> {
   if (cachedShopId) return cachedShopId
-
-  const { data, error } = await supabase
-    .from('shops')
-    .select('id')
-    .limit(1)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!data?.id) throw new Error('No shop found in the database.')
-
-  cachedShopId = data.id
-  return data.id
+  cachedShopId = DEMO_SHOP_ID
+  return DEMO_SHOP_ID
 }
 
 // ---------------------------------------------------------------------------
@@ -136,35 +143,44 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
   const now = new Date().toISOString()
 
   // Fetch products
-  const { data: products, error: prodErr } = await supabase
+  const productsQuery = supabase
     .from('products')
     .select(
-      'product_id,prodname,price,quantity,image,status,categories:categories!products_category_id_fkey(name)',
+      'product_id,prodname,price,quantity,image,status,shop_id,shops:shops!products_shop_id_fkey(name,owner_id),categories:categories!products_category_id_fkey(name)',
     )
-    .eq('shop_id', shopId)
     .eq('status', 'avail')
     .order('created_at', { ascending: false })
+
+  const { data: products, error: prodErr } = isDemoShop(shopId)
+    ? await productsQuery
+    : await productsQuery.eq('shop_id', shopId)
 
   if (prodErr) throw prodErr
 
   // Fetch active flash deals
-  const { data: flashDeals } = await supabase
+  const flashDealsQuery = supabase
     .from('flash_deals')
     .select('id,product_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at')
-    .eq('shop_id', shopId)
     .eq('is_active', true)
     .or('voucher_type.is.null,voucher_type.neq.private')
     .lte('start_at', now)
     .gte('end_at', now)
 
+  const { data: flashDeals } = isDemoShop(shopId)
+    ? await flashDealsQuery
+    : await flashDealsQuery.eq('shop_id', shopId)
+
   // Fetch active product discounts
-  const { data: discounts } = await supabase
+  const discountsQuery = supabase
     .from('product_discounts')
     .select('id,product_id,discount_type,discount_value,promotion_id')
-    .eq('shop_id', shopId)
     .eq('is_active', true)
     .lte('start_at', now)
     .gte('end_at', now)
+
+  const { data: discounts } = isDemoShop(shopId)
+    ? await discountsQuery
+    : await discountsQuery.eq('shop_id', shopId)
 
   const flashMap = new Map<string, (typeof flashDeals extends (infer T)[] | null ? T : never)>()
   for (const fd of flashDeals ?? []) {
@@ -187,6 +203,9 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
       image: p.image ?? null,
       category: p.categories?.name?.trim() || 'Uncategorized',
       quantity: p.quantity ?? 0,
+      shopId: p.shop_id,
+      shopName: p.shops?.name?.trim() || 'Unknown Shop',
+      shopOwnerId: p.shops?.owner_id ?? null,
       flashDeal: fd
         ? {
             id: fd.id,
@@ -217,16 +236,17 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
 export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceFlashDeal[]> {
   const now = new Date().toISOString()
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('flash_deals')
     .select(
-      'id,product_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image)',
+      'id,product_id,shop_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image),shops:shops!flash_deals_shop_fkey(name,owner_id)',
     )
-    .eq('shop_id', shopId)
     .eq('is_active', true)
     .lte('start_at', now)
     .gte('end_at', now)
     .order('end_at', { ascending: true })
+
+  const { data, error } = isDemoShop(shopId) ? await query : await query.eq('shop_id', shopId)
 
   if (error) throw error
 
@@ -242,6 +262,9 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
     startAt: row.start_at,
     endAt: row.end_at,
     purchaseLimit: row.purchase_limit ?? null,
+    shopId: row.shop_id,
+    shopName: row.shops?.name?.trim() || 'Unknown Shop',
+    shopOwnerId: row.shops?.owner_id ?? null,
   }))
 }
 
@@ -252,15 +275,18 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
 export async function listClaimableVouchers(shopId: string): Promise<MarketplaceVoucher[]> {
   const now = new Date().toISOString()
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('vouchers')
-    .select('id,code,name,voucher_type,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at')
-    .eq('shop_id', shopId)
+    .select(
+      'id,code,name,voucher_type,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,shop_id,shops:shops!vouchers_shop_fkey(name,owner_id)',
+    )
     .eq('is_active', true)
     .or('voucher_type.is.null,voucher_type.neq.private')
     .lte('start_at', now)
     .gte('end_at', now)
     .order('created_at', { ascending: false })
+
+  const { data, error } = isDemoShop(shopId) ? await query : await query.eq('shop_id', shopId)
 
   if (error) throw error
 
@@ -279,6 +305,9 @@ export async function listClaimableVouchers(shopId: string): Promise<Marketplace
     usedCount: v.used_count ?? 0,
     startAt: v.start_at,
     endAt: v.end_at,
+    shopId: v.shop_id,
+    shopName: v.shops?.name?.trim() || 'Unknown Shop',
+    shopOwnerId: v.shops?.owner_id ?? null,
   }))
 }
 
@@ -290,25 +319,31 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
   const now = new Date().toISOString()
 
   // Get active discount_sections of type 'bundle'
-  const { data: sections } = await supabase
+  const sectionsQuery = supabase
     .from('discount_section')
     .select('id')
-    .eq('shop_id', shopId)
     .eq('campaign_type', 'bundle')
     .eq('is_active', true)
     .lte('start_at', now)
     .gte('end_at', now)
 
+  const { data: sections } = isDemoShop(shopId)
+    ? await sectionsQuery
+    : await sectionsQuery.eq('shop_id', shopId)
+
   if (!sections || sections.length === 0) return []
 
   const sectionIds = sections.map((s: any) => s.id)
 
-  const { data: bundles, error } = await supabase
+  const bundlesQuery = supabase
     .from('bundles')
-    .select('id,name,price,currency,bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,price))')
-    .eq('shop_id', shopId)
+    .select('id,name,price,currency,shop_id,shops:shops!bundles_shop_id_fkey(name,owner_id),bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,price))')
     .eq('is_active', true)
     .in('promotion_id', sectionIds)
+
+  const { data: bundles, error } = isDemoShop(shopId)
+    ? await bundlesQuery
+    : await bundlesQuery.eq('shop_id', shopId)
 
   if (error) throw error
 
@@ -317,6 +352,9 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
     name: b.name,
     price: b.price ? Number(b.price) : null,
     currency: b.currency ?? 'USD',
+    shopId: b.shop_id,
+    shopName: b.shops?.name?.trim() || 'Unknown Shop',
+    shopOwnerId: b.shops?.owner_id ?? null,
     items: (b.bundle_items ?? []).map((item: any) => ({
       productId: item.product_id,
       productName: item.products?.prodname?.trim() || 'Unnamed Product',
@@ -334,15 +372,16 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
 export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceAddonDeal[]> {
   const now = new Date().toISOString()
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('addon_deals')
     .select(
       'id,name,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,price))',
     )
-    .eq('shop_id', shopId)
     .eq('is_active', true)
     .lte('start_at', now)
     .gte('end_at', now)
+
+  const { data, error } = isDemoShop(shopId) ? await query : await query.eq('shop_id', shopId)
 
   if (error) throw error
 
@@ -380,15 +419,15 @@ export async function validateVoucher(
 
   const now = new Date().toISOString()
 
-  const { data, error } = await supabase
+  const baseQuery = supabase
     .from('vouchers')
     .select(
       'id,code,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,voucher_products(product_id)',
     )
-    .eq('shop_id', shopId)
     .eq('code', trimmedCode)
     .eq('is_active', true)
-    .maybeSingle()
+  const scopedQuery = isDemoShop(shopId) ? baseQuery : baseQuery.eq('shop_id', shopId)
+  const { data, error } = await scopedQuery.maybeSingle()
 
   if (error) return { valid: false, message: 'Error looking up voucher.', discount: 0, voucherId: null }
   if (!data) return { valid: false, message: 'Invalid voucher code.', discount: 0, voucherId: null }
@@ -422,7 +461,7 @@ export async function validateVoucher(
   const isProductVoucher = voucherType === 'product'
   const linkedProducts = (data.voucher_products ?? [])
     .map((row: { product_id?: string | null }) => row.product_id)
-    .filter((value): value is string => Boolean(value))
+    .filter((value: string | null | undefined): value is string => Boolean(value && value.trim()))
 
   const eligibleSubtotal = isProductVoucher
     ? cartItems.reduce(
@@ -447,7 +486,7 @@ export async function validateVoucher(
   if (eligibleSubtotal < minSpend) {
     return {
       valid: false,
-      message: `Minimum spend of ₱${minSpend.toFixed(2)} required.`,
+      message: `Minimum spend of ?${minSpend.toFixed(2)} required.`,
       discount: 0,
       voucherId: null,
     }
@@ -467,7 +506,7 @@ export async function validateVoucher(
 
   return {
     valid: true,
-    message: `Voucher applied! You save ₱${discount.toFixed(2)}`,
+    message: `Voucher applied! You save ?${discount.toFixed(2)}`,
     discount,
     voucherId: data.id,
   }
@@ -607,37 +646,72 @@ export async function simulateCheckout(
 export async function resetDemoData(shopId: string): Promise<{ success: boolean; message: string }> {
   try {
     // Reset flash deals sold_quantity
-    await supabase
+    const flashReset = supabase
       .from('flash_deals')
       .update({ sold_quantity: 0, updated_at: new Date().toISOString() })
-      .eq('shop_id', shopId)
+    isDemoShop(shopId) ? await flashReset : await flashReset.eq('shop_id', shopId)
 
     // Reset voucher usage
-    await supabase
+    const voucherReset = supabase
       .from('vouchers')
       .update({
         used_count: 0,
         total_used: 0,
         updated_at: new Date().toISOString(),
       })
-      .eq('shop_id', shopId)
+    isDemoShop(shopId) ? await voucherReset : await voucherReset.eq('shop_id', shopId)
 
     // Reset product discounts used_count
-    await supabase
+    const discountReset = supabase
       .from('product_discounts')
       .update({ used_count: 0, updated_at: new Date().toISOString() })
-      .eq('shop_id', shopId)
+    isDemoShop(shopId) ? await discountReset : await discountReset.eq('shop_id', shopId)
 
     // Reset bundle and addon used_count
-    await supabase
+    const bundleReset = supabase
       .from('bundles')
       .update({ used_count: 0, updated_at: new Date().toISOString() })
-      .eq('shop_id', shopId)
+    isDemoShop(shopId) ? await bundleReset : await bundleReset.eq('shop_id', shopId)
 
-    await supabase
+    const addonReset = supabase
       .from('addon_deals')
       .update({ used_count: 0, updated_at: new Date().toISOString() })
-      .eq('shop_id', shopId)
+    isDemoShop(shopId) ? await addonReset : await addonReset.eq('shop_id', shopId)
+
+    // Reset product quantities from metadata snapshots (if present)
+    const productsQuery = supabase
+      .from('products')
+      .select('product_id,quantity,metadata,shop_id')
+    const { data: products } = isDemoShop(shopId)
+      ? await productsQuery
+      : await productsQuery.eq('shop_id', shopId)
+
+    if (products && products.length > 0) {
+      for (const product of products) {
+        const metadata =
+          product && typeof product.metadata === 'object' && product.metadata !== null
+            ? (product.metadata as Record<string, unknown>)
+            : {}
+        const snapshotCandidates = [
+          metadata.demo_default_quantity,
+          metadata.demoDefaultQuantity,
+          metadata.default_quantity,
+          metadata.defaultQuantity,
+          metadata.original_quantity,
+          metadata.originalQuantity,
+        ]
+        const snapshot = snapshotCandidates.find((value) => typeof value === 'number')
+        if (typeof snapshot === 'number') {
+          await supabase
+            .from('products')
+            .update({
+              quantity: Math.max(snapshot, 0),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('product_id', product.product_id)
+        }
+      }
+    }
 
     // Delete demo voucher_usages (those with placeholder user_id)
     await supabase
@@ -653,4 +727,6 @@ export async function resetDemoData(shopId: string): Promise<{ success: boolean;
     }
   }
 }
+
+
 

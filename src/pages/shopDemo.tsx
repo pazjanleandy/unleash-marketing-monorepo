@@ -18,6 +18,7 @@ import {
   type CartItem,
   type CheckoutResult,
 } from '../services/market/shopDemo.repo'
+import { supabase } from '../supabase'
 
 /* ------------------------------------------------------------------ */
 /*  Utility helpers                                                    */
@@ -112,6 +113,9 @@ function FlashDealCard({
         <h4 className="line-clamp-2 text-[13px] font-semibold leading-tight text-white/90">
           {deal.productName}
         </h4>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-white/50">
+          {deal.shopName}
+        </span>
 
         <div className="flex items-baseline gap-2">
           <span className="text-base font-bold text-orange-400">{formatPrice(deal.flashPrice)}</span>
@@ -208,6 +212,9 @@ function ProductCard({
         <span className="text-[10px] font-medium uppercase tracking-wider text-blue-500">
           {product.category}
         </span>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          {product.shopName}
+        </span>
         <h4 className="line-clamp-2 text-sm font-semibold text-slate-800">{product.name}</h4>
         <div className="mt-auto flex items-baseline gap-2">
           <span className={`text-base font-bold ${hasDiscount ? 'text-red-600' : 'text-slate-900'}`}>
@@ -259,6 +266,9 @@ function BundleCard({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-purple-500">
+          {bundle.shopName}
+        </span>
         {bundle.items.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
             <span className="flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-[10px] font-bold text-purple-600">
@@ -655,6 +665,9 @@ function VoucherBadge({ voucher }: { voucher: MarketplaceVoucher }) {
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-lg">🏷️</div>
       <div className="flex-1">
         <p className="text-sm font-bold text-orange-700">{discLabel}</p>
+        <p className="text-[10px] font-medium uppercase tracking-wider text-orange-500/80">
+          {voucher.shopName}
+        </p>
         <p className="text-xs text-orange-500">
           Code: <span className="font-mono font-bold">{voucher.code}</span>
           {voucher.minSpend > 0 && ` · Min. spend ₱${voucher.minSpend}`}
@@ -675,6 +688,7 @@ function VoucherBadge({ voucher }: { voucher: MarketplaceVoucher }) {
 
 function ShopDemoPage() {
   const navigate = useNavigate()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [shopId, setShopId] = useState<string | null>(null)
   const [products, setProducts] = useState<MarketplaceProduct[]>([])
   const [flashDeals, setFlashDeals] = useState<MarketplaceFlashDeal[]>([])
@@ -1063,15 +1077,22 @@ function ShopDemoPage() {
 
           {/* Back button */}
           <button
-            onClick={() => navigate('/')}
-            className="hidden h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-600 transition hover:border-red-200 hover:text-red-500 sm:flex"
+            onClick={async () => {
+              if (isLoggingOut) return
+              setIsLoggingOut(true)
+              await supabase.auth.signOut()
+              setIsLoggingOut(false)
+              navigate('/', { replace: true })
+            }}
+            disabled={isLoggingOut}
+            className="hidden h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-600 transition hover:border-red-200 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60 sm:flex"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M9 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Logout
+            {isLoggingOut ? 'Logging out...' : 'Logout'}
           </button>
         </div>
       </header>
@@ -1210,3 +1231,4 @@ function ShopDemoPage() {
 }
 
 export default ShopDemoPage
+
