@@ -5,6 +5,7 @@ type BundleDealBasicInformationCardProps = {
   onChange: (value: CreateBundleDealForm) => void
   onOpenPicker: (field: DiscountDateTimeField) => void
   activePickerField: DiscountDateTimeField | null
+  bundlePriceError?: string
 }
 
 function fromLocalDateTimeInputValue(value: string) {
@@ -49,6 +50,7 @@ function BundleDealBasicInformationCard({
   onChange,
   onOpenPicker,
   activePickerField,
+  bundlePriceError,
 }: BundleDealBasicInformationCardProps) {
   const setField = <K extends keyof CreateBundleDealForm>(
     field: K,
@@ -137,7 +139,11 @@ function BundleDealBasicInformationCard({
               <span className="text-xs font-semibold text-slate-500">Currency</span>
               <span className="ml-2 text-sm font-semibold text-slate-700">PHP</span>
             </div>
-            <div className="flex h-11 items-center rounded-md border border-[#cbd5e1] bg-white px-3">
+            <div
+              className={`flex h-11 items-center rounded-md border bg-white px-3 ${
+                bundlePriceError ? 'border-[#fca5a5]' : 'border-[#cbd5e1]'
+              }`}
+            >
               <input
                 type="text"
                 inputMode="decimal"
@@ -148,9 +154,13 @@ function BundleDealBasicInformationCard({
               />
             </div>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Bundle price applies to the entire bundle..
-          </p>
+          {bundlePriceError ? (
+            <p className="mt-1 text-xs font-medium text-[#b91c1c]">{bundlePriceError}</p>
+          ) : (
+            <p className="mt-1 text-xs text-slate-500">
+              Bundle price applies to the entire bundle..
+            </p>
+          )}
         </div>
 
         <div className="grid gap-2 md:grid-cols-[210px_minmax(0,1fr)] md:items-start">

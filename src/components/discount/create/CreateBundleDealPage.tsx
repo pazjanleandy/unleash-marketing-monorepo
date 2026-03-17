@@ -4,6 +4,7 @@ import type { CreateBundleDealForm, DiscountDateTimeField } from './types'
 import BundleDealItemsCard from './BundleDealItemsCard'
 import BundleDealBasicInformationCard from './BundleDealBasicInformationCard'
 import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
+import { listShopProducts } from '../../../services/market/products.repo'
 
 type CreateBundleDealPageProps = {
   onBack: () => void
@@ -82,6 +83,36 @@ function toSubmitErrorMessage(error: unknown) {
   return 'Unable to save bundle deal.'
 }
 
+async function validateBundlePricingOnClient(form: CreateBundleDealForm) {
+  const result = await listShopProducts()
+  if (result.authRequired) {
+    return { ok: false, message: 'Sign in to validate bundle pricing.' }
+  }
+  if (result.noShop) {
+    return { ok: false, message: 'No shop found for this account.' }
+  }
+
+  const priceMap = new Map(result.items.map((item) => [item.id, item.price]))
+  const totalOriginal = form.items.reduce((sum, item) => {
+    const price = priceMap.get(item.productId) ?? 0
+    return sum + price * item.quantity
+  }, 0)
+
+  if (!Number.isFinite(totalOriginal) || totalOriginal <= 0) {
+    return { ok: false, message: 'Unable to validate bundle price against product totals.' }
+  }
+
+  const bundlePrice = Number(form.bundlePrice.trim())
+  if (Number.isFinite(bundlePrice) && bundlePrice > totalOriginal) {
+    return {
+      ok: false,
+      message: 'Bundle price must not exceed the total original price of items.',
+    }
+  }
+
+  return { ok: true as const }
+}
+
 const now = new Date()
 const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
 
@@ -120,6 +151,8 @@ function CreateBundleDealPage({
   const [activePickerField, setActivePickerField] = useState<DiscountDateTimeField | null>(null)
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isBundlePriceError =
+    submitError.toLowerCase().includes('bundle price')
   const hasSelectedProducts = form.items.length > 0
   const isEditMode = mode === 'edit'
   const mobileTitle = isEditMode ? 'Edit Bundle Deal' : 'Create Bundle Deal'
@@ -241,6 +274,11 @@ function CreateBundleDealPage({
     setIsSubmitting(true)
 
     try {
+      const pricingCheck = await validateBundlePricingOnClient(form)
+      if (!pricingCheck.ok) {
+        setSubmitError(pricingCheck.message)
+        return
+      }
       if (onConfirm) {
         await onConfirm(form)
       }
@@ -257,7 +295,7 @@ function CreateBundleDealPage({
       className="motion-rise min-h-[calc(100vh-2.5rem)] bg-[#f1f5f9] pb-24 sm:rounded-3xl sm:border sm:border-slate-200/80 sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)]"
       style={{ animationDelay: '80ms' }}
     >
-      {submitError ? (
+      {submitError && !isBundlePriceError ? (
         <p className="mx-4 mt-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c] sm:mx-0 sm:mt-4">
           {submitError}
         </p>
@@ -366,10 +404,15 @@ function CreateBundleDealPage({
                     value={form.bundlePrice}
                     onChange={(event) => setField('bundlePrice', event.target.value)}
                     placeholder="0.00"
-                    className="h-9 w-24 border-0 bg-transparent text-right text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                    className={`h-9 w-24 border-0 bg-transparent text-right text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none ${
+                      isBundlePriceError ? 'text-[#b91c1c]' : ''
+                    }`}
                   />
                 </div>
               </div>
+              {isBundlePriceError ? (
+                <p className="mt-2 text-[11px] font-medium text-[#b91c1c]">{submitError}</p>
+              ) : null}
             </div>
 
             <div className="border-t border-slate-200 px-4 py-3">
@@ -416,6 +459,7 @@ function CreateBundleDealPage({
             onChange={setForm}
             onOpenPicker={handleOpenPicker}
             activePickerField={activePickerField}
+            bundlePriceError={isBundlePriceError ? submitError : undefined}
           />
         ) : (
           <article className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] p-5 text-sm text-slate-600">

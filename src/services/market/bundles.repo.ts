@@ -185,6 +185,46 @@ function formatDecimal(value: number) {
   return Number.isInteger(value) ? `${value}` : `${value}`
 }
 
+async function validateBundlePricing(
+  shopId: string,
+  items: Array<{ productId: string; quantity: number }>,
+  bundlePrice: number,
+) {
+  const productIds = Array.from(new Set(items.map((item) => item.productId)))
+  const { data, error } = await supabase
+    .from('products')
+    .select('product_id,price')
+    .eq('shop_id', shopId)
+    .in('product_id', productIds)
+
+  if (error) {
+    throw toDatabaseError(error, 'Failed to validate bundle pricing')
+  }
+
+  const rows = (data ?? []) as Array<{ product_id: string; price: number | null }>
+  if (rows.length !== productIds.length) {
+    throw new Error('Bundle items must belong to your shop.')
+  }
+
+  const priceMap = new Map<string, number>()
+  for (const row of rows) {
+    priceMap.set(row.product_id, typeof row.price === 'number' ? row.price : 0)
+  }
+
+  const totalOriginalPrice = items.reduce((sum, item) => {
+    const price = priceMap.get(item.productId) ?? 0
+    return sum + price * item.quantity
+  }, 0)
+
+  if (!Number.isFinite(totalOriginalPrice) || totalOriginalPrice <= 0) {
+    throw new Error('Unable to validate bundle price against product totals.')
+  }
+
+  if (bundlePrice > totalOriginalPrice) {
+    throw new Error('Bundle price must not exceed the total original price of items.')
+  }
+}
+
 function validateBundleForm(form: CreateBundleDealForm): ValidatedBundlePayload {
   const promotionName = form.promotionName.trim()
   if (!promotionName) {
@@ -319,6 +359,7 @@ export async function createBundleDeal(form: CreateBundleDealForm) {
   }
 
   const payload = validateBundleForm(form)
+  await validateBundlePricing(shopId, payload.items, payload.bundlePrice)
   const { data: promotion, error: promotionError } = await supabase
     .from('discount_section')
     .insert({
@@ -391,6 +432,7 @@ export async function updateBundleDeal(promotionId: string, form: CreateBundleDe
   }
 
   const payload = validateBundleForm(form)
+  await validateBundlePricing(shopId, payload.items, payload.bundlePrice)
   const { error: promotionError } = await supabase
     .from('discount_section')
     .update({

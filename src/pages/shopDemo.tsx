@@ -304,6 +304,7 @@ function BundleCard({
 type AddonSuggestion = {
   dealId: string
   dealName: string
+  shopId: string
   triggerProductId: string
   triggerProductName: string
   addonProductId: string
@@ -772,6 +773,7 @@ function ShopDemoPage() {
         {
           dealId: deal.id,
           dealName: deal.name,
+          shopId: deal.shopId,
           triggerProductId: deal.triggerProductId,
           triggerProductName: deal.triggerProductName,
           addonProductId: addonItem.productId,
@@ -851,6 +853,7 @@ function ShopDemoPage() {
           image: deal.productImage,
           flashDealId: deal.id,
           discountId: null,
+          shopId: deal.shopId,
         },
       ]
     })
@@ -878,6 +881,7 @@ function ShopDemoPage() {
           image: product.image,
           flashDealId: product.flashDeal?.id ?? null,
           discountId: product.discount?.id ?? null,
+          shopId: product.shopId,
         },
       ]
     })
@@ -904,6 +908,7 @@ function ShopDemoPage() {
           image: addon.addonProductImage,
           flashDealId: null,
           discountId: null,
+          shopId: addon.shopId,
         },
       ]
     })
@@ -924,21 +929,22 @@ function ShopDemoPage() {
         }
         return [
           ...prev,
-          {
-            productId: item.productId,
-            name: item.productName,
-            price: bundle.price
-              ? (bundle.price / bundle.items.reduce((s, b) => s + b.quantity, 0)) * item.quantity
-              : item.productPrice,
-            originalPrice: item.productPrice,
-            quantity: item.quantity,
-            image: item.productImage,
-            flashDealId: null,
-            discountId: null,
-          },
-        ]
-      })
-    }
+        {
+          productId: item.productId,
+          name: item.productName,
+          price: bundle.price
+            ? (bundle.price / bundle.items.reduce((s, b) => s + b.quantity, 0)) * item.quantity
+            : item.productPrice,
+          originalPrice: item.productPrice,
+          quantity: item.quantity,
+          image: item.productImage,
+          flashDealId: null,
+          discountId: null,
+          shopId: bundle.shopId,
+        },
+      ]
+    })
+  }
     setCartOpen(true)
     const triggerIds = Array.from(new Set(bundle.items.map((item) => item.productId)))
     setPendingAddonTriggerIds(triggerIds)
@@ -962,6 +968,14 @@ function ShopDemoPage() {
     if (!shopId || !voucherCode.trim()) return
     setIsApplyingVoucher(true)
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
+    const cartShopIds = new Set(cart.map((item) => item.shopId).filter(Boolean))
+    if (cartShopIds.size > 1) {
+      setVoucherMessage('Vouchers can only be used for items from a single shop.')
+      setVoucherDiscount(0)
+      setAppliedVoucherId(null)
+      setIsApplyingVoucher(false)
+      return
+    }
     const result = await validateVoucher(voucherCode, subtotal, shopId, cart)
     setVoucherMessage(result.message)
     setVoucherDiscount(result.discount)

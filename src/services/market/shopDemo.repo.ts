@@ -85,6 +85,8 @@ export type MarketplaceBundle = {
 export type MarketplaceAddonDeal = {
   id: string
   name: string
+  shopId: string
+  shopName: string
   triggerProductId: string
   triggerProductName: string
   discountType: 'percentage' | 'fixed'
@@ -107,6 +109,7 @@ export type CartItem = {
   image: string | null
   flashDealId: string | null
   discountId: string | null
+  shopId: string
 }
 
 export type CheckoutResult = {
@@ -375,7 +378,7 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
   const query = supabase
     .from('addon_deals')
     .select(
-      'id,name,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,price))',
+      'id,name,shop_id,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,price))',
     )
     .eq('is_active', true)
     .lte('start_at', now)
@@ -388,6 +391,8 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
   return (data ?? []).map((deal: any) => ({
     id: deal.id,
     name: deal.name,
+    shopId: deal.shop_id,
+    shopName: 'Unknown Shop',
     triggerProductId: deal.trigger_product_id,
     triggerProductName: deal.products?.prodname?.trim() || 'Unnamed Product',
     discountType: deal.discount_type as 'percentage' | 'fixed',
@@ -406,6 +411,16 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
 // Voucher validation
 // ---------------------------------------------------------------------------
 
+function getUniqueCartShopIds(items: CartItem[]) {
+  const ids = new Set<string>()
+  for (const item of items) {
+    if (item.shopId) {
+      ids.add(item.shopId)
+    }
+  }
+  return Array.from(ids)
+}
+
 export async function validateVoucher(
   code: string,
   cartTotal: number,
@@ -417,12 +432,26 @@ export async function validateVoucher(
     return { valid: false, message: 'Please enter a voucher code.', discount: 0, voucherId: null }
   }
 
+  if (cartItems.length === 0) {
+    return { valid: false, message: 'Add items to your cart first.', discount: 0, voucherId: null }
+  }
+
+  const cartShopIds = getUniqueCartShopIds(cartItems)
+  if (cartShopIds.length > 1) {
+    return {
+      valid: false,
+      message: 'Vouchers can only be used for items from a single shop.',
+      discount: 0,
+      voucherId: null,
+    }
+  }
+
   const now = new Date().toISOString()
 
   const baseQuery = supabase
     .from('vouchers')
     .select(
-      'id,code,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,voucher_products(product_id)',
+      'id,code,shop_id,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,voucher_products(product_id)',
     )
     .eq('code', trimmedCode)
     .eq('is_active', true)
@@ -431,6 +460,16 @@ export async function validateVoucher(
 
   if (error) return { valid: false, message: 'Error looking up voucher.', discount: 0, voucherId: null }
   if (!data) return { valid: false, message: 'Invalid voucher code.', discount: 0, voucherId: null }
+
+  const cartShopId = cartShopIds[0]
+  if (cartShopId && data.shop_id && data.shop_id !== cartShopId) {
+    return {
+      valid: false,
+      message: 'This voucher is only valid for the shop that created it.',
+      discount: 0,
+      voucherId: null,
+    }
+  }
 
   const startMs = new Date(data.start_at).getTime()
   const endMs = new Date(data.end_at).getTime()
@@ -523,6 +562,160 @@ export async function simulateCheckout(
   _shopId: string,
 ): Promise<CheckoutResult> {
   try {
+    if (!items || items.length === 0) {
+      return {
+        success: false,
+        message: 'Your cart is empty.',
+        itemsPurchased: 0,
+        totalPaid: 0,
+        discountsSaved: 0,
+        voucherSaved: 0,
+      }
+    }
+
+    const cartShopIds = getUniqueCartShopIds(items)
+    if (voucherId && cartShopIds.length > 1) {
+      return {
+        success: false,
+        message: 'Vouchers can only be used for items from a single shop.',
+        itemsPurchased: 0,
+        totalPaid: 0,
+        discountsSaved: 0,
+        voucherSaved: 0,
+      }
+    }
+
+    const productQtyMap = new Map<string, number>()
+    for (const item of items) {
+      productQtyMap.set(item.productId, (productQtyMap.get(item.productId) ?? 0) + item.quantity)
+    }
+
+    let resolvedVoucherDiscount = 0
+    let resolvedVoucherId: string | null = null
+
+    if (voucherId) {
+      const { data: voucher, error: voucherError } = await supabase
+        .from('vouchers')
+        .select(
+          'id,shop_id,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,voucher_products(product_id)',
+        )
+        .eq('id', voucherId)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (voucherError || !voucher) {
+        return {
+          success: false,
+          message: 'Invalid or unavailable voucher.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+
+      const cartShopId = cartShopIds[0]
+      if (cartShopId && voucher.shop_id && voucher.shop_id !== cartShopId) {
+        return {
+          success: false,
+          message: 'This voucher is only valid for the shop that created it.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+
+      const startMs = new Date(voucher.start_at).getTime()
+      const endMs = new Date(voucher.end_at).getTime()
+      const nowMs = Date.now()
+      if (nowMs < startMs || nowMs > endMs) {
+        return {
+          success: false,
+          message: 'This voucher has expired or is not active yet.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+
+      if (voucher.usage_limit && (voucher.used_count ?? 0) >= voucher.usage_limit) {
+        return {
+          success: false,
+          message: 'This voucher has reached its usage limit.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+
+      const voucherType = (() => {
+        const metadata =
+          voucher && typeof voucher.metadata === 'object' && voucher.metadata !== null
+            ? (voucher.metadata as Record<string, unknown>)
+            : {}
+        const raw =
+          (voucher.voucher_type as string | null) ??
+          (metadata.voucher_type as string | undefined) ??
+          (metadata.voucherType as string | undefined) ??
+          (metadata.voucher_category as string | undefined) ??
+          ''
+        return typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+      })()
+
+      const isProductVoucher = voucherType === 'product'
+      const linkedProducts = (voucher.voucher_products ?? [])
+        .map((row: { product_id?: string | null }) => row.product_id)
+        .filter((value: string | null | undefined): value is string => Boolean(value && value.trim()))
+
+      const eligibleSubtotal = isProductVoucher
+        ? items.reduce(
+            (sum, item) =>
+              linkedProducts.includes(item.productId) ? sum + item.price * item.quantity : sum,
+            0,
+          )
+        : items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+      if (isProductVoucher) {
+        if (linkedProducts.length === 0 || eligibleSubtotal <= 0) {
+          return {
+            success: false,
+            message: 'This voucher only applies to selected products.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+
+      const minSpend = voucher.min_spend ?? 0
+      if (eligibleSubtotal < minSpend) {
+        return {
+          success: false,
+          message: `Minimum spend of ₱${minSpend.toFixed(2)} required.`,
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+
+      if (voucher.discount_type === 'percentage') {
+        resolvedVoucherDiscount = eligibleSubtotal * (voucher.discount_value / 100)
+        if (voucher.max_discount && resolvedVoucherDiscount > voucher.max_discount) {
+          resolvedVoucherDiscount = voucher.max_discount
+        }
+      } else {
+        resolvedVoucherDiscount = voucher.discount_value
+      }
+
+      resolvedVoucherDiscount = Math.min(resolvedVoucherDiscount, eligibleSubtotal)
+      resolvedVoucherId = voucher.id
+    }
+
     let totalPaid = 0
     let discountsSaved = 0
 
@@ -531,90 +724,132 @@ export async function simulateCheckout(
       const originalTotal = item.originalPrice * item.quantity
       totalPaid += itemTotal
       discountsSaved += originalTotal - itemTotal
+    }
 
-      // Update flash deal sold_quantity
-      if (item.flashDealId) {
-        const { data: fd } = await supabase
-          .from('flash_deals')
-          .select('sold_quantity')
-          .eq('id', item.flashDealId)
-          .single()
+    // Apply voucher discount after recomputing totals
+    if (resolvedVoucherId && resolvedVoucherDiscount > 0) {
+      totalPaid = Math.max(totalPaid - resolvedVoucherDiscount, 0)
+    }
 
-        if (fd) {
-          await supabase
-            .from('flash_deals')
-            .update({
-              sold_quantity: (fd.sold_quantity ?? 0) + item.quantity,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', item.flashDealId)
-        }
+    // Reduce stock atomically via RPC
+    const stockPayload = Array.from(productQtyMap.entries()).map(([productId, quantity]) => ({
+      product_id: productId,
+      quantity,
+    }))
+    const { error: stockError } = await supabase.rpc('decrement_product_stock', {
+      p_items: stockPayload,
+    })
 
-        // Also decrement product stock
-        const { data: prod } = await supabase
-          .from('products')
-          .select('quantity')
-          .eq('product_id', item.productId)
-          .single()
-
-        if (prod) {
-          await supabase
-            .from('products')
-            .update({
-              quantity: Math.max((prod.quantity ?? 0) - item.quantity, 0),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('product_id', item.productId)
-        }
-      }
-
-      // Update product discount used_count
-      if (item.discountId) {
-        const { data: disc } = await supabase
-          .from('product_discounts')
-          .select('used_count')
-          .eq('id', item.discountId)
-          .single()
-
-        if (disc) {
-          await supabase
-            .from('product_discounts')
-            .update({
-              used_count: (disc.used_count ?? 0) + item.quantity,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', item.discountId)
-        }
+    if (stockError) {
+      const message = stockError.message?.toLowerCase() ?? ''
+      return {
+        success: false,
+        message: message.includes('insufficient stock')
+          ? 'Insufficient stock for one or more items in your cart.'
+          : 'Unable to complete checkout due to a stock update error.',
+        itemsPurchased: 0,
+        totalPaid: 0,
+        discountsSaved: 0,
+        voucherSaved: 0,
       }
     }
 
-    // Update voucher usage
-    if (voucherId && voucherDiscount > 0) {
+    // Update flash deal sold_quantity
+    const flashDealQtyMap = new Map<string, number>()
+    for (const item of items) {
+      if (item.flashDealId) {
+        flashDealQtyMap.set(
+          item.flashDealId,
+          (flashDealQtyMap.get(item.flashDealId) ?? 0) + item.quantity,
+        )
+      }
+    }
+
+    for (const [flashDealId, qty] of flashDealQtyMap) {
+      const { data: fd } = await supabase
+        .from('flash_deals')
+        .select('sold_quantity')
+        .eq('id', flashDealId)
+        .single()
+
+      if (fd) {
+        await supabase
+          .from('flash_deals')
+          .update({
+            sold_quantity: (fd.sold_quantity ?? 0) + qty,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', flashDealId)
+      }
+    }
+
+    // Update product discount used_count
+    const discountQtyMap = new Map<string, number>()
+    for (const item of items) {
+      if (item.discountId) {
+        discountQtyMap.set(
+          item.discountId,
+          (discountQtyMap.get(item.discountId) ?? 0) + item.quantity,
+        )
+      }
+    }
+
+    for (const [discountId, qty] of discountQtyMap) {
+      const { data: disc } = await supabase
+        .from('product_discounts')
+        .select('used_count')
+        .eq('id', discountId)
+        .single()
+
+      if (disc) {
+        await supabase
+          .from('product_discounts')
+          .update({
+            used_count: (disc.used_count ?? 0) + qty,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', discountId)
+      }
+    }
+
+    // Update voucher usage + sales tracking
+    if (resolvedVoucherId && resolvedVoucherDiscount > 0) {
       const { data: voucher } = await supabase
         .from('vouchers')
-        .select('used_count,total_used')
-        .eq('id', voucherId)
+        .select('used_count,total_used,metadata')
+        .eq('id', resolvedVoucherId)
         .single()
 
       if (voucher) {
+        const metadata =
+          voucher.metadata && typeof voucher.metadata === 'object'
+            ? (voucher.metadata as Record<string, unknown>)
+            : {}
+        const currentSales = Number(metadata.total_sales ?? 0) || 0
+        const currentDiscount = Number(metadata.total_discount ?? 0) || 0
+        const nextMetadata = {
+          ...metadata,
+          total_sales: currentSales + totalPaid,
+          total_discount: currentDiscount + resolvedVoucherDiscount,
+        }
+
         await supabase
           .from('vouchers')
           .update({
             used_count: (voucher.used_count ?? 0) + 1,
             total_used: (voucher.total_used ?? 0) + 1,
+            metadata: nextMetadata,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', voucherId)
+          .eq('id', resolvedVoucherId)
       }
 
       // Insert voucher_usage record (user_id optional for demo)
       await supabase.from('voucher_usages').insert({
-        voucher_id: voucherId,
+        voucher_id: resolvedVoucherId,
         user_id: '00000000-0000-0000-0000-000000000000', // demo placeholder UUID
         used_at: new Date().toISOString(),
       })
-
-      totalPaid = Math.max(totalPaid - voucherDiscount, 0)
     }
 
     const itemsPurchased = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -625,7 +860,7 @@ export async function simulateCheckout(
       itemsPurchased,
       totalPaid,
       discountsSaved,
-      voucherSaved: voucherDiscount,
+      voucherSaved: resolvedVoucherDiscount || voucherDiscount,
     }
   } catch (err) {
     return {
