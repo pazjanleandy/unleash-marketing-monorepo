@@ -7,6 +7,7 @@ import {
   deleteFlashDeal,
   listFlashDeals,
   updateFlashDeal,
+  updateFlashDealStatus,
   type UpdateFlashDealInput,
 } from '../../services/market/flashDeals.repo'
 
@@ -90,6 +91,11 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
     await loadFlashDeals()
   }
 
+  const handleToggleFlashDeal = async (row: FlashDealRow, isActive: boolean) => {
+    await updateFlashDealStatus(row.id, isActive)
+    await loadFlashDeals()
+  }
+
   const flashDealsPerformanceDateLabel = useMemo(() => {
     const now = new Date()
     const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -104,7 +110,8 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
 
   const flashDealsPerformanceMetrics = useMemo<FlashDealsMetric[]>(() => {
     const totalDeals = flashDealRows.length
-    const activeDeals = flashDealRows.filter((item) => item.status === 'Ongoing').length
+    const activeDeals = flashDealRows.filter((item) => item.status === 'Ongoing' && item.enabled)
+      .length
     const totalEnabledProducts = flashDealRows.reduce((sum, item) => sum + item.enabledProducts, 0)
     const inventorySnapshot = flashDealRows.reduce((sum, item) => sum + item.totalAvailable, 0)
 
@@ -243,6 +250,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
               onCreate={onCreate}
               onDelete={handleDeleteFlashDeal}
               onEdit={handleEditFlashDeal}
+              onToggle={handleToggleFlashDeal}
             />
           </div>
         </div>
@@ -294,6 +302,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
               onCreate={onCreate}
               onDelete={handleDeleteFlashDeal}
               onEdit={handleEditFlashDeal}
+              onToggle={handleToggleFlashDeal}
             />
           </div>
         </div>

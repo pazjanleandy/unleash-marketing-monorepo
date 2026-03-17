@@ -98,7 +98,8 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
   const handleConfirmSelection = (nextSelection: string[]) => {
     const nextItems = nextSelection.map<BundleDealItem>((productId) => {
       const existing = value.items.find((item) => item.productId === productId)
-      return existing ?? { productId, quantity: 1 }
+      // `quantity: 0` represents "unset" in the form; validation blocks submit until it is >= 1.
+      return existing ?? { productId, quantity: 0 }
     })
 
     onChange({
@@ -115,7 +116,7 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
 
   const handleQuantityChange = (index: number, nextValue: string) => {
     const sanitized = nextValue.replace(/\D/g, '')
-    const parsed = sanitized ? Math.max(Number(sanitized), 1) : 1
+    const parsed = sanitized.length === 0 ? 0 : Math.max(1, Math.floor(Number(sanitized)))
     const nextItems = value.items.map((item, itemIndex) =>
       itemIndex === index ? { ...item, quantity: parsed } : item,
     )
@@ -196,9 +197,9 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={item?.quantity ?? 1}
+                        value={item?.quantity ? `${item.quantity}` : ''}
                         onChange={(event) => handleQuantityChange(index, event.target.value)}
-                        placeholder="1"
+                        placeholder="Qty"
                         className="w-12 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                       />
                       <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
@@ -221,6 +222,7 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
           onRetry={() => void loadProducts()}
           selectedProductIds={value.items.map((item) => item.productId)}
           onConfirmSelection={handleConfirmSelection}
+          minSelectionCount={2}
           subtitle="Choose products for this bundle deal."
         />
       </article>
@@ -301,9 +303,9 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={item?.quantity ?? 1}
+                      value={item?.quantity ? `${item.quantity}` : ''}
                       onChange={(event) => handleQuantityChange(index, event.target.value)}
-                      placeholder="1"
+                      placeholder="Qty"
                       className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                     />
                     <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
@@ -338,6 +340,7 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
         onRetry={() => void loadProducts()}
         selectedProductIds={value.items.map((item) => item.productId)}
         onConfirmSelection={handleConfirmSelection}
+        minSelectionCount={2}
         subtitle="Choose products for this bundle deal."
       />
     </article>

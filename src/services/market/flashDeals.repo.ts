@@ -169,12 +169,13 @@ async function getCurrentUserShopId() {
   }
 }
 
-function toStatus(startAt: string, endAt: string, isActive: boolean): FlashDealStatus {
+function toStatus(startAt: string, endAt: string): FlashDealStatus {
   const now = Date.now()
   const startMs = new Date(startAt).getTime()
   const endMs = new Date(endAt).getTime()
 
-  if (!isActive || Number.isNaN(startMs) || Number.isNaN(endMs) || now > endMs) {
+  // Status is time-based. "Disabled" is handled separately via `is_active`.
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || now > endMs) {
     return 'Expired'
   }
   if (now < startMs) {
@@ -221,7 +222,7 @@ export async function listFlashDeals(): Promise<FlashDealsResult> {
 
   const rows = (data ?? []) as FlashDealDbRow[]
   const items: FlashDealRow[] = rows.map((row) => {
-    const status = toStatus(row.start_at, row.end_at, row.is_active ?? true)
+    const status = toStatus(row.start_at, row.end_at)
     const totalAvailable = row.products?.quantity ?? 0
 
     return {
@@ -373,5 +374,32 @@ export async function updateFlashDeal(flashDealId: string, input: UpdateFlashDea
 
   if (error) {
     throw toDatabaseError(error, 'Failed to update flash deal')
+  }
+}
+
+export async function updateFlashDealStatus(flashDealId: string, isActive: boolean) {
+  if (!flashDealId) {
+    throw new Error('Flash deal ID is required.')
+  }
+
+  const { authRequired, shopId, noShop } = await getCurrentUserShopId()
+  if (authRequired) {
+    throw new Error('Sign in to update flash deals.')
+  }
+  if (!shopId || noShop) {
+    throw new Error('No shop found for this account.')
+  }
+
+  const { error } = await supabase
+    .from('flash_deals')
+    .update({
+      is_active: isActive,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', flashDealId)
+    .eq('shop_id', shopId)
+
+  if (error) {
+    throw toDatabaseError(error, 'Failed to update flash deal status')
   }
 }

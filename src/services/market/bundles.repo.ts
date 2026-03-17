@@ -192,7 +192,11 @@ function validateBundleForm(form: CreateBundleDealForm): ValidatedBundlePayload 
   }
 
   if (!Array.isArray(form.items) || form.items.length === 0) {
-    throw new Error('Select at least one bundle item.')
+    throw new Error('Select at least two bundle items.')
+  }
+
+  if (form.items.length < 2) {
+    throw new Error('Select at least two bundle items.')
   }
 
   const startAt = parseLocalDateTimeInput(form.startDateTime)

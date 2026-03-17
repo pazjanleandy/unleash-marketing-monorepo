@@ -10,6 +10,7 @@ type FlashDealsPromotionListSectionProps = {
   onCreate?: () => void
   onDelete?: (row: FlashDealRow) => Promise<void> | void
   onEdit?: (row: FlashDealRow, input: UpdateFlashDealInput) => Promise<void> | void
+  onToggle?: (row: FlashDealRow, isActive: boolean) => Promise<void> | void
 }
 
 const tabs: FlashDealsTab[] = ['All', 'Ongoing', 'Upcoming', 'Expired']
@@ -200,22 +201,25 @@ function Toggle({
   enabled,
   status,
   onToggle,
+  disabled = false,
 }: {
   enabled: boolean
   status: FlashDealStatus
   onToggle: () => void
+  disabled?: boolean
 }) {
-  const disabled = status === 'Expired'
+  const isDisabled = disabled || status === 'Expired'
 
   return (
     <button
       type="button"
       onClick={onToggle}
-      disabled={disabled}
+      disabled={isDisabled}
       className={`relative inline-flex h-11 w-[68px] items-center rounded-full transition ${
         enabled ? toggleClasses[status] : 'bg-slate-300'
-      } ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
+      } ${isDisabled ? 'cursor-not-allowed opacity-70' : ''}`}
       aria-pressed={enabled}
+      aria-disabled={isDisabled}
       aria-label={enabled ? 'Disable promotion' : 'Enable promotion'}
     >
       <span
@@ -231,6 +235,7 @@ function SwipeablePromotionCard({
   row,
   enabled,
   onToggle,
+  isToggling,
   onPrimaryAction,
   onDelete,
   showDateInCard = false,
@@ -238,6 +243,7 @@ function SwipeablePromotionCard({
   row: FlashDealRow
   enabled: boolean
   onToggle: () => void
+  isToggling: boolean
   onPrimaryAction: (row: FlashDealRow) => void
   onDelete: (row: FlashDealRow) => void
   showDateInCard?: boolean
@@ -375,29 +381,36 @@ function SwipeablePromotionCard({
           >
             {primaryActionLabel}
           </button>
-          <button
-            type="button"
-            onClick={handleSecondaryAction}
-            className={`inline-flex h-11 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition active:scale-[0.98] ${
-              secondaryDanger
-                ? 'border-[#fca5a5] bg-white text-[#b91c1c]'
-                : 'border-slate-300 bg-white text-slate-700'
-            }`}
-          >
-            {secondaryActionLabel}
-          </button>
+          {secondaryDanger ? (
+            <button
+              type="button"
+              onClick={handleSecondaryAction}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-[#fca5a5] bg-white px-3 text-sm font-semibold text-[#b91c1c] transition active:scale-[0.98]"
+            >
+              {secondaryActionLabel}
+            </button>
+          ) : (
+            <div className="flex h-11 items-center justify-between rounded-lg border border-slate-300 bg-white px-3">
+              <p className="text-sm font-semibold text-slate-700">
+                {enabled ? 'Enabled' : 'Disabled'}
+              </p>
+              <div className="scale-90">
+                <Toggle
+                  enabled={enabled}
+                  status={row.status}
+                  onToggle={onToggle}
+                  disabled={isToggling}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[11px] text-slate-400">Swipe for more actions</p>
-          <div className="flex items-center gap-2">
-            <p className="text-[11px] font-medium text-slate-500">
-              {enabled ? 'Active' : 'Paused'}
-            </p>
-            <div className="scale-90">
-              <Toggle enabled={enabled} status={row.status} onToggle={onToggle} />
-            </div>
-          </div>
+          <p className="text-[11px] font-medium text-slate-500">
+            {enabled ? 'Active' : 'Paused'}
+          </p>
         </div>
       </div>
     </article>
@@ -667,6 +680,7 @@ function FlashDealsPromotionListSection({
   onCreate,
   onDelete,
   onEdit,
+  onToggle,
 }: FlashDealsPromotionListSectionProps) {
   const [activeTab, setActiveTab] = useState<FlashDealsTab>('All')
   const [enabledById, setEnabledById] = useState<Record<string, boolean>>(() =>
@@ -684,6 +698,7 @@ function FlashDealsPromotionListSection({
   const [editingRow, setEditingRow] = useState<FlashDealRow | null>(null)
   const [deletingRowId, setDeletingRowId] = useState<string | null>(null)
   const [savingEdit, setSavingEdit] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
 
   const customPickerValue = useMemo(() => fromDateISO(customDate), [customDate])
@@ -693,6 +708,15 @@ function FlashDealsPromotionListSection({
     const timer = window.setTimeout(() => setLoading(false), 700)
     return () => window.clearTimeout(timer)
   }, [refreshNonce])
+
+  useEffect(() => {
+    setEnabledById(
+      rows.reduce<Record<string, boolean>>((accumulator, row) => {
+        accumulator[row.id] = row.enabled
+        return accumulator
+      }, {}),
+    )
+  }, [rows])
 
   const filteredRows = useMemo(() => {
     const byStatus = rows.filter((row) => activeTab === 'All' || row.status === activeTab)
@@ -728,11 +752,37 @@ function FlashDealsPromotionListSection({
     return groups
   }, [filteredRows])
 
-  const handleToggle = (rowId: string) => {
+  const handleToggle = async (row: FlashDealRow) => {
+    if (!onToggle || row.status === 'Expired') {
+      return
+    }
+
+    // Prevent double-toggles while an update is already in-flight for this row.
+    if (togglingId === row.id) {
+      return
+    }
+
+    const nextEnabled = !enabledById[row.id]
+    setActionError('')
+    setTogglingId(row.id)
     setEnabledById((previous) => ({
       ...previous,
-      [rowId]: !previous[rowId],
+      [row.id]: nextEnabled,
     }))
+
+    try {
+      await onToggle(row, nextEnabled)
+    } catch (error) {
+      setEnabledById((previous) => ({
+        ...previous,
+        [row.id]: !nextEnabled,
+      }))
+      setActionError(
+        error instanceof Error ? error.message : 'Unable to update flash deal status.',
+      )
+    } finally {
+      setTogglingId(null)
+    }
   }
 
   const handleView = (row: FlashDealRow) => {
@@ -882,8 +932,12 @@ function FlashDealsPromotionListSection({
                     <Toggle
                       enabled={enabledById[row.id]}
                       status={row.status}
-                      onToggle={() => handleToggle(row.id)}
+                      disabled={togglingId === row.id}
+                      onToggle={() => void handleToggle(row)}
                     />
+                    {togglingId === row.id ? (
+                      <p className="mt-2 text-[11px] font-medium text-slate-500">Updating...</p>
+                    ) : null}
                   </td>
                   <td className="px-3 py-3.5">
                     <ul className="min-w-[110px] space-y-1.5">
@@ -1042,7 +1096,8 @@ function FlashDealsPromotionListSection({
                         key={row.id}
                         row={row}
                         enabled={enabledById[row.id]}
-                        onToggle={() => handleToggle(row.id)}
+                        onToggle={() => void handleToggle(row)}
+                        isToggling={togglingId === row.id}
                         onPrimaryAction={handleMobilePrimaryAction}
                         onDelete={(item) => void handleDelete(item)}
                         showDateInCard={false}

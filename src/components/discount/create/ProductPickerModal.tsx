@@ -11,6 +11,7 @@ type ProductPickerModalProps = {
   title?: string
   subtitle?: string
   selectionMode?: 'single' | 'multiple'
+  minSelectionCount?: number
   catalogItems: ShopProduct[]
   isLoading: boolean
   loadError: string
@@ -49,6 +50,7 @@ function ProductPickerModal({
   title = 'Select Products',
   subtitle = 'Choose products for this deal.',
   selectionMode = 'multiple',
+  minSelectionCount = 1,
   catalogItems,
   isLoading,
   loadError,
@@ -66,6 +68,7 @@ function ProductPickerModal({
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [showAvailableOnly, setShowAvailableOnly] = useState(true)
   const [draftSelection, setDraftSelection] = useState<string[]>(selectedProductIds)
+  const [warning, setWarning] = useState('')
 
   useEffect(() => {
     if (!isOpen) {
@@ -73,6 +76,7 @@ function ProductPickerModal({
     }
     setDraftSelection(selectionMode === 'single' ? selectedProductIds.slice(0, 1) : selectedProductIds)
     setActiveTab('select')
+    setWarning('')
   }, [isOpen, selectedProductIds, selectionMode])
 
   useEffect(() => {
@@ -194,6 +198,26 @@ function ProductPickerModal({
 
   const canManageProducts = !isAuthRequired && !hasNoShop
   const isSingleSelection = selectionMode === 'single'
+  const effectiveMinSelectionCount = isSingleSelection ? 1 : Math.max(1, minSelectionCount)
+
+  const handleConfirm = () => {
+    if (!canManageProducts) {
+      return
+    }
+
+    if (draftSelection.length < effectiveMinSelectionCount) {
+      const message =
+        effectiveMinSelectionCount === 1
+          ? 'Select at least one product to continue.'
+          : `Select at least ${effectiveMinSelectionCount} products to continue.`
+
+      setWarning(message)
+      window.setTimeout(() => setWarning(''), 2500)
+      return
+    }
+
+    onConfirmSelection(draftSelection)
+  }
 
   const pickerModal =
     isOpen && typeof document !== 'undefined'
@@ -208,6 +232,13 @@ function ProductPickerModal({
 
             <div className="absolute inset-0 flex items-end sm:items-center sm:justify-center sm:p-6">
               <article className="relative z-10 flex w-full max-h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-[#dbeafe] bg-white shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)] animate-[rise-in_240ms_cubic-bezier(0.22,1,0.36,1)_both] sm:max-h-[90vh] sm:max-w-5xl sm:rounded-2xl">
+                {warning ? (
+                  <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center px-3 sm:top-5">
+                    <div className="pointer-events-auto w-full max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow">
+                      {warning}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
 
                 <header className="sticky top-0 z-10 shrink-0 border-b border-[#dbeafe] bg-white px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
@@ -488,7 +519,7 @@ function ProductPickerModal({
                     </button>
                     <button
                       type="button"
-                      onClick={() => onConfirmSelection(draftSelection)}
+                      onClick={handleConfirm}
                       disabled={!canManageProducts}
                       className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
                     >

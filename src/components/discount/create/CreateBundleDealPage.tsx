@@ -141,7 +141,7 @@ function CreateBundleDealPage({
       return true
     }
 
-    if (form.items.length === 0) {
+    if (form.items.length < 2) {
       return true
     }
 
@@ -388,7 +388,7 @@ function CreateBundleDealPage({
           </div>
         ) : (
           <div className="mx-4 mt-3 rounded-lg border border-dashed border-[#bfdbfe] bg-white px-4 py-3 text-xs text-slate-500">
-            Select at least 1 product first. Bundle deal details and date range will appear after
+            Select at least 2 products first. Bundle deal details and date range will appear after
             product selection.
           </div>
         )}
@@ -419,7 +419,7 @@ function CreateBundleDealPage({
           />
         ) : (
           <article className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] p-5 text-sm text-slate-600">
-            Select at least 1 product first. Bundle deal details and date range will appear here
+            Select at least 2 products first. Bundle deal details and date range will appear here
             after product selection.
           </article>
         )}

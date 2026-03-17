@@ -38,7 +38,6 @@ type FlashDealProductState = {
   discountPercent: string
   campaignStock: string
   purchaseLimit: string
-  enabled: boolean
 }
 
 export type CreateFlashDealForm = {
@@ -191,7 +190,6 @@ function createProductState(catalogEntry: FlashDealCatalogEntry): FlashDealProdu
     discountPercent: '',
     campaignStock: `${catalogEntry.stock}`,
     purchaseLimit: '',
-    enabled: true,
   }
 }
 
@@ -355,7 +353,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
   const [mobileBulkCampaignStock, setMobileBulkCampaignStock] = useState('')
   const [mobileBulkPurchaseLimit, setMobileBulkPurchaseLimit] = useState('')
   const [mobileBulkNoLimit, setMobileBulkNoLimit] = useState(false)
-  const [mobileBulkEnabledOnly, setMobileBulkEnabledOnly] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -431,11 +428,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       criteriaCategories.find((category) => category.id === activeCriteriaId)?.label ?? 'All',
     [activeCriteriaId, criteriaCategories],
   )
-  const enabledProductCount = useMemo(
-    () =>
-      selectedProductIds.filter((productId) => productStateById[productId]?.enabled).length,
-    [productStateById, selectedProductIds],
-  )
+  const selectedProductCount = selectedProductIds.length
   const slotSummaryLabel = useMemo(() => {
     if (!slotStartDate || !slotEndDate) {
       return 'Schedule not set'
@@ -522,9 +515,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     )
   }, [mobileStepTwoProducts, mobileStepTwoSearch])
   const productSummaryLabel =
-    selectedProductIds.length === 0
-      ? '0 products'
-      : `${enabledProductCount}/${selectedProductIds.length} enabled`
+    selectedProductIds.length === 0 ? '0 products' : `${selectedProductCount} selected`
   const canOpenDiscountStep = selectedProductIds.length > 0
   const isSetupComplete = Boolean(slotStartDate)
   const visibleCategoryRules = showAllMobileRules
@@ -539,17 +530,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     Boolean(mobileBulkCampaignStock) ||
     Boolean(mobileBulkPurchaseLimit) ||
     mobileBulkNoLimit
-  const mobileBulkTargetProductIds = useMemo(() => {
-    if (!mobileBulkEnabledOnly) {
-      return selectedProductIds
-    }
-
-    return selectedProductIds.filter((productId) => {
-      const currentState =
-        productStateById[productId] ?? createProductState(getCatalogEntry(productId, productsById))
-      return currentState.enabled
-    })
-  }, [mobileBulkEnabledOnly, productStateById, productsById, selectedProductIds])
+  const mobileBulkTargetProductIds = useMemo(() => selectedProductIds, [selectedProductIds])
 
   const isConfirmDisabled = selectedProductIds.length === 0 || !slotStartDate
   const isMobileBulkApplyDisabled =
@@ -740,12 +721,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
     updateProductState(productId, { purchaseLimit: sanitizeWholeNumber(nextValue) })
   }
 
-  const handleToggleProductEnabled = (productId: string) => {
-    const current =
-      productStateById[productId] ?? createProductState(getCatalogEntry(productId, productsById))
-    updateProductState(productId, { enabled: !current.enabled })
-  }
-
   const handleBatchUpdateAll = () => {
     setProductStateById((previous) => {
       const next = { ...previous }
@@ -851,21 +826,9 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       return
     }
 
-    const enabledProductIds = selectedProductIds.filter((productId) => {
-      const state =
-        productStateById[productId] ??
-        createProductState(getCatalogEntry(productId, productsById))
-      return state.enabled
-    })
-
-    if (enabledProductIds.length === 0) {
-      setSubmitError('Enable at least one product before confirming.')
-      return
-    }
-
     const products: CreateFlashDealForm['products'] = []
 
-    for (const productId of enabledProductIds) {
+    for (const productId of selectedProductIds) {
       const catalogEntry = getCatalogEntry(productId, productsById)
       const state =
         productStateById[productId] ??
@@ -1306,9 +1269,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-base font-semibold text-slate-800">Schedule</h3>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-semibold text-[#1d4ed8]">
-                        {slotDurationHours}-hour slot
-                      </span>
                       <select
                         value={slotDurationHours}
                         onChange={(event) => setSlotDurationHours(Number(event.target.value))}
@@ -1665,24 +1625,13 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           No limit for purchase limit
                         </label>
 
-                        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-[#dbeafe] bg-[#f8fbff] px-3 text-sm text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={mobileBulkEnabledOnly}
-                            onChange={(event) => setMobileBulkEnabledOnly(event.target.checked)}
-                            className="h-4 w-4 rounded border-[#94a3b8] text-[#2563eb] focus:ring-[#93c5fd]"
-                          />
-                          Only apply to enabled products
-                        </label>
 
                         <button
                           type="submit"
                           disabled={isMobileBulkApplyDisabled}
                           className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2563eb] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
                         >
-                          {mobileBulkEnabledOnly
-                            ? `Apply to enabled (${mobileBulkTargetProductIds.length})`
-                            : `Apply to all selected (${selectedProductIds.length})`}
+                          {`Apply to selected (${selectedProductIds.length})`}
                         </button>
                       </form>
                     </article>
@@ -1727,34 +1676,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                   <X size={14} weight="bold" />
                                 </button>
 
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={productState.enabled}
-                                  onClick={() => handleToggleProductEnabled(productId)}
-                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
-                                    productState.enabled ? 'bg-[#2563eb]' : 'bg-slate-300'
-                                  }`}
-                                  aria-label={
-                                    productState.enabled
-                                      ? `Disable ${catalogEntry.name}`
-                                      : `Enable ${catalogEntry.name}`
-                                  }
-                                >
-                                  <span
-                                    className={`inline-flex h-5 w-5 rounded-full bg-white shadow transition ${
-                                      productState.enabled ? 'translate-x-5' : 'translate-x-0.5'
-                                    }`}
-                                  />
-                                </button>
-
-                                <span
-                                  className={`text-[11px] font-semibold ${
-                                    productState.enabled ? 'text-[#1d4ed8]' : 'text-slate-500'
-                                  }`}
-                                >
-                                  {productState.enabled ? 'Enabled' : 'Disabled'}
-                                </span>
                               </div>
                             </div>
 
@@ -1847,8 +1768,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               {selectedProductIds.length > 0 ? (
               <div className="mt-3 space-y-3">
                 <div className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] px-3 py-2 text-xs text-slate-600">
-                  You have enabled {enabledProductCount} out of 50 product(s) for this Flash Deals
-                  time slot.
+                  You have selected {selectedProductCount} out of 50 product(s) for this Flash Deals time slot.
                 </div>
 
                 <div className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-4">
@@ -1942,7 +1862,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                         <th className="px-3 py-2.5 font-semibold">Campaign Stock</th>
                         <th className="px-3 py-2.5 font-semibold">Stock</th>
                         <th className="px-3 py-2.5 font-semibold">Purchase Limit</th>
-                        <th className="px-3 py-2.5 font-semibold">Enable / Disable</th>
                         <th className="px-3 py-2.5 font-semibold">Action</th>
                       </tr>
                     </thead>
@@ -2018,26 +1937,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 placeholder="No Limit"
                                 className="h-9 w-24 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
                               />
-                            </td>
-                            <td className="px-3 py-3 align-top">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleProductEnabled(productId)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                                  productState.enabled ? 'bg-[#2563eb]' : 'bg-slate-300'
-                                }`}
-                                aria-label={
-                                  productState.enabled
-                                    ? `Disable ${catalogEntry.name}`
-                                    : `Enable ${catalogEntry.name}`
-                                }
-                              >
-                                <span
-                                  className={`inline-flex h-5 w-5 rounded-full bg-white shadow transition ${
-                                    productState.enabled ? 'translate-x-5' : 'translate-x-0.5'
-                                  }`}
-                                />
-                              </button>
                             </td>
                             <td className="px-3 py-3 align-top">
                               <button
@@ -2202,5 +2101,9 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 }
 
 export default CreateFlashDealPage
+
+
+
+
 
 
