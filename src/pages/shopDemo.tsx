@@ -25,7 +25,7 @@ import { supabase } from '../supabase'
 /* ------------------------------------------------------------------ */
 
 function formatPrice(n: number) {
-  return `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `\u20B1${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function discountPercent(original: number, sale: number) {
@@ -301,34 +301,15 @@ function BundleCard({
 /*  CartDrawer                                                         */
 /* ------------------------------------------------------------------ */
 
-type AddonSuggestion = {
-  dealId: string
-  dealName: string
-  shopId: string
-  triggerProductId: string
-  triggerProductName: string
-  addonProductId: string
-  addonProductName: string
-  addonProductImage: string | null
-  addonProductPrice: number
-  discountedPrice: number
-  discountLabel: string
-  requiredQuantity: number
-}
-
 function CartDrawer({
   open,
   items,
   onClose,
   onUpdateQty,
   onRemove,
-  voucherCode,
-  onVoucherCodeChange,
-  onApplyVoucher,
-  voucherMessage,
+  onRemoveBundle,
   voucherDiscount,
-  isApplyingVoucher,
-  onCheckout,
+  onReviewCheckout,
   isCheckingOut,
 }: {
   open: boolean
@@ -336,13 +317,9 @@ function CartDrawer({
   onClose: () => void
   onUpdateQty: (productId: string, delta: number) => void
   onRemove: (productId: string) => void
-  voucherCode: string
-  onVoucherCodeChange: (v: string) => void
-  onApplyVoucher: () => void
-  voucherMessage: string | null
+  onRemoveBundle: (bundleId: string) => void
   voucherDiscount: number
-  isApplyingVoucher: boolean
-  onCheckout: () => void
+  onReviewCheckout: () => void
   isCheckingOut: boolean
 }) {
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -358,14 +335,17 @@ function CartDrawer({
       />
       {/* Drawer */}
       <div
-        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-[440px] flex-col bg-slate-50 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur">
           <h3 className="text-lg font-bold text-slate-800">
             Shopping Cart <span className="text-sm font-normal text-slate-400">({items.length})</span>
           </h3>
-          <button onClick={onClose} className="text-slate-400 transition hover:text-slate-700">
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -373,7 +353,7 @@ function CartDrawer({
         </div>
 
         {/* Items */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4 pb-36">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-400">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -389,7 +369,7 @@ function CartDrawer({
               {items.map((item) => (
                 <div
                   key={item.productId}
-                  className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+                  className="flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_6px_18px_-12px_rgba(15,23,42,.35)]"
                 >
                   <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-200">
                     {item.image ? (
@@ -400,6 +380,11 @@ function CartDrawer({
                   </div>
                   <div className="flex flex-1 flex-col gap-1">
                     <span className="text-sm font-medium text-slate-700 line-clamp-1">{item.name}</span>
+                    {item.bundleId && (
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-purple-600">
+                        Bundle Deal{item.bundleName ? `: ${item.bundleName}` : ''}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-slate-900">{formatPrice(item.price)}</span>
                       {item.originalPrice > item.price && (
@@ -416,22 +401,37 @@ function CartDrawer({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onUpdateQty(item.productId, -1)}
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                        disabled={Boolean(item.bundleId)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                      <span className="w-7 text-center text-sm font-semibold">{item.quantity}</span>
                       <button
                         onClick={() => onUpdateQty(item.productId, 1)}
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                        disabled={Boolean(item.bundleId)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                       >
                         +
                       </button>
                       <button
-                        onClick={() => onRemove(item.productId)}
-                        className="ml-auto text-xs text-red-400 hover:text-red-600"
+                        onClick={() =>
+                          item.bundleId ? onRemoveBundle(item.bundleId) : onRemove(item.productId)
+                        }
+                        className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-red-100 hover:bg-red-50 hover:text-red-600"
+                        aria-label="Remove item"
                       >
-                        Remove
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path d="M8 6V4H16V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path
+                            d="M19 6L18 20H6L5 6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -443,33 +443,7 @@ function CartDrawer({
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-slate-200 px-5 pb-5 pt-4">
-            {/* Voucher */}
-            <div className="mb-4">
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">Voucher Code</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={voucherCode}
-                  onChange={(e) => onVoucherCodeChange(e.target.value)}
-                  placeholder="Enter voucher code"
-                  className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                />
-                <button
-                  onClick={onApplyVoucher}
-                  disabled={isApplyingVoucher || !voucherCode.trim()}
-                  className="h-9 rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isApplyingVoucher ? '…' : 'Apply'}
-                </button>
-              </div>
-              {voucherMessage && (
-                <p className={`mt-1.5 text-xs ${voucherDiscount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {voucherMessage}
-                </p>
-              )}
-            </div>
-
+          <div className="border-t border-slate-200 bg-white/95 px-5 pb-4 pt-4 backdrop-blur">
             {/* Summary */}
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between text-slate-500">
@@ -488,21 +462,213 @@ function CartDrawer({
                   <span>-{formatPrice(voucherDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
-                <span>Total</span>
-                <span>{formatPrice(total)}</span>
-              </div>
             </div>
+          </div>
+        )}
 
+        {items.length > 0 && (
+          <div className="sticky bottom-0 border-t border-slate-200 bg-white px-5 py-4 shadow-[0_-8px_24px_-16px_rgba(15,23,42,.4)]">
+            <div className="mb-3 flex items-center justify-between text-base font-bold text-slate-900">
+              <span>Total</span>
+              <span>{formatPrice(total)}</span>
+            </div>
             <button
-              onClick={onCheckout}
+              onClick={onReviewCheckout}
               disabled={isCheckingOut}
-              className="mt-4 h-11 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_6px_20px_-6px_rgba(37,99,235,.6)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
+              className="h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,.7)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
             >
-              {isCheckingOut ? 'Processing...' : `Checkout (Demo) — ${formatPrice(total)}`}
+              {isCheckingOut ? 'Processing...' : `Checkout - ${formatPrice(total)}`}
             </button>
           </div>
         )}
+      </div>
+    </>
+  )
+}
+
+function OrderDetailsModal({
+  open,
+  items,
+  voucherDiscount,
+  voucherCode,
+  onVoucherCodeChange,
+  onApplyVoucher,
+  onRemoveVoucher,
+  voucherMessage,
+  isApplyingVoucher,
+  vouchers,
+  shopLabel,
+  onClose,
+  onConfirm,
+  isCheckingOut,
+}: {
+  open: boolean
+  items: CartItem[]
+  voucherDiscount: number
+  voucherCode: string
+  onVoucherCodeChange: (v: string) => void
+  onApplyVoucher: () => void
+  onRemoveVoucher: () => void
+  voucherMessage: string | null
+  isApplyingVoucher: boolean
+  vouchers: MarketplaceVoucher[]
+  shopLabel: string | null
+  onClose: () => void
+  onConfirm: () => void
+  isCheckingOut: boolean
+}) {
+  if (!open) return null
+
+  const [showVouchers, setShowVouchers] = useState(false)
+  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const discounts = items.reduce((s, i) => s + (i.originalPrice - i.price) * i.quantity, 0)
+  const total = Math.max(subtotal - voucherDiscount, 0)
+  const cartShopIds = Array.from(new Set(items.map((item) => item.shopId).filter(Boolean)))
+  const eligibleVouchers =
+    items.length === 0 || cartShopIds.length !== 1
+      ? []
+      : vouchers.filter((v) => v.shopId === cartShopIds[0] && subtotal >= v.minSpend)
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[80] bg-black/50" onClick={onClose} />
+      <div className="fixed left-1/2 top-1/2 z-[90] w-[92vw] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h3 className="text-lg font-bold text-slate-800">Order Details</h3>
+          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <p className="text-xs font-semibold text-slate-500">Shop</p>
+            <p className="font-semibold text-slate-800">{shopLabel ?? 'Unknown Shop'}</p>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Voucher</label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="text"
+                value={voucherCode}
+                onChange={(e) => onVoucherCodeChange(e.target.value)}
+                placeholder="Enter voucher code"
+                className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+              <button
+                type="button"
+                onClick={() => setShowVouchers((prev) => !prev)}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                {showVouchers ? 'Hide vouchers' : 'View vouchers'}
+              </button>
+              {(voucherDiscount > 0 || voucherCode.trim()) && (
+                <button
+                  type="button"
+                  onClick={onRemoveVoucher}
+                  className="h-10 rounded-xl border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                >
+                  Remove
+                </button>
+              )}
+              <button
+                onClick={onApplyVoucher}
+                disabled={isApplyingVoucher || !voucherCode.trim()}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isApplyingVoucher ? '…' : 'Apply'}
+              </button>
+            </div>
+            {voucherMessage && (
+              <p className={`mt-1.5 text-xs ${voucherDiscount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {voucherMessage}
+              </p>
+            )}
+            {showVouchers && (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                {eligibleVouchers.length === 0 ? (
+                  <p className="text-slate-500">No available vouchers for this cart.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {eligibleVouchers.slice(0, 5).map((v) => {
+                      const label =
+                        v.discountType === 'percentage'
+                          ? `${v.discountValue}% OFF`
+                          : `${formatPrice(v.discountValue)} OFF`
+                      return (
+                        <div key={v.id} className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800">{v.code}</p>
+                            <p className="truncate text-[11px] text-slate-500">
+                              {v.name || 'Voucher'} · {label}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => onVoucherCodeChange(v.code)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            Use
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {items.map((item) => (
+              <div key={item.productId} className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {item.quantity} x {formatPrice(item.price)}
+                  </p>
+                </div>
+                <div className="text-sm font-semibold text-slate-800">
+                  {formatPrice(item.price * item.quantity)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 px-5 py-4">
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between text-slate-500">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            {discounts > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Product Discounts</span>
+                <span>-{formatPrice(discounts)}</span>
+              </div>
+            )}
+            {voucherDiscount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Voucher Discount</span>
+                <span>-{formatPrice(voucherDiscount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+              <span>Total</span>
+              <span>{formatPrice(total)}</span>
+            </div>
+          </div>
+          <button
+            onClick={onConfirm}
+            disabled={isCheckingOut}
+            className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,.7)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
+          >
+            {isCheckingOut ? 'Processing...' : 'Buy Now'}
+          </button>
+        </div>
       </div>
     </>
   )
@@ -659,7 +825,7 @@ function VoucherBadge({ voucher }: { voucher: MarketplaceVoucher }) {
   const discLabel =
     voucher.discountType === 'percentage'
       ? `${voucher.discountValue}% OFF`
-      : `₱${voucher.discountValue} OFF`
+      : `\u20B1${voucher.discountValue} OFF`
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-dashed border-orange-300 bg-orange-50 px-4 py-2.5">
@@ -671,7 +837,7 @@ function VoucherBadge({ voucher }: { voucher: MarketplaceVoucher }) {
         </p>
         <p className="text-xs text-orange-500">
           Code: <span className="font-mono font-bold">{voucher.code}</span>
-          {voucher.minSpend > 0 && ` · Min. spend ₱${voucher.minSpend}`}
+          {voucher.minSpend > 0 && ` · Min. spend \u20B1${voucher.minSpend}`}
         </p>
       </div>
       <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[10px] font-semibold text-orange-600">
@@ -717,6 +883,7 @@ function ShopDemoPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResult | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showOrderDetails, setShowOrderDetails] = useState(false)
 
   // Filter
   const [search, setSearch] = useState('')
@@ -741,6 +908,14 @@ function ShopDemoPage() {
   }, [products, activeCategory, search])
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const cartShopLabel = useMemo(() => {
+    if (cart.length === 0) return null
+    const shopIds = Array.from(new Set(cart.map((item) => item.shopId)))
+    if (shopIds.length !== 1) return 'Multiple shops'
+    const shopId = shopIds[0]
+    const shop = products.find((p) => p.shopId === shopId)
+    return shop?.shopName ?? shopId
+  }, [cart, products])
 
   const addonSuggestions = useMemo<AddonSuggestion[]>(() => {
     if (addonDeals.length === 0 || cart.length === 0) return []
@@ -917,6 +1092,9 @@ function ShopDemoPage() {
   }
 
   const addBundleToCart = (bundle: MarketplaceBundle) => {
+    const totalBundleQty = bundle.items.reduce((s, b) => s + b.quantity, 0)
+    const perUnitBundlePrice =
+      bundle.price && totalBundleQty > 0 ? bundle.price / totalBundleQty : null
     for (const item of bundle.items) {
       setCart((prev) => {
         const existing = prev.find((c) => c.productId === item.productId)
@@ -929,22 +1107,22 @@ function ShopDemoPage() {
         }
         return [
           ...prev,
-        {
-          productId: item.productId,
-          name: item.productName,
-          price: bundle.price
-            ? (bundle.price / bundle.items.reduce((s, b) => s + b.quantity, 0)) * item.quantity
-            : item.productPrice,
-          originalPrice: item.productPrice,
-          quantity: item.quantity,
-          image: item.productImage,
-          flashDealId: null,
-          discountId: null,
-          shopId: bundle.shopId,
-        },
-      ]
-    })
-  }
+          {
+            productId: item.productId,
+            name: item.productName,
+            price: perUnitBundlePrice ?? item.productPrice,
+            originalPrice: item.productPrice,
+            quantity: item.quantity,
+            image: item.productImage,
+            flashDealId: null,
+            discountId: null,
+            bundleId: bundle.id,
+            bundleName: bundle.name ?? null,
+            shopId: bundle.shopId,
+          },
+        ]
+      })
+    }
     setCartOpen(true)
     const triggerIds = Array.from(new Set(bundle.items.map((item) => item.productId)))
     setPendingAddonTriggerIds(triggerIds)
@@ -953,13 +1131,19 @@ function ShopDemoPage() {
   const updateCartQty = (productId: string, delta: number) => {
     setCart((prev) =>
       prev
-        .map((c) => (c.productId === productId ? { ...c, quantity: c.quantity + delta } : c))
+        .map((c) =>
+          c.productId === productId && !c.bundleId ? { ...c, quantity: c.quantity + delta } : c,
+        )
         .filter((c) => c.quantity > 0),
     )
   }
 
   const removeFromCart = (productId: string) => {
     setCart((prev) => prev.filter((c) => c.productId !== productId))
+  }
+
+  const removeBundleFromCart = (bundleId: string) => {
+    setCart((prev) => prev.filter((c) => c.bundleId !== bundleId))
   }
 
   // ---- Voucher ----
@@ -981,6 +1165,13 @@ function ShopDemoPage() {
     setVoucherDiscount(result.discount)
     setAppliedVoucherId(result.voucherId)
     setIsApplyingVoucher(false)
+  }
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode('')
+    setVoucherMessage(null)
+    setVoucherDiscount(0)
+    setAppliedVoucherId(null)
   }
 
   // ---- Checkout ----
@@ -1202,13 +1393,32 @@ function ShopDemoPage() {
         onClose={() => setCartOpen(false)}
         onUpdateQty={updateCartQty}
         onRemove={removeFromCart}
+        onRemoveBundle={removeBundleFromCart}
+        voucherDiscount={voucherDiscount}
+        onReviewCheckout={() => setShowOrderDetails(true)}
+        isCheckingOut={isCheckingOut}
+      />
+
+      <OrderDetailsModal
+        open={showOrderDetails}
+        items={cart}
+        voucherDiscount={voucherDiscount}
         voucherCode={voucherCode}
         onVoucherCodeChange={setVoucherCode}
         onApplyVoucher={handleApplyVoucher}
+        onRemoveVoucher={handleRemoveVoucher}
         voucherMessage={voucherMessage}
-        voucherDiscount={voucherDiscount}
         isApplyingVoucher={isApplyingVoucher}
-        onCheckout={handleCheckout}
+        vouchers={vouchers}
+        shopLabel={cartShopLabel}
+        onClose={() => {
+          setShowOrderDetails(false)
+          handleRemoveVoucher()
+        }}
+        onConfirm={() => {
+          setShowOrderDetails(false)
+          void handleCheckout()
+        }}
         isCheckingOut={isCheckingOut}
       />
 
@@ -1245,4 +1455,8 @@ function ShopDemoPage() {
 }
 
 export default ShopDemoPage
+
+
+
+
 

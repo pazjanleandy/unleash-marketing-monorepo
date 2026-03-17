@@ -158,6 +158,7 @@ function RewardSettingsCard({
   const rewardTypeGroupName = useId()
   const [activePickerField, setActivePickerField] =
     useState<VoucherDateTimeField | null>(null)
+  const isPrivateVoucher = value.voucherType === 'private'
 
   const setField = <K extends keyof CreateVoucherForm>(
     field: K,
@@ -232,6 +233,25 @@ function RewardSettingsCard({
       </header>
 
       <div className="space-y-6 px-4 py-4 sm:px-5 sm:py-5">
+        {isPrivateVoucher ? (
+          <FieldRow
+            label="Voucher Code"
+            hint="Leave blank to auto-generate a private voucher code."
+          >
+            <input
+              id={fieldIds?.voucherCode}
+              type="text"
+              value={value.voucherCode}
+              onChange={(event) =>
+                setField('voucherCode', event.target.value.toUpperCase())
+              }
+              placeholder="e.g. PET10"
+              aria-label="Voucher code"
+              className="h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#64748b] focus:outline-none"
+            />
+          </FieldRow>
+        ) : null}
+
         <fieldset className="space-y-3">
           <legend className="text-[14px] font-medium text-slate-700">Reward Type</legend>
           <div

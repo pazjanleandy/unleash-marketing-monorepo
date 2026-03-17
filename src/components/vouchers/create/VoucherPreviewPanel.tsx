@@ -71,6 +71,11 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
               <p className="text-[10px] font-semibold text-[#2563EB]">
                 {formatDiscountLabel(value)}
               </p>
+              {voucherType === 'private' && value.voucherCode.trim() ? (
+                <p className="text-[9px] font-semibold text-slate-700">
+                  Code: {value.voucherCode.trim().toUpperCase()}
+                </p>
+              ) : null}
               <p className="text-[9px] text-slate-500">Min. spend ₱{minimumBasketPrice}</p>
               <button
                 type="button"

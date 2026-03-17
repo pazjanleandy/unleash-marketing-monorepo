@@ -137,6 +137,7 @@ const createVoucherDefaults: CreateVoucherForm = {
   voucherType: 'shop',
   rewardType: 'discount',
   discountType: 'fixed-amount',
+  voucherCode: '',
   discountAmount: '1.00',
   minimumBasketPrice: '10.00',
   usageQuantity: '100',
@@ -204,6 +205,7 @@ function mapVoucherToCreateForm(voucher: VoucherItem): CreateVoucherForm {
     voucherType: voucher.voucherType ?? 'shop',
     rewardType: 'discount',
     discountType: voucher.icon === 'percent' ? 'percentage' : 'fixed-amount',
+    voucherCode: voucher.code ?? '',
     discountAmount: toDecimalInputValue(
       voucher.discountAmount,
       createVoucherDefaults.discountAmount,

@@ -109,6 +109,8 @@ export type CartItem = {
   image: string | null
   flashDealId: string | null
   discountId: string | null
+  bundleId?: string | null
+  bundleName?: string | null
   shopId: string
 }
 

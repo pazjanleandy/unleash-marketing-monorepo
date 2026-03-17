@@ -213,10 +213,15 @@ function buildVoucherPayload(form: CreateVoucherForm, shopId: string): VoucherIn
   const discountAmount = parseDecimalInput(form.discountAmount, 0)
   const usageQuantity = parseIntInput(form.usageQuantity, 0)
   const usagePerUser = parseIntInput(form.maxDistributionPerBuyer, 1)
+  const trimmedCode = form.voucherCode.trim()
+  const resolvedCode =
+    form.voucherType === 'private' && trimmedCode.length > 0
+      ? trimmedCode.toUpperCase()
+      : `V-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
 
   return {
     shop_id: shopId,
-    code: `V-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    code: resolvedCode,
     name: VOUCHER_TYPE_LABELS[form.voucherType] ?? 'Shop Voucher',
     voucher_type: form.voucherType,
     discount_type: form.discountType === 'percentage' ? 'percentage' : 'fixed',

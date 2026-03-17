@@ -12,6 +12,7 @@ export type CreateVoucherForm = {
   voucherType: VoucherType
   rewardType: RewardType
   discountType: DiscountType
+  voucherCode: string
   discountAmount: string
   minimumBasketPrice: string
   usageQuantity: string

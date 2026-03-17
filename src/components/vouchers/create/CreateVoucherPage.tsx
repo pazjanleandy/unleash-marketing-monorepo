@@ -42,6 +42,7 @@ function toLocalDateTimeInputValue(date: Date) {
 type FormErrorMap = Partial<Record<keyof CreateVoucherForm, string>>
 
 const fieldElementIds: Partial<Record<keyof CreateVoucherForm, string>> = {
+  voucherCode: 'create-voucher-code',
   discountType: 'create-voucher-discount-type',
   discountAmount: 'create-voucher-discount-amount',
   minimumBasketPrice: 'create-voucher-minimum-basket-price',
@@ -57,6 +58,7 @@ function getDefaultForm(voucherType: VoucherType): CreateVoucherForm {
     voucherType,
     rewardType: 'discount',
     discountType: 'fixed-amount',
+    voucherCode: '',
     discountAmount: '',
     minimumBasketPrice: '',
     usageQuantity: '',
