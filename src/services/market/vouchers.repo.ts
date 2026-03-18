@@ -435,7 +435,7 @@ export async function deleteVoucher(voucherId: string) {
 export async function listShopProducts(shopId: string) {
   const { data, error } = await supabase
     .from('products')
-    .select('product_id,prodname,price,image,status')
+    .select('product_id,prodname,price,image,image_url,status')
     .eq('shop_id', shopId)
     .eq('status', 'avail')
     .order('prodname', { ascending: true })
@@ -444,7 +444,10 @@ export async function listShopProducts(shopId: string) {
     throw error
   }
 
-  return data ?? []
+  return (data ?? []).map((row) => ({
+    ...row,
+    image: row.image_url ?? row.image ?? null,
+  }))
 }
 
 export { deriveDisplaySetting, deriveProductScope }

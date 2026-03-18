@@ -35,6 +35,7 @@ type ProductRow = {
   quantity: number | null
   status: string
   image: string | null
+  image_url?: string | null
   categories?: { name?: string | null } | null
 }
 
@@ -82,7 +83,7 @@ export async function listShopProducts(): Promise<ProductsListResult> {
   const { data, error } = await supabase
     .from('products')
     .select(
-      'product_id,prodname,price,quantity,status,image,categories:categories!products_category_id_fkey(name)',
+      'product_id,prodname,price,quantity,status,image,image_url,categories:categories!products_category_id_fkey(name)',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
@@ -100,7 +101,7 @@ export async function listShopProducts(): Promise<ProductsListResult> {
     stock: typeof row.quantity === 'number' ? row.quantity : 0,
     sales: 0,
     status: row.status ?? 'avail',
-    image: row.image ?? null,
+    image: row.image_url ?? row.image ?? null,
   }))
 
   return {

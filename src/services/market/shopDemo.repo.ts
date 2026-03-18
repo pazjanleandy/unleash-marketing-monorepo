@@ -151,7 +151,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
   const productsQuery = supabase
     .from('products')
     .select(
-      'product_id,prodname,price,quantity,image,status,shop_id,shops:shops!products_shop_id_fkey(name,owner_id),categories:categories!products_category_id_fkey(name)',
+      'product_id,prodname,price,quantity,image,image_url,status,shop_id,shops:shops!products_shop_id_fkey(name,owner_id),categories:categories!products_category_id_fkey(name)',
     )
     .eq('status', 'avail')
     .order('created_at', { ascending: false })
@@ -205,7 +205,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
       id: p.product_id,
       name: p.prodname ?? 'Unnamed Product',
       price: p.price ?? 0,
-      image: p.image ?? null,
+      image: p.image_url ?? p.image ?? null,
       category: p.categories?.name?.trim() || 'Uncategorized',
       quantity: p.quantity ?? 0,
       shopId: p.shop_id,
@@ -244,7 +244,7 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
   const query = supabase
     .from('flash_deals')
     .select(
-      'id,product_id,shop_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image),shops:shops!flash_deals_shop_fkey(name,owner_id)',
+      'id,product_id,shop_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image,image_url),shops:shops!flash_deals_shop_fkey(name,owner_id)',
     )
     .eq('is_active', true)
     .lte('start_at', now)
@@ -259,7 +259,7 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
     id: row.id,
     productId: row.product_id,
     productName: row.products?.prodname?.trim() || 'Unnamed Product',
-    productImage: row.products?.image ?? null,
+    productImage: row.products?.image_url ?? row.products?.image ?? null,
     flashPrice: row.flash_price,
     originalPrice: row.original_price,
     flashQuantity: row.flash_quantity,
@@ -342,7 +342,7 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
 
   const bundlesQuery = supabase
     .from('bundles')
-    .select('id,name,price,currency,shop_id,shops:shops!bundles_shop_id_fkey(name,owner_id),bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,price))')
+    .select('id,name,price,currency,shop_id,shops:shops!bundles_shop_id_fkey(name,owner_id),bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,image_url,price))')
     .eq('is_active', true)
     .in('promotion_id', sectionIds)
 
@@ -363,7 +363,7 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
     items: (b.bundle_items ?? []).map((item: any) => ({
       productId: item.product_id,
       productName: item.products?.prodname?.trim() || 'Unnamed Product',
-      productImage: item.products?.image ?? null,
+      productImage: item.products?.image_url ?? item.products?.image ?? null,
       productPrice: item.products?.price ?? 0,
       quantity: item.quantity ?? 1,
     })),
@@ -380,7 +380,7 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
   const query = supabase
     .from('addon_deals')
     .select(
-      'id,name,shop_id,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,price))',
+      'id,name,shop_id,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,image_url,price))',
     )
     .eq('is_active', true)
     .lte('start_at', now)
@@ -402,7 +402,7 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
     addonItems: (deal.addon_deal_items ?? []).map((item: any) => ({
       productId: item.product_id,
       productName: item.products?.prodname?.trim() || 'Unnamed Product',
-      productImage: item.products?.image ?? null,
+      productImage: item.products?.image_url ?? item.products?.image ?? null,
       productPrice: item.products?.price ?? 0,
       requiredQuantity: item.required_quantity ?? 1,
     })),
