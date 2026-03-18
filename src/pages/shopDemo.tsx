@@ -658,124 +658,6 @@ function ProductBrowseSection({
   )
 }
 /* ------------------------------------------------------------------ */
-function PromotionsUnifiedFeed({
-  flashDeals,
-  bundles,
-  vouchers,
-  productsMap,
-  activePromoTab,
-  activeCategory,
-  onAddFlashDeal,
-  onAddBundle,
-  products,
-  voucherEligibleShopIds,
-  bundleProductIds,
-  addProductToCart,
-}: {
-  flashDeals: MarketplaceFlashDeal[]
-  bundles: MarketplaceBundle[]
-  vouchers: MarketplaceVoucher[]
-  productsMap: Map<string, MarketplaceProduct>
-  activePromoTab: 'all' | 'flash' | 'bundles' | 'vouchers'
-  activeCategory: string
-  onAddFlashDeal: (deal: MarketplaceFlashDeal) => void
-  onAddBundle: (bundle: MarketplaceBundle) => void
-  products: MarketplaceProduct[]
-  voucherEligibleShopIds: Set<string>
-  bundleProductIds: Set<string>
-  addProductToCart: (product: MarketplaceProduct) => void
-}) {
-  const resolveCategory = (productId?: string | null) => {
-    if (!productId) return 'All'
-    const found = productsMap.get(productId)
-    return found?.category ?? 'All'
-  }
-
-  const matchCategory = (cat: string, itemCat: string) => cat === 'All' || itemCat === cat
-
-  const flashItems = flashDeals.map((deal) => ({
-    type: 'flash' as const,
-    category: resolveCategory(deal.productId),
-    node: <FlashDealCard key={`flash-${deal.id}`} deal={deal} onAdd={onAddFlashDeal} />,
-  }))
-
-  const bundleItems = bundles.map((bundle) => ({
-    type: 'bundles' as const,
-    category: resolveCategory(bundle.items[0]?.productId),
-    node: <BundleCard key={`bundle-${bundle.id}`} bundle={bundle} onAdd={onAddBundle} />,
-  }))
-
-  const voucherItems = vouchers.map((voucher) => ({
-    type: 'vouchers' as const,
-    category: 'All',
-    node: (
-      <div
-        key={`voucher-${voucher.id}`}
-        className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900">{voucher.name ?? 'Shop Voucher'}</p>
-            <p className="text-xs text-slate-500">{voucher.code}</p>
-          </div>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-            Voucher
-          </span>
-        </div>
-        <p className="mt-1 text-sm font-semibold text-slate-900">
-          {voucher.discountType === 'percentage'
-            ? `${voucher.discountValue}% off`
-            : `${formatPrice(voucher.discountValue)} off`}
-        </p>
-        <p className="text-[11px] text-slate-500">Min spend {formatPrice(voucher.minSpend)}</p>
-      </div>
-    ),
-  }))
-
-  const productItems = products.map((product) => ({
-    type: 'product' as const,
-    category: product.category ?? 'All',
-    node: (
-      <ProductCard
-        key={`product-${product.id}`}
-        product={product}
-        onAdd={addProductToCart}
-        isVoucherEligible={voucherEligibleShopIds.has(product.shopId)}
-        isBundleItem={bundleProductIds.has(product.id)}
-      />
-    ),
-  }))
-
-  let items = [...flashItems, ...bundleItems, ...voucherItems, ...productItems]
-  if (activePromoTab !== 'all') {
-    items = items.filter((item) => item.type === activePromoTab)
-  }
-  if (activeCategory !== 'All') {
-    items = items.filter((item) => matchCategory(activeCategory, item.category))
-  }
-
-  const resultCount = items.length
-
-  if (resultCount === 0) {
-    return (
-      <div className="rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-        No items match this filter.
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs font-semibold text-slate-500">
-        {resultCount} result{resultCount === 1 ? '' : 's'}
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {items.map((item) => item.node)}
-      </div>
-    </div>
-  )
-}
-/* ------------------------------------------------------------------ */
 /*  CartDrawer                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -1335,12 +1217,15 @@ function ShopDemoPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [showSearchBar, setShowSearchBar] = useState(false)
-  const [activePromoTab, setActivePromoTab] = useState<'all' | 'flash' | 'bundles' | 'vouchers'>(
-    'all',
-  )
+  const [activePromoTab, setActivePromoTab] = useState<'all' | 'flash' | 'bundles' | 'vouchers'>('all')
 
   // Reset
   const [isResetting, setIsResetting] = useState(false)
+
+  const categories = useMemo(() => {
+    const cats = new Set(products.map((p) => p.category))
+    return ['All', ...Array.from(cats).sort()]
+  }, [products])
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -1350,26 +1235,8 @@ function ShopDemoPage() {
     })
   }, [products, activeCategory, search])
 
-  const secondaryFlashDeals = flashDeals
-  const productById = useMemo(() => {
-    const map = new Map<string, MarketplaceProduct>()
-    for (const product of products) {
-      map.set(product.id, product)
-    }
-    return map
-  }, [products])
-
-  const resolveCategory = useCallback(
-    (productId?: string | null) => {
-      if (!productId) return 'All'
-      const found = productById.get(productId)
-      return found?.category ?? 'All'
-    },
-    [productById],
-  )
-
-  const matchCategory = useCallback((cat: string, itemCat: string) => cat === 'All' || itemCat === cat, [])
-
+  const featuredFlashDeal = flashDeals[0] ?? null
+  const secondaryFlashDeals = featuredFlashDeal ? flashDeals.slice(1) : flashDeals
   const voucherEligibleShopIds = useMemo(() => new Set(vouchers.map((voucher) => voucher.shopId)), [vouchers])
   const bundleProductIds = useMemo(() => {
     const ids = new Set<string>()
@@ -1393,47 +1260,13 @@ function ShopDemoPage() {
 
   const promoTabs: Array<{ key: typeof activePromoTab; label: string; count: number }> = useMemo(
     () => [
-      {
-        key: 'all',
-        label: 'All',
-        count: products.length + flashDeals.length + bundles.length + vouchers.length,
-      },
+      { key: 'all', label: 'All', count: flashDeals.length + bundles.length + vouchers.length },
       { key: 'flash', label: 'Flash Deals', count: flashDeals.length },
-      { key: 'bundles', label: 'Bundle Deals', count: bundles.length },
+      { key: 'bundles', label: 'Bundles', count: bundles.length },
       { key: 'vouchers', label: 'Vouchers', count: vouchers.length },
     ],
-    [products.length, flashDeals.length, bundles.length, vouchers.length],
+    [flashDeals.length, bundles.length, vouchers.length],
   )
-
-  const visibleItemCount = useMemo(() => {
-    const flashCount = flashDeals.filter((deal) => matchCategory(activeCategory, resolveCategory(deal.productId))).length
-    const bundleCount = bundles.filter((bundle) => matchCategory(activeCategory, resolveCategory(bundle.items[0]?.productId))).length
-    const voucherCount = matchCategory(activeCategory, 'All') ? vouchers.length : 0
-    const productCount =
-      activePromoTab === 'all'
-        ? filteredProducts.filter((product) => matchCategory(activeCategory, product.category ?? 'All')).length
-        : 0
-
-    switch (activePromoTab) {
-      case 'flash':
-        return flashCount
-      case 'bundles':
-        return bundleCount
-      case 'vouchers':
-        return voucherCount
-      default:
-        return flashCount + bundleCount + voucherCount + productCount
-    }
-  }, [
-    activePromoTab,
-    activeCategory,
-    flashDeals,
-    bundles,
-    vouchers,
-    filteredProducts,
-    matchCategory,
-    resolveCategory,
-  ])
 
   const handleVoucherPrefill = (code: string) => {
     setVoucherCode(code)
@@ -1853,8 +1686,10 @@ function ShopDemoPage() {
           vouchersCount={vouchers.length}
         />
 
-        <section className="rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <FeaturedFlashDeal deal={featuredFlashDeal} voucherCount={vouchers.length} onAdd={addFlashDealToCart} />
+
+        <div className="sticky top-[56px] z-30 mb-4 bg-white/95 pb-3 backdrop-blur">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {promoTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -1872,43 +1707,55 @@ function ShopDemoPage() {
               </button>
             ))}
           </div>
+        </div>
 
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-              {['All', 'Cat Food', 'Cat Litter', 'Dog Accessories', 'Dog Care', 'Dog Food', 'Pet Accessories'].map(
-                (cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
-                      activeCategory === cat ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ),
-              )}
+        {(activePromoTab === 'all' || activePromoTab === 'flash') && (
+          <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
+        )}
+
+        {(activePromoTab === 'all' || activePromoTab === 'bundles') && (
+          <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
+        )}
+
+        <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Shop by category</h2>
+              <p className="text-xs text-slate-500">Tap a category or browse all.</p>
             </div>
-            <span className="text-[11px] font-semibold text-slate-500">
-              {visibleItemCount} item{visibleItemCount === 1 ? '' : 's'}
-            </span>
+            <span className="text-xs font-semibold text-slate-500">{filteredProducts.length} items</span>
           </div>
+          <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`flex-shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                  activeCategory === cat
+                    ? 'bg-indigo-600 text-white shadow-[0_10px_24px_-14px_rgba(79,70,229,.6)]'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </section>
 
-          <PromotionsUnifiedFeed
-            flashDeals={secondaryFlashDeals}
-            bundles={bundles}
-            vouchers={vouchers}
-            productsMap={productById}
-            activePromoTab={activePromoTab}
-            activeCategory={activeCategory}
-            onAddFlashDeal={addFlashDealToCart}
-            onAddBundle={addBundleToCart}
+        {filteredProducts.length === 0 ? (
+          <section className="rounded-2xl bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            No products match this filter.
+          </section>
+        ) : (
+          <ProductBrowseSection
+            title={activeCategory === 'All' ? 'All products' : activeCategory}
+            subtitle={activeCategory === 'All' ? 'Fresh picks from this shop.' : 'Matching products from this category.'}
             products={filteredProducts}
+            onAdd={addProductToCart}
             voucherEligibleShopIds={voucherEligibleShopIds}
             bundleProductIds={bundleProductIds}
-            addProductToCart={addProductToCart}
           />
-        </section>
+        )}
       </main>
 
       {/* ===== Cart Drawer ===== */}
