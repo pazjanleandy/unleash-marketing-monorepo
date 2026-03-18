@@ -51,7 +51,7 @@ function DiscountCreateSection({
         {tools.map((tool) => (
           <article
             key={tool.title}
-            className="rounded-lg border border-slate-200 bg-white p-3 transition hover:border-[#D0DBF7] hover:shadow-[0_10px_22px_-18px_rgba(51,69,143,0.32)]"
+            className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-3 transition hover:border-[#D0DBF7] hover:shadow-[0_10px_22px_-18px_rgba(51,69,143,0.32)]"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D0DBF7] bg-[#F2F4FF] text-[#3A56C5]">
@@ -80,7 +80,7 @@ function DiscountCreateSection({
               <p className="mt-0.5 text-xs leading-snug text-slate-600">{tool.description}</p>
             </div>
 
-            <div className="mt-3 flex justify-end">
+            <div className="mt-auto flex justify-end pt-3">
               <button
                 type="button"
                 onClick={() => onCreateTool?.(tool.type)}

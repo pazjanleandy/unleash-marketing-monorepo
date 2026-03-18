@@ -60,6 +60,7 @@ type FlashDealCatalogEntry = {
   originalPrice: number
   stock: number
   variations: string[]
+  image: string | null
 }
 
 const SLOT_DURATION_HOURS = 6
@@ -108,6 +109,7 @@ function getCatalogEntry(
       originalPrice: product.price,
       stock: product.stock,
       variations: [product.category || 'Default'],
+      image: product.image ?? null,
     }
   }
 
@@ -118,10 +120,21 @@ function getCatalogEntry(
     originalPrice: 0,
     stock: 0,
     variations: ['Default'],
+    image: null,
   }
 }
 
-function ProductImagePlaceholder({ name }: { name: string }) {
+function ProductImage({ name, image }: { name: string; image: string | null }) {
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        className="h-10 w-10 flex-none rounded-lg object-cover"
+      />
+    )
+  }
+
   return (
     <span className="relative inline-flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
       <ImageSquare size={16} weight="bold" className="opacity-75" />
@@ -384,6 +397,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
           price: item.price,
           stock: item.stock,
           status: item.status,
+          image: item.image ?? null,
         })),
       )
       setProductsAuthRequired(result.authRequired)
@@ -1470,7 +1484,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                     />
                                   </span>
                                   <span className="flex-none">
-                                    <ProductImagePlaceholder name={product.name} />
+                                    <ProductImage name={product.name} image={product.image} />
                                   </span>
                                   <div className="min-w-0 flex-1">
                                     <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
@@ -1649,7 +1663,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#E6EBFF]"
                           >
                             <div className="flex items-start gap-3">
-                              <ProductImagePlaceholder name={catalogEntry.name} />
+                              <ProductImage name={catalogEntry.name} image={catalogEntry.image} />
 
                               <div className="min-w-0 flex-1">
                                 <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
@@ -1876,7 +1890,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           <tr key={productId} className="border-t border-slate-100 text-sm text-slate-700">
                             <td className="px-3 py-3 align-top">
                               <div className="flex items-start gap-2.5">
-                                <ProductImagePlaceholder name={catalogEntry.name} />
+                                <ProductImage name={catalogEntry.name} image={catalogEntry.image} />
                                 <div className="min-w-0">
                                   <p className="font-medium text-slate-900">{catalogEntry.name}</p>
                                   <p className="mt-0.5 text-xs text-slate-500">
