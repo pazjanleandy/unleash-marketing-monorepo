@@ -404,87 +404,6 @@ function ShopPromotionsHeader({
     </section>
   )
 }
-
-function FeaturedFlashDeal({
-  deal,
-  voucherCount,
-  onAdd,
-}: {
-  deal: MarketplaceFlashDeal | null
-  voucherCount: number
-  onAdd: (deal: MarketplaceFlashDeal) => void
-}) {
-  const { h, m, s, expired } = useCountdown(deal?.endAt ?? '2099-01-01T00:00:00.000Z')
-  const off = deal ? discountPercent(deal.originalPrice, deal.flashPrice) : 0
-  const remaining = deal ? Math.max(deal.flashQuantity - deal.soldQuantity, 0) : 0
-  const soldPct = deal && deal.flashQuantity > 0 ? (deal.soldQuantity / deal.flashQuantity) * 100 : 0
-
-  return (
-    <section className="mb-6">
-      {deal ? (
-        <div className="flex gap-3 rounded-2xl bg-white p-4 shadow-[0_16px_32px_-26px_rgba(15,23,42,.35)] ring-1 ring-orange-100">
-          <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl bg-orange-50">
-            {deal.productImage ? (
-              <img src={deal.productImage} alt={deal.productName} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-[0.2em] text-orange-300">
-                Deal
-              </div>
-            )}
-            {off > 0 && (
-              <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-[10px] font-bold text-white">
-                -{off}%
-              </span>
-            )}
-            <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
-              {expired ? 'Ended' : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`}
-            </span>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-0.5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-500">Featured Flash Deal</p>
-                <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900">{deal.productName}</h3>
-              </div>
-              <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-semibold text-violet-700">
-                {voucherCount} voucher{voucherCount === 1 ? '' : 's'}
-              </span>
-            </div>
-
-            <div className="flex items-end gap-2">
-              <span className="text-2xl font-extrabold text-orange-600">{formatPrice(deal.flashPrice)}</span>
-              <span className="pb-1 text-xs text-slate-400 line-through">{formatPrice(deal.originalPrice)}</span>
-              {off > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">Save {off}%</span>}
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-slate-600">
-              <span>{deal.soldQuantity} sold</span>
-              <span>{remaining} left</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-orange-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700"
-                style={{ width: `${Math.min(soldPct, 100)}%` }}
-              />
-            </div>
-
-            <button
-              onClick={() => onAdd(deal)}
-              disabled={remaining <= 0 || expired}
-              className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-12px_rgba(239,68,68,.7)] transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {remaining <= 0 ? 'Sold Out' : expired ? 'Deal Ended' : 'Add to Cart'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">No active flash deal right now.</div>
-      )}
-    </section>
-  )
-}
-
 function FlashDealsSection({
   deals,
   onAdd,
@@ -1235,8 +1154,7 @@ function ShopDemoPage() {
     })
   }, [products, activeCategory, search])
 
-  const featuredFlashDeal = flashDeals[0] ?? null
-  const secondaryFlashDeals = featuredFlashDeal ? flashDeals.slice(1) : flashDeals
+  const secondaryFlashDeals = flashDeals
   const voucherEligibleShopIds = useMemo(() => new Set(vouchers.map((voucher) => voucher.shopId)), [vouchers])
   const bundleProductIds = useMemo(() => {
     const ids = new Set<string>()
@@ -1685,8 +1603,6 @@ function ShopDemoPage() {
           bundlesCount={bundles.length}
           vouchersCount={vouchers.length}
         />
-
-        <FeaturedFlashDeal deal={featuredFlashDeal} voucherCount={vouchers.length} onAdd={addFlashDealToCart} />
 
         <div className="sticky top-[56px] z-30 mb-4 bg-white/95 pb-3 backdrop-blur">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
