@@ -97,7 +97,7 @@ function ProductImagePlaceholder({
 }) {
   return (
     <div
-      className={`inline-flex flex-none items-center justify-center border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe] font-bold text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)] ${
+      className={`inline-flex flex-none items-center justify-center border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)] ${
         compact ? 'h-9 w-9 rounded-md text-xs' : 'h-12 w-12 rounded-lg text-sm'
       }`}
     >
@@ -380,19 +380,19 @@ function CreateAddOnDealPage({
         </p>
       ) : null}
       <div className="sm:hidden">
-        <div className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white px-4 py-3">
+        <div className="sticky top-0 z-10 border-b border-[#E6EBFF] bg-white px-4 py-3">
           <div className="flex items-start gap-2">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#eff6ff] text-base font-semibold text-[#1E40AF] transition active:scale-95"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F4FF] text-base font-semibold text-[#33458F] transition active:scale-95"
               aria-label="Back to Discount"
             >
               &larr;
             </button>
             <div>
               <h1 className="text-[22px] font-semibold leading-none text-slate-900">{mobileTitle}</h1>
-              <p className="mt-1 text-xs text-[#1d4ed8]">{subtitle}</p>
+              <p className="mt-1 text-xs text-[#3347A8]">{subtitle}</p>
             </div>
           </div>
         </div>
@@ -405,13 +405,13 @@ function CreateAddOnDealPage({
                 type="button"
                 onClick={() => setIsTriggerPickerOpen(true)}
                 disabled={!canManageProducts || isLoading}
-                className="inline-flex h-8 items-center justify-center rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#f8fbff] active:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
+                className="inline-flex h-8 items-center justify-center rounded-md border border-[#D0DBF7] bg-white px-3 text-xs font-semibold text-[#3347A8] transition hover:bg-[#f8fbff] active:bg-[#F2F4FF] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {selectedTriggerProduct ? 'Change' : 'Select'}
               </button>
             </div>
             {selectedTriggerProduct ? (
-              <div className="flex items-start gap-2.5 rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-2.5">
+              <div className="flex items-start gap-2.5 rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-2.5">
                 <ProductImagePlaceholder name={selectedTriggerProduct.name} />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
@@ -423,7 +423,7 @@ function CreateAddOnDealPage({
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-[#bfdbfe] bg-white px-3 py-3 text-xs text-slate-500">
+              <div className="rounded-lg border border-dashed border-[#D0DBF7] bg-white px-3 py-3 text-xs text-slate-500">
                 Select the main product that triggers the add-on suggestion.
               </div>
             )}
@@ -438,13 +438,13 @@ function CreateAddOnDealPage({
                 type="button"
                 onClick={() => setIsAddonPickerOpen(true)}
                 disabled={!canManageProducts || isLoading}
-                className="inline-flex h-8 items-center justify-center rounded-md border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#f8fbff] active:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
+                className="inline-flex h-8 items-center justify-center rounded-md border border-[#D0DBF7] bg-white px-3 text-xs font-semibold text-[#3347A8] transition hover:bg-[#f8fbff] active:bg-[#F2F4FF] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {selectedAddonProduct ? 'Change' : 'Select'}
               </button>
             </div>
             {selectedAddonProduct ? (
-              <div className="flex items-start gap-2.5 rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-2.5">
+              <div className="flex items-start gap-2.5 rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-2.5">
                 <ProductImagePlaceholder name={selectedAddonProduct.name} />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
@@ -456,7 +456,7 @@ function CreateAddOnDealPage({
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-[#bfdbfe] bg-white px-3 py-3 text-xs text-slate-500">
+              <div className="rounded-lg border border-dashed border-[#D0DBF7] bg-white px-3 py-3 text-xs text-slate-500">
                 Select the product you want to recommend as an add-on.
               </div>
             )}
@@ -475,7 +475,7 @@ function CreateAddOnDealPage({
               value={form.promotionName}
               onChange={(event) => setField('promotionName', event.target.value)}
               placeholder="Enter your add-on deal name here"
-              className="mt-2 h-10 w-full border-0 border-b border-[#e2e8f0] px-0 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-2 h-10 w-full border-0 border-b border-[#e2e8f0] px-0 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
             />
           </div>
 
@@ -487,14 +487,14 @@ function CreateAddOnDealPage({
                 onClick={() => handleOpenPicker('startDateTime')}
                 className={`inline-flex h-9 min-w-[205px] items-center justify-end gap-1 border-0 bg-transparent text-right text-xs transition ${
                   activePickerField === 'startDateTime'
-                    ? 'font-semibold text-[#2563EB]'
+                    ? 'font-semibold text-[#3A56C5]'
                     : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 <span>{formatMobileDateTime(form.startDateTime)}</span>
                 <span
                   className={`text-sm ${
-                    activePickerField === 'startDateTime' ? 'text-[#2563EB]' : 'text-slate-400'
+                    activePickerField === 'startDateTime' ? 'text-[#3A56C5]' : 'text-slate-400'
                   }`}
                 >
                   &rsaquo;
@@ -511,14 +511,14 @@ function CreateAddOnDealPage({
                 onClick={() => handleOpenPicker('endDateTime')}
                 className={`inline-flex h-9 min-w-[205px] items-center justify-end gap-1 border-0 bg-transparent text-right text-xs transition ${
                   activePickerField === 'endDateTime'
-                    ? 'font-semibold text-[#2563EB]'
+                    ? 'font-semibold text-[#3A56C5]'
                     : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 <span>{formatMobileDateTime(form.endDateTime)}</span>
                 <span
                   className={`text-sm ${
-                    activePickerField === 'endDateTime' ? 'text-[#2563EB]' : 'text-slate-400'
+                    activePickerField === 'endDateTime' ? 'text-[#3A56C5]' : 'text-slate-400'
                   }`}
                 >
                   &rsaquo;
@@ -568,28 +568,28 @@ function CreateAddOnDealPage({
           createTitle="Create Add-on Deal"
           editTitle="Edit Add-on Deal"
         />
-        <header className="mt-2 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4">
-          <h1 className="text-3xl font-semibold text-[#1E40AF]">{desktopTitle}</h1>
-          <p className="mt-1 text-sm text-[#1d4ed8]">{subtitle}</p>
+        <header className="mt-2 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-4">
+          <h1 className="text-3xl font-semibold text-[#33458F]">{desktopTitle}</h1>
+          <p className="mt-1 text-sm text-[#3347A8]">{subtitle}</p>
         </header>
       </div>
 
       <div className="mt-4 hidden space-y-4 sm:block">
-        <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
-          <h2 className="text-xl font-semibold text-[#1E40AF]">Add-on Products</h2>
+        <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+          <h2 className="text-xl font-semibold text-[#33458F]">Add-on Products</h2>
           <p className="mt-1 text-sm text-slate-600">
             Choose the trigger product and the suggested add-on to show at checkout.
           </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-3">
+            <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-800">Trigger Product</p>
                 <button
                   type="button"
                   onClick={() => setIsTriggerPickerOpen(true)}
                   disabled={!canManageProducts || isLoading}
-                  className="inline-flex h-8 items-center justify-center rounded-md border border-[#93c5fd] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex h-8 items-center justify-center rounded-md border border-[#B1C2EC] bg-white px-3 text-xs font-semibold text-[#3347A8] transition hover:bg-[#F2F4FF] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {selectedTriggerProduct ? 'Change' : 'Select'}
                 </button>
@@ -607,20 +607,20 @@ function CreateAddOnDealPage({
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 rounded-md border border-dashed border-[#bfdbfe] bg-white px-3 py-4 text-xs text-slate-500">
+                <div className="mt-3 rounded-md border border-dashed border-[#D0DBF7] bg-white px-3 py-4 text-xs text-slate-500">
                   Select the main product that unlocks the add-on.
                 </div>
               )}
             </div>
 
-            <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-3">
+            <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-800">Suggested Add-on</p>
                 <button
                   type="button"
                   onClick={() => setIsAddonPickerOpen(true)}
                   disabled={!canManageProducts || isLoading}
-                  className="inline-flex h-8 items-center justify-center rounded-md border border-[#93c5fd] bg-white px-3 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex h-8 items-center justify-center rounded-md border border-[#B1C2EC] bg-white px-3 text-xs font-semibold text-[#3347A8] transition hover:bg-[#F2F4FF] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {selectedAddonProduct ? 'Change' : 'Select'}
                 </button>
@@ -638,7 +638,7 @@ function CreateAddOnDealPage({
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 rounded-md border border-dashed border-[#bfdbfe] bg-white px-3 py-4 text-xs text-slate-500">
+                <div className="mt-3 rounded-md border border-dashed border-[#D0DBF7] bg-white px-3 py-4 text-xs text-slate-500">
                   Select the add-on product to suggest.
                 </div>
               )}
@@ -654,15 +654,15 @@ function CreateAddOnDealPage({
           ) : loadError ? (
             <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
               <span>{loadError}</span>
-              <button type="button" onClick={() => void loadProducts()} className="font-semibold text-[#1d4ed8] hover:underline">
+              <button type="button" onClick={() => void loadProducts()} className="font-semibold text-[#3347A8] hover:underline">
                 Retry
               </button>
             </div>
           ) : null}
         </article>
 
-        <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
-          <h2 className="text-xl font-semibold text-[#1E40AF]">Add-on Deal Details</h2>
+        <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+          <h2 className="text-xl font-semibold text-[#33458F]">Add-on Deal Details</h2>
           <p className="mt-1 text-sm text-slate-600">Define the discount and availability window.</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -674,7 +674,7 @@ function CreateAddOnDealPage({
                 value={form.promotionName}
                 onChange={(event) => setField('promotionName', event.target.value)}
                 placeholder="Enter your add-on deal name here"
-                className="h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+                className="h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
               />
             </div>
             <div>
@@ -697,7 +697,7 @@ function CreateAddOnDealPage({
                 type="button"
                 onClick={() => handleOpenPicker('startDateTime')}
                 className={`flex h-10 w-full items-center justify-between rounded-md border border-[#cbd5e1] bg-white px-3 text-sm ${
-                  activePickerField === 'startDateTime' ? 'font-semibold text-[#2563EB]' : 'text-slate-700'
+                  activePickerField === 'startDateTime' ? 'font-semibold text-[#3A56C5]' : 'text-slate-700'
                 }`}
               >
                 <span>{formatMobileDateTime(form.startDateTime)}</span>
@@ -710,7 +710,7 @@ function CreateAddOnDealPage({
                 type="button"
                 onClick={() => handleOpenPicker('endDateTime')}
                 className={`flex h-10 w-full items-center justify-between rounded-md border border-[#cbd5e1] bg-white px-3 text-sm ${
-                  activePickerField === 'endDateTime' ? 'font-semibold text-[#2563EB]' : 'text-slate-700'
+                  activePickerField === 'endDateTime' ? 'font-semibold text-[#3A56C5]' : 'text-slate-700'
                 }`}
               >
                 <span>{formatMobileDateTime(form.endDateTime)}</span>
@@ -725,14 +725,14 @@ function CreateAddOnDealPage({
                 value={form.purchaseLimit}
                 onChange={(event) => setField('purchaseLimit', event.target.value)}
                 placeholder="Quantity (Default: No Limit)"
-                className="h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-slate-600 focus:border-[#93c5fd] focus:outline-none"
+                className="h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-slate-600 focus:border-[#B1C2EC] focus:outline-none"
               />
             </div>
           </div>
         </article>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#dbeafe] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E6EBFF] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-2 px-4 py-3 min-[420px]:grid-cols-2 sm:flex sm:justify-end sm:px-0 sm:py-0">
           <button
             type="button"
@@ -746,7 +746,7 @@ function CreateAddOnDealPage({
             type="button"
             onClick={() => void handleConfirm()}
             disabled={isConfirmDisabled || isSubmitting}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
           >
             {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
@@ -800,3 +800,4 @@ function CreateAddOnDealPage({
 }
 
 export default CreateAddOnDealPage
+

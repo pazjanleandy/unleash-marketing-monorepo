@@ -23,7 +23,7 @@ function CreateDiscountPromotionBreadcrumb({
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[96px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[96px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         Home
       </button>
@@ -31,7 +31,7 @@ function CreateDiscountPromotionBreadcrumb({
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[170px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[170px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         Marketing Centre
       </button>
@@ -39,7 +39,7 @@ function CreateDiscountPromotionBreadcrumb({
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[170px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[170px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         {sectionLabel}
       </button>
@@ -52,3 +52,4 @@ function CreateDiscountPromotionBreadcrumb({
 }
 
 export default CreateDiscountPromotionBreadcrumb
+

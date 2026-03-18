@@ -112,7 +112,7 @@ function VoucherDisplaySettingsSection({
       : 'all products'
 
   return (
-    <section className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] px-5 py-5">
+    <section className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] px-5 py-5">
       {/* Display Setting Toggle – only for Shop Voucher */}
       {showDisplayToggle ? (
         <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-start">
@@ -121,7 +121,7 @@ function VoucherDisplaySettingsSection({
               <legend className="text-sm font-medium text-slate-700">
                 Voucher Display Setting
               </legend>
-              <a href="#" className="text-xs font-medium text-[#1d4ed8] hover:underline">
+              <a href="#" className="text-xs font-medium text-[#3347A8] hover:underline">
                 Learn more
               </a>
             </div>
@@ -141,7 +141,7 @@ function VoucherDisplaySettingsSection({
                   aria-invalid={Boolean(displaySettingError)}
                   className="peer sr-only"
                 />
-                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#93c5fd] peer-focus-visible:ring-offset-1">
+                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
                   Display on all pages
                 </span>
               </label>
@@ -156,7 +156,7 @@ function VoucherDisplaySettingsSection({
                   aria-invalid={Boolean(displaySettingError)}
                   className="peer sr-only"
                 />
-                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#93c5fd] peer-focus-visible:ring-offset-1">
+                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
                   Shared through voucher code
                 </span>
               </label>
@@ -214,7 +214,7 @@ function VoucherDisplaySettingsSection({
               value={livestreamUrl}
               onChange={(e) => onLivestreamUrlChange?.(e.target.value)}
               placeholder="https://example.com/live/your-stream"
-              className="mt-1.5 h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#93c5fd]"
+              className="mt-1.5 h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#3A56C5] focus:outline-none focus:ring-1 focus:ring-[#B1C2EC]"
             />
           </div>
         </div>
@@ -247,7 +247,7 @@ function VoucherDisplaySettingsSection({
               value={videoUrl}
               onChange={(e) => onVideoUrlChange?.(e.target.value)}
               placeholder="https://example.com/video/your-product-video"
-              className="mt-1.5 h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#93c5fd]"
+              className="mt-1.5 h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#3A56C5] focus:outline-none focus:ring-1 focus:ring-[#B1C2EC]"
             />
           </div>
         </div>
@@ -281,7 +281,7 @@ function VoucherDisplaySettingsSection({
               value={productSearchQuery}
               onChange={(e) => setProductSearchQuery(e.target.value)}
               placeholder="Search products..."
-              className="mt-1.5 h-10 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[13px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#93c5fd]"
+              className="mt-1.5 h-10 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[13px] text-slate-900 placeholder:text-slate-400 focus:border-[#3A56C5] focus:outline-none focus:ring-1 focus:ring-[#B1C2EC]"
             />
           </div>
 
@@ -299,7 +299,7 @@ function VoucherDisplaySettingsSection({
                   <label
                     key={product.product_id}
                     className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition ${isSelected
-                        ? 'bg-[#eff6ff] ring-1 ring-[#bfdbfe]'
+                        ? 'bg-[#F2F4FF] ring-1 ring-[#D0DBF7]'
                         : 'hover:bg-slate-50'
                       }`}
                   >
@@ -307,7 +307,7 @@ function VoucherDisplaySettingsSection({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleProduct(product.product_id)}
-                      className="h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#93c5fd]"
+                      className="h-4 w-4 rounded border-slate-300 text-[#3A56C5] focus:ring-[#B1C2EC]"
                     />
                     {product.image ? (
                       <img
@@ -337,7 +337,7 @@ function VoucherDisplaySettingsSection({
           )}
 
           {selectedProductIds.length > 0 ? (
-            <p className="text-xs font-medium text-[#1d4ed8]">
+            <p className="text-xs font-medium text-[#3347A8]">
               {selectedProductIds.length} product{selectedProductIds.length !== 1 ? 's' : ''} selected
             </p>
           ) : null}
@@ -363,3 +363,4 @@ function VoucherDisplaySettingsSection({
 }
 
 export default VoucherDisplaySettingsSection
+

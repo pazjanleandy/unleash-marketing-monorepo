@@ -123,9 +123,9 @@ function getCatalogEntry(
 
 function ProductImagePlaceholder({ name }: { name: string }) {
   return (
-    <span className="relative inline-flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe] text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)]">
+    <span className="relative inline-flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
       <ImageSquare size={16} weight="bold" className="opacity-75" />
-      <span className="absolute bottom-0.5 right-1 text-[9px] font-semibold leading-none text-[#1d4ed8]">
+      <span className="absolute bottom-0.5 right-1 text-[9px] font-semibold leading-none text-[#3347A8]">
         {name.slice(0, 1).toUpperCase()}
       </span>
     </span>
@@ -908,7 +908,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
   return (
     <section
-      className="motion-rise relative min-h-[calc(100vh-2.5rem)] overflow-hidden bg-[linear-gradient(165deg,_#f0f7ff_0%,_#f7fbff_40%,_#fdfefe_100%)] pb-32 sm:rounded-3xl sm:border sm:border-[#d6e7ff] sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_52px_-45px_rgba(30,64,175,0.5)]"
+      className="motion-rise relative min-h-[calc(100vh-2.5rem)] overflow-hidden bg-[linear-gradient(165deg,_#f0f7ff_0%,_#f7fbff_40%,_#fdfefe_100%)] pb-32 sm:rounded-3xl sm:border sm:border-[#d6e7ff] sm:bg-white/95 sm:p-6 sm:pb-6 sm:shadow-[0_24px_52px_-45px_rgba(51,69,143,0.5)]"
       style={{ animationDelay: '80ms' }}
     >
       {submitError ? (
@@ -920,12 +920,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       <div className="pointer-events-none absolute -bottom-24 right-[-60px] hidden h-80 w-80 rounded-full bg-[#bae6fd]/45 blur-3xl sm:block" />
 
       <div className="sm:hidden">
-        <div className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white/95 px-4 pb-3 pt-4 backdrop-blur">
+        <div className="sticky top-0 z-10 border-b border-[#E6EBFF] bg-white/95 px-4 pb-3 pt-4 backdrop-blur">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#e5e7eb] bg-white text-lg text-[#2563eb] transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#e5e7eb] bg-white text-lg text-[#3A56C5] transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
               aria-label="Back to Flash Deals"
             >
               &larr;
@@ -938,17 +938,17 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             </div>
           </div>
 
-          <div className="mt-3 rounded-md border border-[#bfdbfe] bg-white p-3">
+          <div className="mt-3 rounded-md border border-[#D0DBF7] bg-white p-3">
             <div className="grid grid-cols-3 gap-1">
               <button
                 type="button"
                 onClick={() => setMobileStep('setup')}
-                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
               >
                 <span
                   className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold ${
                     mobileCurrentStepNumber >= 1
-                      ? 'border-[#2563eb] bg-[#eff6ff] text-[#2563eb]'
+                      ? 'border-[#3A56C5] bg-[#F2F4FF] text-[#3A56C5]'
                       : 'border-slate-300 text-slate-400'
                   }`}
                 >
@@ -960,12 +960,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               <button
                 type="button"
                 onClick={() => setMobileStep('products')}
-                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
               >
                 <span
                   className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold ${
                     mobileCurrentStepNumber >= 2
-                      ? 'border-[#2563eb] bg-[#eff6ff] text-[#2563eb]'
+                      ? 'border-[#3A56C5] bg-[#F2F4FF] text-[#3A56C5]'
                       : 'border-slate-300 text-slate-400'
                   }`}
                 >
@@ -978,12 +978,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 type="button"
                 onClick={() => setMobileStep('discount')}
                 disabled={!canOpenDiscountStep}
-                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex min-h-11 flex-col items-center justify-center rounded-sm px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span
                   className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold ${
                     mobileCurrentStepNumber >= 3
-                      ? 'border-[#2563eb] bg-[#eff6ff] text-[#2563eb]'
+                      ? 'border-[#3A56C5] bg-[#F2F4FF] text-[#3A56C5]'
                       : 'border-slate-300 text-slate-400'
                   }`}
                 >
@@ -998,14 +998,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
       <div className="relative hidden sm:block">
         <CreateFlashDealBreadcrumb onBack={onBack} />
-        <header className="mt-3 rounded-3xl border border-[#cfe2ff] bg-[linear-gradient(135deg,_#f4f8ff_0%,_#e9f3ff_50%,_#dbeafe_100%)] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1d4ed8]">
+        <header className="mt-3 rounded-3xl border border-[#cfe2ff] bg-[linear-gradient(135deg,_#f4f8ff_0%,_#e9f3ff_50%,_#E6EBFF_100%)] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#3347A8]">
             Launch workflow
           </p>
           <h1 className="mt-1 text-3xl font-semibold text-[#1E3A8A]">
             Create Flash Deal
           </h1>
-          <p className="mt-1 text-sm text-[#1d4ed8]">
+          <p className="mt-1 text-sm text-[#3347A8]">
             Configure timing and filters, then attach products when your schedule is ready.
           </p>
         </header>
@@ -1014,16 +1014,16 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       <div className="relative mt-3 grid gap-4 px-3 sm:mt-4 sm:px-0 lg:grid-cols-[minmax(0,1fr)_270px]">
         <div className="space-y-4">
           <article
-            className={`rounded-2xl border border-[#cfe2ff] bg-white/95 p-4 shadow-[0_12px_26px_-20px_rgba(30,64,175,0.45)] sm:p-5 ${
+            className={`rounded-2xl border border-[#cfe2ff] bg-white/95 p-4 shadow-[0_12px_26px_-20px_rgba(51,69,143,0.45)] sm:p-5 ${
               mobileStep === 'setup' ? 'block' : 'hidden'
             } sm:block`}
           >
             <div className="sm:hidden">
-              <div className="rounded-md border border-[#bfdbfe] bg-white">
-                <div className="border-b border-[#dbeafe] px-2 py-2">
+              <div className="rounded-md border border-[#D0DBF7] bg-white">
+                <div className="border-b border-[#E6EBFF] px-2 py-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1d4ed8]">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#3347A8]">
                         Select Period
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-500">{mobileDayWindowLabel}</p>
@@ -1033,7 +1033,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <button
                         type="button"
                         onClick={() => handleShiftMobileDayWindow(-1)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#dbeafe] bg-white text-[#2563eb] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#E6EBFF] bg-white text-[#3A56C5] transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                         aria-label="Show previous dates"
                       >
                         <CaretLeft size={14} weight="bold" />
@@ -1041,7 +1041,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <button
                         type="button"
                         onClick={() => handleShiftMobileDayWindow(1)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#dbeafe] bg-white text-[#2563eb] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#E6EBFF] bg-white text-[#3A56C5] transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                         aria-label="Show next dates"
                       >
                         <CaretRight size={14} weight="bold" />
@@ -1049,7 +1049,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <button
                         type="button"
                         onClick={() => setIsTimePickerOpen(true)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#dbeafe] bg-white text-[#2563eb] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#E6EBFF] bg-white text-[#3A56C5] transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                         aria-label="Open calendar"
                       >
                         <CalendarBlank size={15} weight="bold" />
@@ -1068,13 +1068,13 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           type="button"
                           onClick={() => handleSelectMobileDay(day)}
                           disabled={isUnavailable}
-                          className={`min-h-12 rounded-sm border px-1 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
+                          className={`min-h-12 rounded-sm border px-1 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] ${
                             isUnavailable
                               ? 'cursor-not-allowed border-[#e2e8f0] bg-[#f8fafc]'
                               : ''
                           } ${
                             selected
-                              ? 'border-[#2563eb] bg-[#eff6ff]'
+                              ? 'border-[#3A56C5] bg-[#F2F4FF]'
                               : 'border-[#f3f4f6] bg-white hover:bg-slate-50'
                           }`}
                         >
@@ -1090,7 +1090,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                               isUnavailable
                                 ? 'text-slate-400'
                                 : selected
-                                  ? 'text-[#1d4ed8]'
+                                  ? 'text-[#3347A8]'
                                   : 'text-slate-700'
                             }`}
                           >
@@ -1111,7 +1111,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     <select
                       value={slotDurationHours}
                       onChange={(event) => setSlotDurationHours(Number(event.target.value))}
-                      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 focus:border-[#93c5fd] focus:outline-none"
+                      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 focus:border-[#B1C2EC] focus:outline-none"
                     >
                       {SLOT_DURATION_OPTIONS.map((hours) => (
                         <option key={hours} value={hours}>
@@ -1140,14 +1140,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           type="button"
                           onClick={() => handleSelectMobileSlot(slotHour)}
                           disabled={isDisabled}
-                          className={`inline-flex min-h-11 w-full items-center justify-between rounded-sm border px-3 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
+                          className={`inline-flex min-h-11 w-full items-center justify-between rounded-sm border px-3 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] ${
                             selected
-                              ? 'border-[#2563eb] bg-[#eff6ff] font-semibold text-[#1d4ed8]'
+                              ? 'border-[#3A56C5] bg-[#F2F4FF] font-semibold text-[#3347A8]'
                               : 'border-[#d1d5db] bg-white text-slate-700'
                           } ${
                             isDisabled
                               ? 'cursor-not-allowed border-[#cbd5e1] bg-[#e2e8f0] text-[#94a3b8]'
-                              : 'hover:border-[#93c5fd] hover:bg-[#f8fbff]'
+                              : 'hover:border-[#B1C2EC] hover:bg-[#f8fbff]'
                           }`}
                         >
                           <span>{formatTime24(slotStart)}-{formatTime24(slotEnd)}</span>
@@ -1171,25 +1171,25 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 
               <p className="mt-2 text-xs font-medium text-slate-600">Selected {mobileSelectedLabel}</p>
 
-              <div className="mt-3 rounded-md border border-[#bfdbfe] bg-white">
+              <div className="mt-3 rounded-md border border-[#D0DBF7] bg-white">
                 <button
                   type="button"
                   onClick={() => setIsMobileCriteriaOpen((previous) => !previous)}
                   aria-expanded={isMobileCriteriaOpen}
                   aria-controls={MOBILE_RULES_REGION_ID}
-                  className="inline-flex min-h-11 w-full items-center justify-between px-3 text-left text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                  className="inline-flex min-h-11 w-full items-center justify-between px-3 text-left text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                 >
                   <span>Criteria Profile: {activeCategoryLabel}</span>
                   <CaretDown
                     size={14}
                     weight="bold"
-                    className={`text-[#2563eb] transition ${isMobileCriteriaOpen ? 'rotate-180' : ''}`}
+                    className={`text-[#3A56C5] transition ${isMobileCriteriaOpen ? 'rotate-180' : ''}`}
                     aria-hidden="true"
                   />
                 </button>
 
                 {isMobileCriteriaOpen ? (
-                  <div className="border-t border-[#bfdbfe] px-3 py-3">
+                  <div className="border-t border-[#D0DBF7] px-3 py-3">
                     <div className="flex flex-wrap gap-2">
                       {criteriaCategories.map((category) => {
                         const active = category.id === activeCriteriaId
@@ -1199,10 +1199,10 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             key={category.id}
                             type="button"
                             onClick={() => setActiveCriteriaId(category.id)}
-                            className={`min-h-9 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
+                            className={`min-h-9 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] ${
                               active
-                                ? 'border-[#2563eb] bg-[#2563eb] text-white'
-                                : 'border-[#bfdbfe] bg-white text-slate-600'
+                                ? 'border-[#3A56C5] bg-[#3A56C5] text-white'
+                                : 'border-[#D0DBF7] bg-white text-slate-600'
                             }`}
                             aria-pressed={active}
                           >
@@ -1215,7 +1215,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     <div id={MOBILE_RULES_REGION_ID} className="mt-3 rounded-sm bg-[#f8fbff] p-2.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold text-slate-700">All criteria rules</p>
-                        <span className="text-[11px] font-semibold text-[#2563eb]">
+                        <span className="text-[11px] font-semibold text-[#3A56C5]">
                           {activeCategoryRules.length} checks
                         </span>
                       </div>
@@ -1223,7 +1223,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <ul className="mt-2 space-y-1.5">
                         {visibleCategoryRules.map((rule) => (
                           <li key={rule} className="flex items-start gap-1.5 text-xs text-slate-600">
-                            <Checks size={12} weight="bold" className="mt-0.5 text-[#2563eb]" />
+                            <Checks size={12} weight="bold" className="mt-0.5 text-[#3A56C5]" />
                             <span>{rule}</span>
                           </li>
                         ))}
@@ -1235,7 +1235,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           onClick={() => setShowAllMobileRules((previous) => !previous)}
                           aria-expanded={showAllMobileRules}
                           aria-controls={MOBILE_RULES_REGION_ID}
-                          className="mt-2 inline-flex min-h-9 items-center rounded-sm border border-[#bfdbfe] bg-white px-3 text-xs font-semibold text-[#2563eb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                          className="mt-2 inline-flex min-h-9 items-center rounded-sm border border-[#D0DBF7] bg-white px-3 text-xs font-semibold text-[#3A56C5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                         >
                           {showAllMobileRules ? 'Show fewer rules' : 'Show all rules'}
                         </button>
@@ -1249,7 +1249,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             <div className="hidden sm:block">
               <header className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#2563eb]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#3A56C5]">
                     Step 1
                   </p>
                   <h2 className="mt-1 text-xl font-semibold text-slate-900 sm:text-lg">
@@ -1259,7 +1259,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     Choose your schedule and criteria before adding products.
                   </p>
                 </div>
-                <span className="inline-flex min-h-9 items-center rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 text-xs font-semibold text-[#1d4ed8]">
+                <span className="inline-flex min-h-9 items-center rounded-full border border-[#D0DBF7] bg-[#F2F4FF] px-3 text-xs font-semibold text-[#3347A8]">
                   Step 1 of 2
                 </span>
               </header>
@@ -1272,7 +1272,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <select
                         value={slotDurationHours}
                         onChange={(event) => setSlotDurationHours(Number(event.target.value))}
-                        className="h-9 rounded-lg border border-[#bfdbfe] bg-white px-2 text-xs font-semibold text-[#1d4ed8] focus:border-[#93c5fd] focus:outline-none"
+                        className="h-9 rounded-lg border border-[#D0DBF7] bg-white px-2 text-xs font-semibold text-[#3347A8] focus:border-[#B1C2EC] focus:outline-none"
                       >
                         {SLOT_DURATION_OPTIONS.map((hours) => (
                           <option key={hours} value={hours}>
@@ -1286,11 +1286,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   <button
                     type="button"
                     onClick={() => setIsTimePickerOpen(true)}
-                    className="inline-flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-[#bfdbfe] bg-[#f8fbff] px-3 py-2 text-left transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                    className="inline-flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-[#D0DBF7] bg-[#f8fbff] px-3 py-2 text-left transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                   >
                     <span className="flex min-w-0 items-center gap-3">
                       <span
-                        className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[#dbeafe] text-[#1d4ed8]"
+                        className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[#E6EBFF] text-[#3347A8]"
                         aria-hidden="true"
                       >
                         <CalendarBlank size={18} weight="bold" />
@@ -1304,7 +1304,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                         </span>
                       </span>
                     </span>
-                    <span className="inline-flex min-h-9 flex-none items-center rounded-lg border border-[#bfdbfe] bg-white px-3 text-sm font-semibold text-[#1d4ed8]">
+                    <span className="inline-flex min-h-9 flex-none items-center rounded-lg border border-[#D0DBF7] bg-white px-3 text-sm font-semibold text-[#3347A8]">
                       Change
                     </span>
                   </button>
@@ -1313,7 +1313,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 <section className="pt-5">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-base font-semibold text-slate-800">Criteria Profile</h3>
-                    <span className="text-sm font-medium text-[#1d4ed8]">{activeCategoryLabel}</span>
+                    <span className="text-sm font-medium text-[#3347A8]">{activeCategoryLabel}</span>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -1325,10 +1325,10 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                           key={category.id}
                           type="button"
                           onClick={() => setActiveCriteriaId(category.id)}
-                          className={`min-h-9 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] ${
+                          className={`min-h-9 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] ${
                             active
-                              ? 'border-[#2563eb] bg-[#2563eb] text-white'
-                              : 'border-[#bfdbfe] bg-white text-slate-700 hover:bg-[#eff6ff]'
+                              ? 'border-[#3A56C5] bg-[#3A56C5] text-white'
+                              : 'border-[#D0DBF7] bg-white text-slate-700 hover:bg-[#F2F4FF]'
                           }`}
                           aria-pressed={active}
                         >
@@ -1349,7 +1349,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     {activeCategoryRules.map((rule) => (
                       <li key={`desktop-${rule}`} className="flex items-start gap-2 rounded-lg bg-[#f8fbff] px-2 py-1.5">
                         <span
-                          className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#dbeafe] text-[10px] font-bold text-[#2563eb]"
+                          className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#E6EBFF] text-[10px] font-bold text-[#3A56C5]"
                           aria-hidden="true"
                         >
                           OK
@@ -1364,13 +1364,13 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
           </article>
 
           <article
-            className={`rounded-2xl border border-[#cfe2ff] bg-white/95 p-4 shadow-[0_12px_26px_-20px_rgba(30,64,175,0.45)] sm:p-5 ${
+            className={`rounded-2xl border border-[#cfe2ff] bg-white/95 p-4 shadow-[0_12px_26px_-20px_rgba(51,69,143,0.45)] sm:p-5 ${
               mobileStep === 'products' || mobileStep === 'discount' ? 'block' : 'hidden'
             } sm:block`}
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 className="text-base font-semibold text-[#1e3a8a]">
+                <h2 className="text-base font-semibold text-[#2F3F7E]">
                   Shop&apos;s Flash Deal Products
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -1379,7 +1379,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     : 'Add products after reviewing your selected criteria profile.'}
                 </p>
               </div>
-              <span className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-2.5 py-1 text-[11px] font-semibold text-[#1d4ed8]">
+              <span className="rounded-full border border-[#D0DBF7] bg-[#F2F4FF] px-2.5 py-1 text-[11px] font-semibold text-[#3347A8]">
                 {productSummaryLabel}
               </span>
             </div>
@@ -1388,7 +1388,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               type="button"
               onClick={handleAddProducts}
               disabled={isLoadingProducts || productsAuthRequired || productsNoShop}
-              className="mt-3 hidden h-9 items-center rounded-lg border border-[#2563eb] bg-white px-3 text-sm font-medium text-[#1d4ed8] transition hover:bg-[#eff6ff] sm:inline-flex"
+              className="mt-3 hidden h-9 items-center rounded-lg border border-[#3A56C5] bg-white px-3 text-sm font-medium text-[#3347A8] transition hover:bg-[#F2F4FF] sm:inline-flex"
             >
               + Add Products
             </button>
@@ -1404,7 +1404,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 <button
                   type="button"
                   onClick={() => void loadProducts()}
-                  className="font-semibold text-[#1d4ed8] hover:underline"
+                  className="font-semibold text-[#3347A8] hover:underline"
                 >
                   Retry
                 </button>
@@ -1418,12 +1418,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     type="button"
                     onClick={handleAddProducts}
                     disabled={isLoadingProducts || productsAuthRequired || productsNoShop}
-                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#2563eb] bg-white px-3 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#3A56C5] bg-white px-3 text-sm font-semibold text-[#3347A8] transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                   >
                     + Add Products
                   </button>
                   {selectedProductIds.length > 0 ? (
-                    <label className="flex min-h-11 items-center rounded-sm border border-[#dbeafe] bg-white px-3">
+                    <label className="flex min-h-11 items-center rounded-sm border border-[#E6EBFF] bg-white px-3">
                       <MagnifyingGlass size={16} className="mr-2 text-slate-400" />
                       <input
                         type="text"
@@ -1449,14 +1449,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                               <li key={`mobile-step-two-${product.id}`}>
                                 <label
                                   htmlFor={checkboxId}
-                                  className={`flex w-full items-center gap-3 px-3 py-3 transition focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#93c5fd] ${
-                                    selected ? 'bg-[#eff6ff]' : 'bg-white'
+                                  className={`flex w-full items-center gap-3 px-3 py-3 transition focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#B1C2EC] ${
+                                    selected ? 'bg-[#F2F4FF]' : 'bg-white'
                                   }`}
                                 >
                                   <span
                                     className={`inline-flex h-11 w-11 flex-none items-center justify-center rounded-lg border ${
                                       selected
-                                        ? 'border-[#93c5fd] bg-[#dbeafe]'
+                                        ? 'border-[#B1C2EC] bg-[#E6EBFF]'
                                         : 'border-slate-200 bg-slate-50'
                                     }`}
                                   >
@@ -1466,7 +1466,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                       checked={selected}
                                       onChange={() => handleToggleMobileStepTwoProduct(product.id)}
                                       aria-label={`Select ${product.name}`}
-                                      className="h-5 w-5 rounded border-[#94a3b8] text-[#2563eb] focus:ring-[#93c5fd]"
+                                      className="h-5 w-5 rounded border-[#94a3b8] text-[#3A56C5] focus:ring-[#B1C2EC]"
                                     />
                                   </span>
                                   <span className="flex-none">
@@ -1493,7 +1493,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2 rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500 sm:hidden">
+                  <div className="mt-2 rounded-xl border border-dashed border-[#D0DBF7] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500 sm:hidden">
                     No products selected yet.
                   </div>
                 )}
@@ -1504,10 +1504,10 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               <div className="mt-3 space-y-3 sm:hidden">
                 {selectedProductIds.length > 0 ? (
                   <>
-                    <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#dbeafe]">
+                    <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#E6EBFF]">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-semibold text-[#1e3a8a]">Bulk apply</h3>
+                          <h3 className="text-sm font-semibold text-[#2F3F7E]">Bulk apply</h3>
                           <p
                             id="mobile-bulk-apply-helper"
                             className="mt-1 text-xs leading-5 text-slate-500"
@@ -1515,7 +1515,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             Bulk apply overwrites existing values.
                           </p>
                         </div>
-                        <span className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-2.5 py-1 text-[11px] font-semibold text-[#1d4ed8]">
+                        <span className="rounded-full border border-[#D0DBF7] bg-[#F2F4FF] px-2.5 py-1 text-[11px] font-semibold text-[#3347A8]">
                           {mobileBulkTargetProductIds.length} target
                         </span>
                       </div>
@@ -1585,7 +1585,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                               }
                               placeholder="Set stock"
                               aria-describedby="mobile-bulk-apply-helper"
-                              className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                              className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                             />
                           </label>
 
@@ -1604,12 +1604,12 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                               aria-disabled={mobileBulkNoLimit}
                               placeholder="No limit"
                               aria-describedby="mobile-bulk-apply-helper"
-                              className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:bg-slate-100 disabled:text-slate-400"
+                              className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:bg-slate-100 disabled:text-slate-400"
                             />
                           </label>
                         </div>
 
-                        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-[#dbeafe] bg-[#f8fbff] px-3 text-sm text-slate-700">
+                        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-[#E6EBFF] bg-[#f8fbff] px-3 text-sm text-slate-700">
                           <input
                             type="checkbox"
                             checked={mobileBulkNoLimit}
@@ -1620,7 +1620,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 setMobileBulkPurchaseLimit('')
                               }
                             }}
-                            className="h-4 w-4 rounded border-[#94a3b8] text-[#2563eb] focus:ring-[#93c5fd]"
+                            className="h-4 w-4 rounded border-[#94a3b8] text-[#3A56C5] focus:ring-[#B1C2EC]"
                           />
                           No limit for purchase limit
                         </label>
@@ -1629,7 +1629,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                         <button
                           type="submit"
                           disabled={isMobileBulkApplyDisabled}
-                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2563eb] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:cursor-not-allowed disabled:bg-[#B1C2EC]"
                         >
                           {`Apply to selected (${selectedProductIds.length})`}
                         </button>
@@ -1646,7 +1646,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                         return (
                           <article
                             key={`mobile-discount-${productId}`}
-                            className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#dbeafe]"
+                            className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#E6EBFF]"
                           >
                             <div className="flex items-start gap-3">
                               <ProductImagePlaceholder name={catalogEntry.name} />
@@ -1670,7 +1670,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveSelectedProduct(productId)}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#bfdbfe] text-[#1d4ed8] transition hover:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D0DBF7] text-[#3347A8] transition hover:bg-[#F2F4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                                   aria-label={`Remove ${catalogEntry.name}`}
                                 >
                                   <X size={14} weight="bold" />
@@ -1730,7 +1730,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                     onChange={(event) =>
                                       handleCampaignStockChange(productId, event.target.value)
                                     }
-                                    className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                                    className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                                   />
                                 </label>
 
@@ -1746,7 +1746,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                       handlePurchaseLimitChange(productId, event.target.value)
                                     }
                                     placeholder="No Limit"
-                                    className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                                    className="mt-1 h-11 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
                                   />
                                 </label>
                               </div>
@@ -1757,7 +1757,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     </div>
                   </>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500">
+                  <div className="rounded-xl border border-dashed border-[#D0DBF7] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500">
                     Add at least one product in Step 2 to continue.
                   </div>
                 )}
@@ -1767,11 +1767,11 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             <div className="hidden sm:block">
               {selectedProductIds.length > 0 ? (
               <div className="mt-3 space-y-3">
-                <div className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] px-3 py-2 text-xs text-slate-600">
+                <div className="rounded-xl border border-[#E6EBFF] bg-[#f8fbff] px-3 py-2 text-xs text-slate-600">
                   You have selected {selectedProductCount} out of 50 product(s) for this Flash Deals time slot.
                 </div>
 
-                <div className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-4">
+                <div className="rounded-xl border border-[#E6EBFF] bg-[#f8fbff] p-4">
                   <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <label className="text-xs text-slate-500">
@@ -1803,7 +1803,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             setBatchCampaignStock(sanitizeWholeNumber(event.target.value))
                           }
                           placeholder="0"
-                          className="mt-1 h-10 w-full rounded border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+                          className="mt-1 h-10 w-full rounded border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
                         />
                       </label>
 
@@ -1817,7 +1817,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                             setBatchPurchaseLimit(sanitizeWholeNumber(event.target.value))
                           }
                           placeholder="No Limit"
-                          className="mt-1 h-10 w-full rounded border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+                          className="mt-1 h-10 w-full rounded border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
                         />
                       </label>
                     </div>
@@ -1826,7 +1826,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                       <button
                         type="button"
                         onClick={handleBatchUpdateAll}
-                        className="inline-flex h-10 items-center justify-center rounded border border-[#2563eb] bg-white px-4 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#eff6ff]"
+                        className="inline-flex h-10 items-center justify-center rounded border border-[#3A56C5] bg-white px-4 text-xs font-semibold text-[#3347A8] transition hover:bg-[#F2F4FF]"
                       >
                         Update All
                       </button>
@@ -1840,7 +1840,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex border-t border-[#dbeafe] pt-3 lg:justify-end">
+                  <div className="mt-3 flex border-t border-[#E6EBFF] pt-3 lg:justify-end">
                     <button
                       type="button"
                       onClick={handleBatchDelete}
@@ -1851,7 +1851,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                   </div>
                 </div>
 
-                <div className="hidden overflow-auto rounded-xl border border-[#dbeafe] sm:block">
+                <div className="hidden overflow-auto rounded-xl border border-[#E6EBFF] sm:block">
                   <table className="min-w-[980px] w-full border-separate border-spacing-0 bg-white">
                     <thead>
                       <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-slate-500">
@@ -1922,7 +1922,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                 onChange={(event) =>
                                   handleCampaignStockChange(productId, event.target.value)
                                 }
-                                className="h-9 w-20 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+                                className="h-9 w-20 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-3 align-top">{catalogEntry.stock}</td>
@@ -1935,14 +1935,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                                   handlePurchaseLimitChange(productId, event.target.value)
                                 }
                                 placeholder="No Limit"
-                                className="h-9 w-24 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+                                className="h-9 w-24 rounded border border-[#cbd5e1] bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-3 align-top">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSelectedProduct(productId)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#bfdbfe] text-[#1d4ed8] transition hover:bg-[#eff6ff]"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D0DBF7] text-[#3347A8] transition hover:bg-[#F2F4FF]"
                                 aria-label={`Remove ${catalogEntry.name}`}
                               >
                                 <X size={14} weight="bold" />
@@ -1956,7 +1956,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 </div>
               </div>
               ) : (
-              <div className="mt-3 rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500">
+              <div className="mt-3 rounded-xl border border-dashed border-[#D0DBF7] bg-[#f8fbff] px-3 py-4 text-sm text-slate-500">
                 No products selected yet.
               </div>
               )}
@@ -1965,8 +1965,8 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
         </div>
 
         <aside className="hidden lg:block">
-          <article className="sticky top-6 rounded-2xl border border-[#cfe2ff] bg-white/90 p-4 shadow-[0_12px_26px_-20px_rgba(30,64,175,0.45)]">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#2563eb]">
+          <article className="sticky top-6 rounded-2xl border border-[#cfe2ff] bg-white/90 p-4 shadow-[0_12px_26px_-20px_rgba(51,69,143,0.45)]">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#3A56C5]">
               Deal Snapshot
             </h3>
 
@@ -1993,14 +1993,14 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               </div>
             </dl>
 
-            <div className="mt-4 rounded-xl border border-[#dbeafe] bg-[#f0f9ff] p-3 text-xs text-slate-600">
+            <div className="mt-4 rounded-xl border border-[#E6EBFF] bg-[#f0f9ff] p-3 text-xs text-slate-600">
               Tip: start by selecting time, then confirm products that match your criteria.
             </div>
           </article>
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#dbeafe] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E6EBFF] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
         <div className="mx-auto max-w-6xl px-4 pb-[max(0.9rem,env(safe-area-inset-bottom))] pt-3 sm:hidden">
           {mobileStep === 'setup' ? (
             <div>
@@ -2009,7 +2009,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 type="button"
                 onClick={() => setMobileStep('products')}
                 disabled={!isSetupComplete}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-sm bg-[#2563eb] px-5 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-sm bg-[#3A56C5] px-5 text-base font-semibold text-white transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:cursor-not-allowed disabled:bg-[#B1C2EC]"
               >
                 Next
               </button>
@@ -2019,7 +2019,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               <button
                 type="button"
                 onClick={() => setMobileStep('setup')}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d1d5db] bg-white px-5 text-base font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d1d5db] bg-white px-5 text-base font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
               >
                 &lt;- Step 1
               </button>
@@ -2027,7 +2027,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 type="button"
                 onClick={() => setMobileStep('discount')}
                 disabled={!canOpenDiscountStep}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563eb] px-5 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#3A56C5] px-5 text-base font-semibold text-white transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:cursor-not-allowed disabled:bg-[#B1C2EC]"
               >
                 Next
               </button>
@@ -2037,7 +2037,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
               <button
                 type="button"
                 onClick={() => setMobileStep('products')}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d1d5db] bg-white px-5 text-base font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d1d5db] bg-white px-5 text-base font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC]"
               >
                 &lt;- Step 2
               </button>
@@ -2045,7 +2045,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
                 type="button"
                 onClick={() => void handleConfirm()}
                 disabled={isConfirmDisabled || isSubmitting}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563eb] px-5 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#3A56C5] px-5 text-base font-semibold text-white transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] disabled:cursor-not-allowed disabled:bg-[#B1C2EC]"
               >
                 {isSubmitting ? 'Saving...' : 'Confirm'}
               </button>
@@ -2066,7 +2066,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
             type="button"
             onClick={() => void handleConfirm()}
             disabled={isConfirmDisabled || isSubmitting}
-            className="inline-flex h-9 items-center justify-center rounded bg-[#2563eb] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:bg-[#93c5fd]"
+            className="inline-flex h-9 items-center justify-center rounded bg-[#3A56C5] px-5 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:bg-[#B1C2EC]"
           >
             {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
@@ -2101,6 +2101,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
 }
 
 export default CreateFlashDealPage
+
 
 
 

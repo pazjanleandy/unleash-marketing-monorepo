@@ -301,12 +301,12 @@ function CreateBundleDealPage({
         </p>
       ) : null}
       <div className="sm:hidden">
-        <div className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white px-4 py-3">
+        <div className="sticky top-0 z-10 border-b border-[#E6EBFF] bg-white px-4 py-3">
           <div className="flex items-start gap-2">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#eff6ff] text-base font-semibold text-[#1E40AF] transition active:scale-95"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F4FF] text-base font-semibold text-[#33458F] transition active:scale-95"
               aria-label="Back to Discount"
             >
               &larr;
@@ -315,7 +315,7 @@ function CreateBundleDealPage({
               <h1 className="text-[22px] font-semibold leading-none text-slate-900">
                 {mobileTitle}
               </h1>
-              <p className="mt-1 text-xs text-[#1d4ed8]">{subtitle}</p>
+              <p className="mt-1 text-xs text-[#3347A8]">{subtitle}</p>
             </div>
           </div>
         </div>
@@ -337,7 +337,7 @@ function CreateBundleDealPage({
                 value={form.promotionName}
                 onChange={(event) => setField('promotionName', event.target.value)}
                 placeholder="Enter your bundle deal name here"
-                className="mt-2 h-10 w-full border-0 border-b border-[#e2e8f0] px-0 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+                className="mt-2 h-10 w-full border-0 border-b border-[#e2e8f0] px-0 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
               />
             </div>
 
@@ -349,7 +349,7 @@ function CreateBundleDealPage({
                   onClick={() => handleOpenPicker('startDateTime')}
                   className={`inline-flex h-9 min-w-[205px] items-center justify-end gap-1 border-0 bg-transparent text-right text-xs transition ${
                     activePickerField === 'startDateTime'
-                      ? 'font-semibold text-[#2563EB]'
+                      ? 'font-semibold text-[#3A56C5]'
                       : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
@@ -357,7 +357,7 @@ function CreateBundleDealPage({
                   <span
                     className={`text-sm ${
                       activePickerField === 'startDateTime'
-                        ? 'text-[#2563EB]'
+                        ? 'text-[#3A56C5]'
                         : 'text-slate-400'
                     }`}
                   >
@@ -375,7 +375,7 @@ function CreateBundleDealPage({
                   onClick={() => handleOpenPicker('endDateTime')}
                   className={`inline-flex h-9 min-w-[205px] items-center justify-end gap-1 border-0 bg-transparent text-right text-xs transition ${
                     activePickerField === 'endDateTime'
-                      ? 'font-semibold text-[#2563EB]'
+                      ? 'font-semibold text-[#3A56C5]'
                       : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
@@ -383,7 +383,7 @@ function CreateBundleDealPage({
                   <span
                     className={`text-sm ${
                       activePickerField === 'endDateTime'
-                        ? 'text-[#2563EB]'
+                        ? 'text-[#3A56C5]'
                         : 'text-slate-400'
                     }`}
                   >
@@ -430,7 +430,7 @@ function CreateBundleDealPage({
             </div>
           </div>
         ) : (
-          <div className="mx-4 mt-3 rounded-lg border border-dashed border-[#bfdbfe] bg-white px-4 py-3 text-xs text-slate-500">
+          <div className="mx-4 mt-3 rounded-lg border border-dashed border-[#D0DBF7] bg-white px-4 py-3 text-xs text-slate-500">
             Select at least 2 products first. Bundle deal details and date range will appear after
             product selection.
           </div>
@@ -445,9 +445,9 @@ function CreateBundleDealPage({
           createTitle="Create Bundle Deal"
           editTitle="Edit Bundle Deal"
         />
-        <header className="mt-2 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4">
-          <h1 className="text-3xl font-semibold text-[#1E40AF]">{desktopTitle}</h1>
-          <p className="mt-1 text-sm text-[#1d4ed8]">{subtitle}</p>
+        <header className="mt-2 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-4">
+          <h1 className="text-3xl font-semibold text-[#33458F]">{desktopTitle}</h1>
+          <p className="mt-1 text-sm text-[#3347A8]">{subtitle}</p>
         </header>
       </div>
 
@@ -462,14 +462,14 @@ function CreateBundleDealPage({
             bundlePriceError={isBundlePriceError ? submitError : undefined}
           />
         ) : (
-          <article className="rounded-xl border border-dashed border-[#bfdbfe] bg-[#f8fbff] p-5 text-sm text-slate-600">
+          <article className="rounded-xl border border-dashed border-[#D0DBF7] bg-[#f8fbff] p-5 text-sm text-slate-600">
             Select at least 2 products first. Bundle deal details and date range will appear here
             after product selection.
           </article>
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#dbeafe] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E6EBFF] bg-white/95 backdrop-blur sm:static sm:mt-4 sm:border-t-0 sm:bg-transparent sm:backdrop-blur-0">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-2 px-4 py-3 min-[420px]:grid-cols-2 sm:flex sm:justify-end sm:px-0 sm:py-0">
           <button
             type="button"
@@ -483,7 +483,7 @@ function CreateBundleDealPage({
             type="button"
             onClick={() => void handleConfirm()}
             disabled={isConfirmDisabled || isSubmitting}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
           >
             {isSubmitting ? 'Saving...' : 'Confirm'}
           </button>
@@ -509,3 +509,4 @@ function CreateBundleDealPage({
 }
 
 export default CreateBundleDealPage
+

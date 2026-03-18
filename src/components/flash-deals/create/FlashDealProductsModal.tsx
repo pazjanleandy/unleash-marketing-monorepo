@@ -36,7 +36,7 @@ function ProductImageStub({
 }) {
   return (
     <span
-      className={`inline-flex flex-none items-center justify-center border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe] font-bold text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)] ${
+      className={`inline-flex flex-none items-center justify-center border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)] ${
         compact ? 'h-9 w-9 rounded-md text-xs' : 'h-12 w-12 rounded-lg text-sm'
       }`}
     >
@@ -213,22 +213,22 @@ function FlashDealProductsModal({
       />
 
       <div className="absolute inset-0 flex items-end sm:items-center sm:justify-center sm:p-6">
-        <article className="relative z-10 flex w-full max-h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-[#dbeafe] bg-white shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)] animate-[rise-in_240ms_cubic-bezier(0.22,1,0.36,1)_both] sm:max-h-[90vh] sm:max-w-5xl sm:rounded-2xl">
+        <article className="relative z-10 flex w-full max-h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-[#E6EBFF] bg-white shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)] animate-[rise-in_240ms_cubic-bezier(0.22,1,0.36,1)_both] sm:max-h-[90vh] sm:max-w-5xl sm:rounded-2xl">
           <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
 
-          <header className="sticky top-0 z-10 shrink-0 border-b border-[#dbeafe] bg-white px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
+          <header className="sticky top-0 z-10 shrink-0 border-b border-[#E6EBFF] bg-white px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-start gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-[#2563EB] transition hover:bg-[#eff6ff] sm:hidden"
+                  className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-[#3A56C5] transition hover:bg-[#F2F4FF] sm:hidden"
                   aria-label="Back"
                 >
                   &larr;
                 </button>
                 <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-[#1E40AF] sm:text-xl">
+                  <h3 className="text-base font-semibold text-[#33458F] sm:text-xl">
                     Select Products
                   </h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 sm:hidden">
@@ -247,17 +247,17 @@ function FlashDealProductsModal({
               </button>
             </div>
 
-            <div className="mt-2 flex gap-4 border-b border-[#dbeafe] text-sm font-semibold">
+            <div className="mt-2 flex gap-4 border-b border-[#E6EBFF] text-sm font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveTab('select')}
                 className={`relative pb-2 ${
-                  activeTab === 'select' ? 'text-[#2563EB]' : 'text-slate-500'
+                  activeTab === 'select' ? 'text-[#3A56C5]' : 'text-slate-500'
                 }`}
               >
                 Select
                 {activeTab === 'select' ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#2563EB]" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#3A56C5]" />
                 ) : null}
               </button>
 
@@ -265,12 +265,12 @@ function FlashDealProductsModal({
                 type="button"
                 onClick={() => setActiveTab('upload')}
                 className={`relative pb-2 ${
-                  activeTab === 'upload' ? 'text-[#2563EB]' : 'text-slate-500'
+                  activeTab === 'upload' ? 'text-[#3A56C5]' : 'text-slate-500'
                 }`}
               >
                 Upload Product List
                 {activeTab === 'upload' ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#2563EB]" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#3A56C5]" />
                 ) : null}
               </button>
             </div>
@@ -299,7 +299,7 @@ function FlashDealProductsModal({
                 <button
                   type="button"
                   onClick={onRetryLoadProducts}
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#93c5fd] bg-[#eff6ff] px-4 text-xs font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#B1C2EC] bg-[#F2F4FF] px-4 text-xs font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
                 >
                   Retry
                 </button>
@@ -341,7 +341,7 @@ function FlashDealProductsModal({
                       <button
                         type="button"
                         onClick={handleSearch}
-                        className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] sm:h-10"
+                        className="inline-flex h-11 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] sm:h-10"
                       >
                         Search
                       </button>
@@ -361,26 +361,26 @@ function FlashDealProductsModal({
                         type="checkbox"
                         checked={showAvailableOnly}
                         onChange={(event) => setShowAvailableOnly(event.target.checked)}
-                        className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                        className="h-5 w-5 rounded border-[#cbd5e1] text-[#3A56C5] focus:ring-[#B1C2EC]"
                       />
                       Show available products only
                     </label>
 
-                    <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs font-semibold text-[#1d4ed8]">
+                    <label className="inline-flex min-h-10 items-center gap-3 rounded-md bg-white px-2.5 text-xs font-semibold text-[#3347A8]">
                       <input
                         ref={selectAllRef}
                         type="checkbox"
                         checked={allFilteredSelected}
                         onChange={handleToggleSelectAll}
-                        className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                        className="h-5 w-5 rounded border-[#cbd5e1] text-[#3A56C5] focus:ring-[#B1C2EC]"
                       />
                       Select all shown products
                     </label>
                   </div>
                 </div>
 
-                <div className="mt-3 overflow-auto rounded-lg border border-[#dbeafe] bg-[#f8fbff]">
-                  <div className="border-b border-[#dbeafe] bg-white px-3 py-2 text-xs font-semibold text-[#1d4ed8] sm:hidden">
+                <div className="mt-3 overflow-auto rounded-lg border border-[#E6EBFF] bg-[#f8fbff]">
+                  <div className="border-b border-[#E6EBFF] bg-white px-3 py-2 text-xs font-semibold text-[#3347A8] sm:hidden">
                     Selected {draftSelection.length} product
                     {draftSelection.length === 1 ? '' : 's'}.
                   </div>
@@ -393,14 +393,14 @@ function FlashDealProductsModal({
                         return (
                           <label
                             key={product.id}
-                            className="flex items-start gap-2.5 rounded-lg border border-[#dbeafe] bg-white p-2.5"
+                            className="flex items-start gap-2.5 rounded-lg border border-[#E6EBFF] bg-white p-2.5"
                           >
                             <span className="mt-1 inline-flex h-8 w-8 flex-none items-center justify-center rounded-md bg-[#f8fbff]">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleToggleProduct(product.id)}
-                                className="h-5 w-5 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                                className="h-5 w-5 rounded border-[#cbd5e1] text-[#3A56C5] focus:ring-[#B1C2EC]"
                               />
                             </span>
                             <ProductImageStub name={product.name} />
@@ -409,7 +409,7 @@ function FlashDealProductsModal({
                                 <p className="line-clamp-2 text-[14px] font-semibold leading-snug text-slate-900">
                                   {product.name}
                                 </p>
-                                <span className="shrink-0 text-sm font-bold text-[#1d4ed8]">
+                                <span className="shrink-0 text-sm font-bold text-[#3347A8]">
                                   {toPriceLabel(product.price)}
                                 </span>
                               </div>
@@ -417,7 +417,7 @@ function FlashDealProductsModal({
                                 ID: {product.id} | {product.category}
                               </p>
                               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-                                <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 font-medium text-[#1d4ed8]">
+                                <span className="rounded-full bg-[#F2F4FF] px-2 py-0.5 font-medium text-[#3347A8]">
                                   Sales {product.sales}
                                 </span>
                                 <span className="rounded-full bg-[#f1f5f9] px-2 py-0.5 font-medium text-slate-600">
@@ -429,7 +429,7 @@ function FlashDealProductsModal({
                         )
                       })
                     ) : (
-                      <div className="rounded-lg border border-dashed border-[#bfdbfe] bg-white px-3 py-6 text-center text-sm text-slate-500">
+                      <div className="rounded-lg border border-dashed border-[#D0DBF7] bg-white px-3 py-6 text-center text-sm text-slate-500">
                         No products found for your filters.
                       </div>
                     )}
@@ -437,7 +437,7 @@ function FlashDealProductsModal({
 
                   <table className="hidden min-w-[760px] w-full border-separate border-spacing-0 sm:table">
                     <thead>
-                      <tr className="bg-white text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
+                      <tr className="bg-white text-left text-xs uppercase tracking-wide text-[#3347A8]">
                         <th className="px-3 py-2.5 font-semibold">Select</th>
                         <th className="px-3 py-2.5 font-semibold">Products</th>
                         <th className="px-3 py-2.5 font-semibold">Sales</th>
@@ -457,7 +457,7 @@ function FlashDealProductsModal({
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => handleToggleProduct(product.id)}
-                                  className="h-4 w-4 rounded border-[#cbd5e1] text-[#2563EB] focus:ring-[#93c5fd]"
+                                  className="h-4 w-4 rounded border-[#cbd5e1] text-[#3A56C5] focus:ring-[#B1C2EC]"
                                 />
                               </td>
                               <td className="px-3 py-2.5">
@@ -493,7 +493,7 @@ function FlashDealProductsModal({
             )}
           </div>
 
-          <footer className="sticky bottom-0 z-10 shrink-0 border-t border-[#dbeafe] bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 sm:px-5 sm:py-3">
+          <footer className="sticky bottom-0 z-10 shrink-0 border-t border-[#E6EBFF] bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 sm:px-5 sm:py-3">
             <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:justify-end">
               <button
                 type="button"
@@ -506,7 +506,7 @@ function FlashDealProductsModal({
                 type="button"
                 onClick={handleConfirm}
                 disabled={authRequired || noShop || isLoadingProducts}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
+                className="inline-flex h-11 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10"
               >
                 Confirm
               </button>
@@ -520,3 +520,4 @@ function FlashDealProductsModal({
 }
 
 export default FlashDealProductsModal
+

@@ -8,7 +8,7 @@ type ViewAddOnDealPageProps = {
 
 function ProductPreviewShape({ label }: { label: string }) {
   return (
-    <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] to-[#bfdbfe] text-xs font-bold text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)]">
+    <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] to-[#D0DBF7] text-xs font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
       {label.slice(0, 1).toUpperCase()}
     </div>
   )
@@ -30,19 +30,19 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
       style={{ animationDelay: '80ms' }}
     >
       <div className="sm:hidden">
-        <div className="sticky top-0 z-10 border-b border-[#dbeafe] bg-white px-4 py-3">
+        <div className="sticky top-0 z-10 border-b border-[#E6EBFF] bg-white px-4 py-3">
           <div className="flex items-start gap-2">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#eff6ff] text-base font-semibold text-[#1E40AF] transition active:scale-95"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F4FF] text-base font-semibold text-[#33458F] transition active:scale-95"
               aria-label="Back to Discount"
             >
               &larr;
             </button>
             <div>
               <h1 className="text-[22px] font-semibold leading-none text-slate-900">View Add-on Deal</h1>
-              <p className="mt-1 text-xs text-[#1d4ed8]">Details are read-only for this add-on..</p>
+              <p className="mt-1 text-xs text-[#3347A8]">Details are read-only for this add-on..</p>
             </div>
           </div>
         </div>
@@ -52,22 +52,22 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center rounded-full bg-[#eff6ff] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+          className="inline-flex items-center rounded-full bg-[#F2F4FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
         >
           &larr; Back to Discount
         </button>
 
-        <header className="mt-3 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1d4ed8]">
+        <header className="mt-3 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#3347A8]">
             Home &gt; Marketing Centre &gt; Discount &gt; View Add-on Deal
           </p>
-          <h1 className="mt-2 text-3xl font-semibold text-[#1E40AF]">View Add-on Deal</h1>
+          <h1 className="mt-2 text-3xl font-semibold text-[#33458F]">View Add-on Deal</h1>
         </header>
       </div>
 
       <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
-        <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
-          <h2 className="text-lg font-semibold text-[#1E40AF] sm:text-xl">Basic Information</h2>
+        <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+          <h2 className="text-lg font-semibold text-[#33458F] sm:text-xl">Basic Information</h2>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div>
@@ -113,23 +113,23 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
           </div>
         </article>
 
-        <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
-          <h2 className="text-lg font-semibold text-[#1E40AF] sm:text-xl">Add-on Data</h2>
+        <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+          <h2 className="text-lg font-semibold text-[#33458F] sm:text-xl">Add-on Data</h2>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {metrics.map((metric) => (
-              <div key={metric.label} className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-3">
+              <div key={metric.label} className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
                 <p className="text-xs text-slate-500">{metric.label}</p>
-                <p className="mt-1 text-lg font-semibold text-[#1d4ed8]">{metric.value}</p>
+                <p className="mt-1 text-lg font-semibold text-[#3347A8]">{metric.value}</p>
               </div>
             ))}
           </div>
         </article>
 
-        <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
-          <h2 className="text-lg font-semibold text-[#1E40AF] sm:text-xl">Products</h2>
+        <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+          <h2 className="text-lg font-semibold text-[#33458F] sm:text-xl">Products</h2>
 
           <div className="mt-3 space-y-2.5">
-            <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-3">
+            <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-start gap-2.5">
                 <ProductPreviewShape label={addon.triggerProductName} />
                 <div className="min-w-0 flex-1">
@@ -162,7 +162,7 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#dbeafe] bg-[#f8fbff] p-3">
+            <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-start gap-2.5">
                 <ProductPreviewShape label={addon.addonProductName} />
                 <div className="min-w-0 flex-1">
@@ -189,7 +189,7 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
                     readOnly
                     disabled
                     value={addon.type}
-                    className="h-9 w-full rounded-md border border-[#cbd5e1] bg-slate-100 px-2.5 text-xs font-semibold text-[#1d4ed8]"
+                    className="h-9 w-full rounded-md border border-[#cbd5e1] bg-slate-100 px-2.5 text-xs font-semibold text-[#3347A8]"
                   />
                 </div>
               </div>
@@ -202,3 +202,4 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
 }
 
 export default ViewAddOnDealPage
+

@@ -1,4 +1,4 @@
-﻿import type { FlashDealsMetric } from './types'
+import type { FlashDealsMetric } from './types'
 
 type FlashDealsPerformanceSectionProps = {
   dateLabel: string
@@ -22,17 +22,17 @@ function FlashDealsPerformanceSection({
   metrics,
 }: FlashDealsPerformanceSectionProps) {
   return (
-    <article className="rounded-none border-0 bg-transparent px-0 shadow-none sm:rounded-2xl sm:border sm:border-[#dbeafe] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(37,99,235,0.8)]">
+    <article className="rounded-none border-0 bg-transparent px-0 shadow-none sm:rounded-2xl sm:border sm:border-[#E6EBFF] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(58,86,197,0.8)]">
       <div className="hidden items-start justify-between gap-3 sm:flex">
         <div>
-          <h2 className="text-lg font-semibold text-[#1E40AF] sm:text-xl">
+          <h2 className="text-lg font-semibold text-[#33458F] sm:text-xl">
             Unleash Flash Deals Performance
           </h2>
           <p className="mt-0.5 text-xs text-slate-500">{dateLabel}</p>
         </div>
         <button
           type="button"
-          className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-2 text-sm font-medium text-[#2563EB] transition hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+          className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-2 text-sm font-medium text-[#3A56C5] transition hover:bg-[#F2F4FF] hover:text-[#3347A8]"
         >
           More &gt;
         </button>
@@ -91,7 +91,7 @@ function FlashDealsPerformanceSection({
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-4 lg:min-h-[118px]"
+            className="rounded-xl border border-[#E6EBFF] bg-[#f8fbff] p-4 lg:min-h-[118px]"
           >
             <p className="text-xs font-semibold text-slate-600">{metric.label}</p>
             <p className="mt-1.5 text-2xl font-semibold text-slate-900">{metric.value}</p>
@@ -107,3 +107,4 @@ function FlashDealsPerformanceSection({
 }
 
 export default FlashDealsPerformanceSection
+

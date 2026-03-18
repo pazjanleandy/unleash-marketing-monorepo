@@ -61,9 +61,9 @@ function DiscountPromotionBasicInformationCard({
   }
 
   return (
-    <article className="rounded-xl border border-[#dbeafe] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
+    <article className="rounded-xl border border-[#E6EBFF] bg-white p-4 shadow-[0_10px_30px_-28px_rgba(15,23,42,0.8)] sm:p-5">
       <header>
-        <h2 className="text-xl font-semibold text-[#1E40AF]">Basic Information</h2>
+        <h2 className="text-xl font-semibold text-[#33458F]">Basic Information</h2>
       </header>
 
       <div className="mt-4 space-y-4">
@@ -102,8 +102,8 @@ function DiscountPromotionBasicInformationCard({
                 onClick={() => onOpenPicker('startDateTime')}
                 className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
                   activePickerField === 'startDateTime'
-                    ? 'border-[#2563EB] bg-[#eff6ff]'
-                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                    ? 'border-[#3A56C5] bg-[#F2F4FF]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#B1C2EC]'
                 }`}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -119,8 +119,8 @@ function DiscountPromotionBasicInformationCard({
                 onClick={() => onOpenPicker('endDateTime')}
                 className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
                   activePickerField === 'endDateTime'
-                    ? 'border-[#2563EB] bg-[#eff6ff]'
-                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                    ? 'border-[#3A56C5] bg-[#F2F4FF]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#B1C2EC]'
                 }`}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -142,3 +142,4 @@ function DiscountPromotionBasicInformationCard({
 }
 
 export default DiscountPromotionBasicInformationCard
+

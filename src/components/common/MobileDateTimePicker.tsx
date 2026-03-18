@@ -530,7 +530,7 @@ function MobileDateTimePickerSheet({
                     dayClassName = 'cursor-not-allowed bg-slate-100 text-slate-300'
                   } else if (isSelected) {
                     dayClassName =
-                      'bg-[#2563EB] text-white ring-2 ring-[#2563EB] shadow-[0_8px_16px_-12px_rgba(37,99,235,0.85)]'
+                      'bg-[#3A56C5] text-white ring-2 ring-[#3A56C5] shadow-[0_8px_16px_-12px_rgba(58,86,197,0.85)]'
                   } else if (isToday) {
                     dayClassName = 'border border-slate-400 text-slate-700 hover:bg-slate-100'
                   }
@@ -574,7 +574,7 @@ function MobileDateTimePickerSheet({
                         optionClassName =
                           'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-300'
                       } else if (isSelected) {
-                        optionClassName = 'bg-[#2563EB] text-white ring-2 ring-[#2563EB]'
+                        optionClassName = 'bg-[#3A56C5] text-white ring-2 ring-[#3A56C5]'
                       }
 
                       return (
@@ -610,7 +610,7 @@ function MobileDateTimePickerSheet({
                         optionClassName =
                           'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-300'
                       } else if (isSelected) {
-                        optionClassName = 'bg-[#2563EB] text-white ring-2 ring-[#2563EB]'
+                        optionClassName = 'bg-[#3A56C5] text-white ring-2 ring-[#3A56C5]'
                       }
 
                       return (
@@ -646,7 +646,7 @@ function MobileDateTimePickerSheet({
                         optionClassName =
                           'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-300'
                       } else if (isSelected) {
-                        optionClassName = 'bg-[#2563EB] text-white ring-2 ring-[#2563EB]'
+                        optionClassName = 'bg-[#3A56C5] text-white ring-2 ring-[#3A56C5]'
                       }
 
                       return (
@@ -699,7 +699,7 @@ function MobileDateTimePickerSheet({
                 type="button"
                 onClick={handleConfirm}
                 disabled={!isSelectionValid}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-11 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Confirm
               </button>
@@ -764,3 +764,4 @@ function MobileDateTimePicker({
 }
 
 export default MobileDateTimePicker
+

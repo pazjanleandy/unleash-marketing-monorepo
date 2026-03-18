@@ -1,257 +1,105 @@
-import { useCallback, useMemo } from 'react'
-import IconMark from './IconMark'
 import ToolSectionBlock from './ToolSectionBlock'
-import type { IconName, ToolCard, ToolSection } from './types'
+import ToolCardItem from './ToolCardItem'
+import type { ToolCard, ToolSection } from './types'
 
 type MarketingToolsPanelProps = {
   sections: ToolSection[]
   onToolSelect?: (tool: ToolCard) => void
+  isMobile?: boolean
 }
 
-type ToolEntry = {
-  label: string
-  sourceTitle: string
-  fallbackIcon: IconName
-}
+function MarketingToolsPanel({ sections, onToolSelect, isMobile = false }: MarketingToolsPanelProps) {
+  if (isMobile) {
+    const allTools = sections.flatMap((section) => section.tools)
+    const recommendedTools = allTools.filter(
+      (tool) => tool.id === 'discount' || tool.id === 'flash-deals' || tool.id === 'vouchers',
+    )
 
-type ToolItem = {
-  label: string
-  tool: ToolCard
-}
+    return (
+      <section className="space-y-4">
+        <div className="rounded-2xl border border-slate-100 bg-white/80 p-4 shadow-[0_10px_26px_-24px_rgba(12,23,50,0.12)]">
+          <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+            <span>Recommended for Unleash</span>
+            <a href="#" className="text-[#2A55D4] hover:text-[#1e47b4] font-semibold">
+              See all
+            </a>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {recommendedTools.map((tool, index) => (
+              <ToolCardItem
+                key={`rec-${tool.title}-${index}`}
+                tool={tool}
+                animationDelay="0ms"
+                onToolSelect={onToolSelect}
+                compact
+              />
+            ))}
+          </div>
+        </div>
 
-type ToolTileProps = {
-  item: ToolItem
-  onToolSelect?: (tool: ToolCard) => void
-}
-
-function ToolTile({ item, onToolSelect }: ToolTileProps) {
-  const isClickable = Boolean(item.tool.id) && typeof onToolSelect === 'function'
-
-  const handleClick = () => {
-    if (!isClickable) {
-      return
-    }
-
-    onToolSelect?.(item.tool)
+        <div className="rounded-2xl border border-slate-100 bg-white/80 p-4 shadow-[0_10px_26px_-24px_rgba(12,23,50,0.12)]">
+          <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+            <span>All Marketing Tools</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {allTools.map((tool, index) => (
+              <ToolCardItem
+                key={`all-${tool.title}-${index}`}
+                tool={tool}
+                animationDelay="0ms"
+                onToolSelect={onToolSelect}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="inline-flex min-h-11 w-full flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-3.5 text-center shadow-sm transition duration-150 hover:border-[#c7dcff] hover:bg-[#f8fbff] active:scale-[0.98] active:bg-[#eff6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-      aria-label={item.label}
-    >
-      <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-full border border-[#c7dcff] bg-[#eff6ff] text-[#2563EB]">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <IconMark name={item.tool.icon} />
-        </svg>
-      </span>
-
-      <span className="min-h-[2.5rem] w-full text-[13px] font-semibold leading-snug text-slate-700 line-clamp-2">
-        {item.label}
-      </span>
-    </button>
-  )
-}
-
-function MarketingToolsPanel({ sections, onToolSelect }: MarketingToolsPanelProps) {
-  const allKnownTools = useMemo(() => sections.flatMap((section) => section.tools), [sections])
-
-  const toolByTitle = useMemo(
-    () => new Map(allKnownTools.map((tool) => [tool.title, tool])),
-    [allKnownTools],
-  )
-
-  const buildToolItems = useCallback(
-    (entries: ToolEntry[]) =>
-      entries.map((entry) => {
-        const matched = toolByTitle.get(entry.sourceTitle)
-
-        return {
-          label: entry.label,
-          tool:
-            matched ?? {
-              title: entry.label,
-              description: '',
-              icon: entry.fallbackIcon,
-              tone: 'blue',
-            },
-        }
-      }),
-    [toolByTitle],
-  )
-
-  const recommendedTools = useMemo<ToolItem[]>(
-    () =>
-      buildToolItems([
-        {
-          label: 'Discount',
-          sourceTitle: 'Discount',
-          fallbackIcon: 'discount',
-        },
-        {
-          label: 'Flash Deals',
-          sourceTitle: "My Shop's Flash Deals",
-          fallbackIcon: 'flash-deals',
-        },
-        {
-          label: 'Vouchers',
-          sourceTitle: 'Vouchers',
-          fallbackIcon: 'voucher',
-        },
-      ]),
-    [buildToolItems],
-  )
-
-  const tools = useMemo<ToolItem[]>(
-    () =>
-      buildToolItems([
-        {
-          label: 'Discount',
-          sourceTitle: 'Discount',
-          fallbackIcon: 'discount',
-        },
-        {
-          label: 'Flash Deals',
-          sourceTitle: "My Shop's Flash Deals",
-          fallbackIcon: 'flash-deals',
-        },
-        {
-          label: 'Vouchers',
-          sourceTitle: 'Vouchers',
-          fallbackIcon: 'voucher',
-        },
-        {
-          label: 'Unleash Ads',
-          sourceTitle: 'Unleash Ads',
-          fallbackIcon: 'ads',
-        },
-        {
-          label: 'Affiliates',
-          sourceTitle: 'Affiliate Marketing Solution',
-          fallbackIcon: 'affiliate',
-        },
-        {
-          label: 'Live Streaming',
-          sourceTitle: 'Live Streaming',
-          fallbackIcon: 'live',
-        },
-        {
-          label: 'Review Prize',
-          sourceTitle: 'Review Prize',
-          fallbackIcon: 'review-prize',
-        },
-        {
-          label: 'Seller Coins',
-          sourceTitle: 'Seller Coins',
-          fallbackIcon: 'seller-coins',
-        },
-        {
-          label: 'Shop Prize',
-          sourceTitle: 'Shop Prize',
-          fallbackIcon: 'shop-prize',
-        },
-      ]),
-    [buildToolItems],
-  )
-
-  return (
     <section
-      className="motion-rise mt-6 rounded-3xl border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
+      className="motion-rise pt-2"
       style={{ animationDelay: '120ms' }}
     >
-      <div className="sm:hidden">
-        <header className="px-1">
-          <h2 className="text-2xl font-semibold text-slate-800">Marketing Tools</h2>
-          <p className="mt-1.5 text-sm leading-snug text-slate-500">
-            Create and manage promotions to boost sales.
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Campaign Library
           </p>
-          <a
-            href="#"
-            className="mt-2 inline-flex items-center text-sm font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
-          >
-            View Products under Promotion
-            <span aria-hidden="true" className="ml-1">
-              -&gt;
-            </span>
-          </a>
-        </header>
-
-        <div className="mt-6 space-y-4">
-          <section className="rounded-2xl border border-slate-200/70 bg-white p-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                Recommended for Unleash
-              </p>
-              <button
-                type="button"
-                className="text-xs font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
-              >
-                See all
-              </button>
-            </div>
-
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              {recommendedTools.map((item) => (
-                <ToolTile
-                  key={`recommended-${item.label}`}
-                  item={item}
-                  onToolSelect={onToolSelect}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-200/70 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              All Marketing Tools
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-3 min-[380px]:grid-cols-3">
-              {tools.map((item) => (
-                <ToolTile key={`tool-${item.label}`} item={item} onToolSelect={onToolSelect} />
-              ))}
-            </div>
-          </section>
+          <h2 className="text-[32px] font-bold text-slate-800 tracking-tight">Marketing Tools</h2>
+          <p className="mt-2 text-[15px] font-medium text-slate-600">
+            Manage promotion, growth, and engagement campaigns from one workspace.
+          </p>
         </div>
+        <a
+          href="#"
+          className="group inline-flex w-fit items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 ring-1 ring-inset ring-blue-600/20 transition hover:bg-blue-100 hover:text-blue-800"
+        >
+          View products under promotion
+          <span
+            aria-hidden="true"
+            className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+          >
+            →
+          </span>
+        </a>
       </div>
 
-      <div className="hidden sm:block">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-semibold text-slate-800">Marketing Tools</h2>
-          <a
-            href="#"
-            className="group inline-flex items-center gap-2 text-sm font-medium text-[#2563EB] transition hover:text-[#1d4ed8]"
+      <div className="mt-4 rounded-[22px] border border-slate-100 bg-white p-5 shadow-[0_14px_38px_-30px_rgba(12,23,50,0.18)] sm:p-7">
+        {sections.map((section, sectionIndex) => (
+          <div
+            key={section.title}
+            className={sectionIndex === sections.length - 1 ? '' : 'mb-8 pb-8'}
           >
-            View Products under Promotion
-            <span
-              aria-hidden="true"
-              className="inline-block transition group-hover:translate-x-0.5"
-            >
-              -&gt;
-            </span>
-          </a>
-        </div>
-
-        <div className="mt-8 space-y-9">
-          {sections.map((section, sectionIndex) => (
             <ToolSectionBlock
-              key={section.title}
               section={section}
               sectionIndex={sectionIndex}
               onToolSelect={onToolSelect}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   )

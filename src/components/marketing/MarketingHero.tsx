@@ -1,21 +1,28 @@
-function MarketingHero() {
+type MarketingHeroProps = {
+  shopName: string
+  isMobile?: boolean
+}
+
+function MarketingHero({ shopName, isMobile = false }: MarketingHeroProps) {
+  const wrapperClass = isMobile
+    ? 'relative mb-4'
+    : 'motion-rise relative mb-8 rounded-3xl border border-slate-100 bg-white p-5 shadow-[0_12px_34px_-30px_rgba(12,23,50,0.28)] md:border-0 md:p-0 md:shadow-none'
+
   return (
-    <section className="motion-rise relative hidden overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f6faff_100%)] p-6 shadow-[0_28px_62px_-42px_rgba(15,23,42,0.65)] sm:block sm:p-8">
-      <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#8ec3ff]/28 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-12 h-48 w-48 rounded-full bg-[#bfdbfe]/35 blur-3xl" />
-      <div className="relative">
-        <img
-          src="/unleash_banner.png"
-          alt="Unleash"
-          className="h-8 w-auto object-contain sm:h-9"
-        />
-        <h1 className="mt-3 text-3xl font-semibold leading-tight text-slate-800 sm:text-4xl">
-          Marketing-Centre
+    <section className={wrapperClass}>
+      <div className="relative z-10 max-w-[1040px]">
+        <h1 className="text-[26px] font-bold leading-[1.15] tracking-tight text-[#2B3A55] sm:text-[42px]">
+          {shopName} Marketing Tools
         </h1>
-        <p className="mt-3 max-w-2xl text-sm text-slate-500 sm:text-base">
-          Manage promotions, shopper engagement, and traffic campaigns from one
-          place.
+        <p className="mt-1 text-[13px] font-medium text-slate-600 sm:text-[17px]">
+          Create and manage promotions to boost sales.
         </p>
+        <a
+          href="#"
+          className="mt-2 inline-flex text-[12px] font-semibold text-[#2A55D4] hover:text-[#1e47b4] sm:text-[14px]"
+        >
+          View Products under Promotion →
+        </a>
       </div>
     </section>
   )

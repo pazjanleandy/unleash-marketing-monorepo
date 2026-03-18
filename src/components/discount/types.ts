@@ -7,6 +7,7 @@ export type DiscountCreateTool = {
   type: DiscountToolType
   title: string
   description: string
+  metaTag?: string
 }
 
 export type DiscountPromotionTab =
@@ -20,6 +21,7 @@ export type PromotionMetric = {
   value: string
   comparisonLabel: string
   comparisonValue: string
+  tone?: 'neutral' | 'ongoing' | 'upcoming' | 'expired'
 }
 
 export type PromotionStatus = 'Ongoing' | 'Upcoming' | 'Expired'

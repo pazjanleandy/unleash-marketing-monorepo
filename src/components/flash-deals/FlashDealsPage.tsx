@@ -259,22 +259,22 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center rounded-full bg-[#eff6ff] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+            className="inline-flex items-center rounded-full bg-[#F2F4FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
           >
             &larr; Back to Marketing Centre
           </button>
 
-          <header className="mt-4 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1d4ed8]">
+          <header className="mt-4 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#3347A8]">
               Home &gt; Marketing Centre &gt; Flash Deals
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-[#1E40AF]">Flash Deals</h1>
-            <p className="mt-1.5 text-sm text-[#1d4ed8]">
+            <h1 className="mt-2 text-3xl font-semibold text-[#33458F]">Flash Deals</h1>
+            <p className="mt-1.5 text-sm text-[#3347A8]">
               Run and optimize short-window promotions on Unleash.
             </p>
           </header>
 
-          <div className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2.5 text-sm text-[#1d4ed8]">
+          <div className="mt-4 rounded-lg border border-[#D0DBF7] bg-[#F2F4FF] px-3 py-2.5 text-sm text-[#3347A8]">
             Expired promotions that ended before 01 May 2020 can't be edited.
           </div>
 
@@ -312,7 +312,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
         <button
           type="button"
           onClick={onCreate}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#2563EB] text-3xl font-semibold leading-none text-white shadow-[0_16px_32px_-14px_rgba(37,99,235,0.9)] transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93c5fd] sm:hidden"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#3A56C5] text-3xl font-semibold leading-none text-white shadow-[0_16px_32px_-14px_rgba(58,86,197,0.9)] transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] sm:hidden"
           aria-label="Create Flash Deal"
         >
           +
@@ -323,3 +323,4 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
 }
 
 export default FlashDealsPage
+

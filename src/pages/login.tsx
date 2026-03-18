@@ -19,38 +19,6 @@ async function resolvePostLoginRoute(): Promise<string> {
     return '/shop-demo'
   }
 }
-const pawMarks = [
-  { top: '6%', left: '8%', size: 56, opacity: 0.16 },
-  { top: '10%', left: '38%', size: 68, opacity: 0.14 },
-  { top: '4%', left: '70%', size: 60, opacity: 0.12 },
-  { top: '24%', left: '18%', size: 64, opacity: 0.15 },
-  { top: '26%', left: '54%', size: 72, opacity: 0.1 },
-  { top: '23%', left: '82%', size: 58, opacity: 0.14 },
-  { top: '48%', left: '9%', size: 72, opacity: 0.11 },
-  { top: '52%', left: '36%', size: 62, opacity: 0.13 },
-  { top: '58%', left: '72%', size: 70, opacity: 0.12 },
-  { top: '73%', left: '20%', size: 66, opacity: 0.14 },
-  { top: '80%', left: '52%', size: 60, opacity: 0.13 },
-  { top: '82%', left: '84%', size: 56, opacity: 0.1 },
-]
-
-function PawIcon({ className = 'h-6 w-6' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="14" cy="20" r="7" />
-      <circle cx="26" cy="12" r="8" />
-      <circle cx="40" cy="12" r="8" />
-      <circle cx="50" cy="22" r="7" />
-      <ellipse cx="32" cy="38" rx="18" ry="14" />
-    </svg>
-  )
-}
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -63,6 +31,7 @@ function LoginPage() {
 
   const signupPendingConfirmation = searchParams.get('confirmation') === 'pending'
   const signupEmail = searchParams.get('email') ?? ''
+  const assetPath = (file: string) => `/Asset/${file}`
 
   useEffect(() => {
     let isActive = true
@@ -162,46 +131,37 @@ function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030a1b] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#10214b_0%,_#071533_38%,_#030a1b_100%)]" />
-      <div className="pointer-events-none absolute inset-0">
-        {pawMarks.map((mark, index) => (
-          <div
-            key={index}
-            className="absolute text-[#8ea5d9]"
-            style={{
-              top: mark.top,
-              left: mark.left,
-              opacity: mark.opacity,
-            }}
-          >
-            <div style={{ width: mark.size, height: mark.size }}>
-              <PawIcon className="h-full w-full" />
-            </div>
-          </div>
-        ))}
+    <div className="relative min-h-screen overflow-hidden bg-[#040917] text-white">
+      <div className="absolute inset-0">
+        <img
+          src={assetPath('background.png')}
+          alt="Playful paw background"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#040917]/60 via-[#040917]/75 to-[#030711]/90 backdrop-blur-[2px]" />
       </div>
 
       <header className="relative z-10 px-6 pt-8">
-        <div className="inline-flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/85">
-            <PawIcon className="h-6 w-6" />
-          </span>
-          <span className="font-['Poppins'] text-2xl font-semibold tracking-wide text-white/90">
-            Unleash
-          </span>
-        </div>
+        <img
+          src={assetPath('unleash_banner.png')}
+          alt="Unleash banner"
+          className="h-12 w-auto"
+          style={{ filter: 'brightness(2.05) saturate(1.4) drop-shadow(0 12px 28px rgba(0,0,0,0.3))' }}
+        />
       </header>
 
-      <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-8">
-        <section className="motion-rise w-full max-w-[460px] rounded-3xl border border-white/10 bg-[#06122c]/95 p-6 shadow-[0_36px_70px_-40px_rgba(0,0,0,0.9)] sm:p-8">
+      <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-10">
+        <section className="motion-rise w-full max-w-[470px] rounded-[28px] border border-white/15 bg-[#0b1533]/[0.92] p-6 shadow-[0_36px_90px_-38px_rgba(0,0,0,0.78)] backdrop-blur">
           <div className="mb-6 text-center sm:mb-7">
-            <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/85">
-              <PawIcon className="h-7 w-7" />
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">Log In</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Welcome back. Please enter your details.
+            <img
+              src={assetPath('logo_nobg.png')}
+              alt="Unleash logo"
+              className="mx-auto mb-3 h-16 w-auto"
+              style={{ filter: 'brightness(2.1) saturate(1.4) drop-shadow(0 10px 26px rgba(12,22,58,0.55))' }}
+            />
+            <h1 className="text-[32px] font-semibold tracking-tight text-white">Log In</h1>
+            <p className="mt-2 text-sm text-slate-200/90">
+              Welcome back! Please enter your details.
             </p>
           </div>
 
@@ -224,7 +184,7 @@ function LoginPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your email"
-                className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
+                className="h-12 w-full rounded-xl border border-[#2d3f6f] bg-[#0a1a3a] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#7396ff] focus:ring-2 focus:ring-[#7396ff]/40"
               />
             </label>
 
@@ -235,7 +195,7 @@ function LoginPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Enter your password"
-                className="h-12 w-full rounded-xl border border-[#2b3f73] bg-[#091a3e] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#5f7fe4] focus:ring-2 focus:ring-[#5f7fe4]/40"
+                className="h-12 w-full rounded-xl border border-[#2d3f6f] bg-[#0a1a3a] px-4 text-sm text-white placeholder:text-slate-400 outline-none transition focus:border-[#7396ff] focus:ring-2 focus:ring-[#7396ff]/40"
               />
             </label>
 
@@ -262,21 +222,21 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-12 w-full rounded-xl bg-[#4e6ed8] text-sm font-semibold text-white shadow-[0_14px_25px_-16px_rgba(78,110,216,0.95)] transition hover:bg-[#5a79df] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+                className="h-12 w-full rounded-xl bg-[#5f82ff] text-sm font-semibold text-white shadow-[0_18px_32px_-18px_rgba(95,130,255,0.95)] transition hover:bg-[#6b8dff] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSubmitting ? 'Logging In...' : 'Log In'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/sign-up')}
-                className="h-12 w-full rounded-xl border border-[#5f7fe4] bg-[#0f214f] text-sm font-semibold text-white transition hover:bg-[#152b63] active:scale-[0.99]"
+                className="h-12 w-full rounded-xl border border-[#6a8bff] bg-[#0f214f] text-sm font-semibold text-white transition hover:bg-[#162d62] active:scale-[0.99]"
               >
                 Sign Up
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/shop-demo')}
-                className="h-12 w-full rounded-xl border border-[#324c8f] bg-transparent text-sm font-semibold text-slate-200 transition hover:bg-[#0c1d46] active:scale-[0.99]"
+                className="h-12 w-full rounded-xl border border-[#2d4075] bg-transparent text-sm font-semibold text-slate-200 transition hover:bg-[#0c1d46] active:scale-[0.99]"
               >
                 Skip for now
               </button>

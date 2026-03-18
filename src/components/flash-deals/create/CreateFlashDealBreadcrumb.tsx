@@ -11,7 +11,7 @@ function CreateFlashDealBreadcrumb({ onBack }: CreateFlashDealBreadcrumbProps) {
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[96px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[96px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         Home
       </button>
@@ -19,7 +19,7 @@ function CreateFlashDealBreadcrumb({ onBack }: CreateFlashDealBreadcrumbProps) {
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[170px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[170px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         Marketing Centre
       </button>
@@ -27,7 +27,7 @@ function CreateFlashDealBreadcrumb({ onBack }: CreateFlashDealBreadcrumbProps) {
       <button
         type="button"
         onClick={onBack}
-        className="max-w-[130px] truncate font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+        className="max-w-[130px] truncate font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
       >
         Flash Deals
       </button>
@@ -38,3 +38,4 @@ function CreateFlashDealBreadcrumb({ onBack }: CreateFlashDealBreadcrumbProps) {
 }
 
 export default CreateFlashDealBreadcrumb
+

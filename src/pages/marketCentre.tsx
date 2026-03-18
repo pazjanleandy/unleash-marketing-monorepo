@@ -77,9 +77,13 @@ export type MarketCentreView =
   | 'create-voucher'
 
 const navPlaceholders: Record<
-  'orders-all' | 'orders-pending' | 'orders-completed' | 'inventory' | 'add-product' | 'categories',
+  'dashboard' | 'orders-all' | 'orders-pending' | 'orders-completed' | 'inventory' | 'add-product' | 'categories',
   { title: string; description: string }
 > = {
+  dashboard: {
+    title: 'Dashboard',
+    description: 'Overview widgets will appear here. Use Marketing Centre to manage active campaigns.',
+  },
   'orders-all': {
     title: 'All Orders',
     description: 'Track, search, and manage every order from a centralized list.',
@@ -318,9 +322,135 @@ function PlaceholderView({
   description: string
 }) {
   return (
-    <section className="motion-rise rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_28px_62px_-44px_rgba(15,23,42,0.55)]">
-      <h2 className="text-2xl font-semibold text-slate-800">{title}</h2>
-      <p className="mt-3 max-w-2xl text-sm text-slate-500 sm:text-base">{description}</p>
+    <section className="motion-rise rounded-2xl border border-[#C9CFDD] bg-white p-8 shadow-[0_22px_44px_-36px_rgba(12,23,50,0.4)]">
+      <h2 className="text-2xl font-semibold text-[#0C1732]">{title}</h2>
+      <p className="mt-3 max-w-2xl text-sm text-[#747C8B] sm:text-base">{description}</p>
+    </section>
+  )
+}
+
+type QuickAction = {
+  title: string
+  description: string
+  cta: string
+  onClick: () => void
+}
+
+function QuickActionIcon({ index }: { index: number }) {
+  if (index === 0) {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 7.5L12 3L20 7.5V16.5L12 21L4 16.5V7.5Z"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8 12.2L10.6 14.8L16 9.4"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  }
+
+  if (index === 1) {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M13.5 2L6 13H12L10.5 22L18 11H12L13.5 2Z"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect x="4.5" y="6" width="15" height="13.5" rx="2.8" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 10.5H16M8 14.5H12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M8 6V4.4C8 3.63 8.63 3 9.4 3H14.6C15.37 3 16 3.63 16 4.4V6" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
+function QuickActionsRow({ actions }: { actions: QuickAction[] }) {
+  const accentClasses = ['text-blue-700', 'text-orange-600', 'text-blue-700']
+  const iconClasses = [
+    'bg-blue-50 text-blue-700 ring-[#bfd3f8] shadow-none',
+    'bg-orange-50 text-orange-600 ring-orange-200 shadow-none',
+    'bg-blue-50 text-blue-700 ring-[#bfd3f8] shadow-none'
+  ]
+  const cardBorders = ['border-slate-200', 'border-slate-200', 'border-slate-200']
+  const cardHoverBgs = ['hover:border-blue-300 hover:bg-blue-50/30', 'hover:border-orange-300 hover:bg-orange-50/30', 'hover:border-blue-300 hover:bg-blue-50/30']
+
+  return (
+    <section className="motion-rise mb-12">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m19 12-7-5-7 5"/><path d="m21 19-9-6-9 6"/></svg>
+            Launchpad
+          </p>
+          <h2 className="text-[32px] font-bold text-slate-800 tracking-tight">Quick Actions</h2>
+          <p className="mt-2 max-w-xl text-[15px] font-medium text-slate-600">
+            Start high-impact campaigns without digging through menus.
+          </p>
+        </div>
+        <span className="inline-flex items-center rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-stone-600">
+          {actions.length} actions ready
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {actions.map((action, index) => (
+          <button
+            key={action.title}
+            type="button"
+            onClick={action.onClick}
+            className={`group relative flex flex-col items-start gap-4 rounded-3xl border bg-white p-6 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 ${cardBorders[index % cardBorders.length]} ${cardHoverBgs[index % cardHoverBgs.length]}`}
+          >
+            <span
+              className={`inline-flex flex-none items-center justify-center rounded-2xl p-3 ring-1 ${iconClasses[index % iconClasses.length]}`}
+              aria-hidden="true"
+            >
+              <QuickActionIcon index={index} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[19px] font-bold text-slate-800">{action.title}</p>
+              <p className="mt-2 text-[14px] font-medium leading-relaxed text-slate-600">{action.description}</p>
+            </div>
+            <div className={`mt-auto inline-flex items-center gap-1.5 text-sm font-bold ${accentClasses[index % accentClasses.length]} transition-transform duration-300 group-hover:translate-x-1`}>
+              {action.cta} 
+              <span aria-hidden="true" className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
+            </div>
+          </button>
+        ))}
+      </div>
     </section>
   )
 }
@@ -336,6 +466,7 @@ function getIsMobileViewport() {
 function MarketCentrePage() {
   const navigate = useNavigate()
   const [activeView, setActiveView] = useState<MarketCentreView>('dashboard')
+  const [shopName, setShopName] = useState('Your Shop')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(getIsMobileViewport)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -392,7 +523,7 @@ function MarketCentrePage() {
 
       const { data: shopRow, error: shopError } = await supabase
         .from('shops')
-        .select('id')
+        .select('id,name')
         .eq('owner_id', userId)
         .maybeSingle()
 
@@ -402,6 +533,12 @@ function MarketCentrePage() {
 
       if (!shopRow?.id) {
         navigate('/shop-demo', { replace: true })
+        return
+      }
+
+      const resolvedShopName = shopRow?.name?.trim()
+      if (resolvedShopName) {
+        setShopName(resolvedShopName)
       }
     }
 
@@ -521,13 +658,6 @@ function MarketCentrePage() {
     setViewingBundle(null)
     setViewingAddOn(null)
     setActiveView('create-discount-promotion')
-  }
-
-  const handleViewDiscountPromotion = (promotion: PromotionRow) => {
-    setViewingPromotion(promotion)
-    setViewingBundle(null)
-    setViewingAddOn(null)
-    setActiveView('view-discount-promotion')
   }
 
   const handleEditDiscountCampaign = (campaign: DiscountCampaignRow) => {
@@ -699,10 +829,31 @@ function MarketCentrePage() {
         active: activeView === 'vouchers' || activeView === 'create-voucher',
       },
     ]
+  const quickActions: QuickAction[] = [
+    {
+      title: 'Create Discount',
+      description: 'Percentage or fixed discounts.',
+      cta: 'Create now',
+      onClick: () => handleCreateDiscountTool('discount-promotions'),
+    },
+    {
+      title: 'Create Flash Deal',
+      description: 'Limited-time offers for urgency.',
+      cta: 'Create now',
+      onClick: handleCreateFlashDeal,
+    },
+    {
+      title: 'Create Voucher',
+      description: 'Checkout savings and promo codes.',
+      cta: 'Create now',
+      onClick: () => handleCreateVoucher('shop'),
+    },
+  ]
   const placeholderConfig =
     activeView in navPlaceholders
       ? navPlaceholders[
       activeView as
+      | 'dashboard'
       | 'orders-all'
       | 'orders-pending'
       | 'orders-completed'
@@ -790,12 +941,12 @@ function MarketCentrePage() {
 
   const topNavButtonClass = (active: boolean) =>
     `relative inline-flex h-full shrink-0 items-center gap-2 px-4 text-[13px] font-medium transition ${active
-      ? 'bg-white text-[#2d46ba] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-[2px] after:rounded-full after:bg-[#2d46ba]'
-      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+      ? 'bg-white text-[#2A4DBD] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-[2px] after:rounded-full after:bg-[#2A4DBD]'
+      : 'text-[#747C8B] hover:bg-[#f7f9fc] hover:text-[#0C1732]'
     }`
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-white text-slate-900">
+    <div className="h-screen w-full overflow-hidden bg-white text-[#0C1732]">
       <div
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
@@ -822,15 +973,15 @@ function MarketCentrePage() {
       </aside>
 
       <div className="h-screen overflow-y-auto">
-        <header className="bg-white px-4 pb-3 pt-4 sm:px-6 md:px-0 md:pt-0 lg:px-0">
-          <div className="hidden h-[66px] w-full items-stretch border-y border-slate-200 bg-white md:grid md:grid-cols-[1fr_auto_1fr]">
+        <header className="bg-white px-4 pb-2 pt-2 sm:px-6 md:px-0 md:pt-0 md:pb-3 lg:px-0">
+          <div className="hidden h-[66px] w-full items-stretch border-y border-[#C9CFDD] bg-white md:grid md:grid-cols-[1fr_auto_1fr]">
             <div className="flex min-w-0 items-center gap-3 bg-white px-4">
               <img
                 src="/Asset/unleash_logo.png"
                 alt="Unleash logo"
                 className="h-8 w-8 object-contain"
               />
-              <p className="text-[13px] font-semibold leading-[1.08] text-slate-900">
+              <p className="text-[13px] font-semibold leading-[1.08] text-[#0C1732]">
                 <span className="block">Inventory Management</span>
                 <span className="block">System</span>
               </p>
@@ -854,7 +1005,7 @@ function MarketCentrePage() {
                 >
                   <path
                     d="M3 3H9V9H3V3ZM11 3H17V9H11V3ZM3 11H9V17H3V11ZM11 11H17V17H11V11Z"
-                    fill={activeView === 'dashboard' ? '#2647c7' : '#94a3b8'}
+                    fill={activeView === 'dashboard' ? '#2A4DBD' : '#9FB0D4'}
                   />
                 </svg>
                 <span>Dashboard</span>
@@ -874,17 +1025,17 @@ function MarketCentrePage() {
                 >
                   <path
                     d="M7 17C5.343 17 4 18.343 4 20C4 21.657 5.343 23 7 23C8.657 23 10 21.657 10 20C10 18.343 8.657 17 7 17ZM17 17C15.343 17 14 18.343 14 20C14 21.657 15.343 23 17 23C18.657 23 20 21.657 20 20C20 18.343 18.657 17 17 17Z"
-                    fill={isOrderActive ? '#2647c7' : '#94a3b8'}
+                    fill={isOrderActive ? '#2A4DBD' : '#9FB0D4'}
                   />
                   <path
                     d="M6 6H22L20 14H8L6 6Z"
-                    stroke={isOrderActive ? '#2647c7' : '#94a3b8'}
+                    stroke={isOrderActive ? '#2A4DBD' : '#9FB0D4'}
                     strokeWidth="1.8"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M6 6L4 2H1"
-                    stroke={isOrderActive ? '#2647c7' : '#94a3b8'}
+                    stroke={isOrderActive ? '#2A4DBD' : '#9FB0D4'}
                     strokeWidth="1.8"
                     strokeLinecap="round"
                   />
@@ -906,12 +1057,12 @@ function MarketCentrePage() {
                 >
                   <path
                     d="M4 20H20V4H4V20Z"
-                    stroke={isProductActive ? '#2647c7' : '#94a3b8'}
+                    stroke={isProductActive ? '#2A4DBD' : '#9FB0D4'}
                     strokeWidth="1.8"
                   />
                   <path
                     d="M8 4V20M16 4V20M4 8H20M4 16H20"
-                    stroke={isProductActive ? '#2647c7' : '#94a3b8'}
+                    stroke={isProductActive ? '#2A4DBD' : '#9FB0D4'}
                     strokeWidth="1.2"
                   />
                 </svg>
@@ -933,13 +1084,13 @@ function MarketCentrePage() {
                   >
                     <path
                       d="M4 10L12 5L20 10V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V10Z"
-                      stroke={isMarketingActive ? '#2647c7' : '#94a3b8'}
+                      stroke={isMarketingActive ? '#2A4DBD' : '#9FB0D4'}
                       strokeWidth="1.6"
                       strokeLinejoin="round"
                     />
                     <path
                       d="M9 13H15M9 16H14"
-                      stroke={isMarketingActive ? '#2647c7' : '#94a3b8'}
+                      stroke={isMarketingActive ? '#2A4DBD' : '#9FB0D4'}
                       strokeWidth="1.6"
                       strokeLinecap="round"
                     />
@@ -951,7 +1102,7 @@ function MarketCentrePage() {
                     viewBox="0 0 20 20"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="text-slate-400 transition group-hover:rotate-180 group-focus-within:rotate-180"
+                    className="text-[#9FB0D4] transition group-hover:rotate-180 group-focus-within:rotate-180"
                   >
                     <path
                       d="M4 7L10 13L16 7"
@@ -962,15 +1113,15 @@ function MarketCentrePage() {
                     />
                   </svg>
                 </button>
-                <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-1 opacity-0 shadow-[0_26px_48px_-30px_rgba(15,23,42,0.6)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-[#C9CFDD] bg-white p-1 opacity-0 shadow-[0_26px_48px_-30px_rgba(12,23,50,0.42)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                   {marketingModules.map((module) => (
                     <button
                       key={module.view}
                       type="button"
                       onClick={() => setActiveView(module.view)}
                       className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${module.active
-                          ? 'bg-[#e9efff] font-semibold text-[#2747c7]'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                          ? 'bg-[#E7ECF9] font-semibold text-[#2A4DBD]'
+                          : 'text-[#747C8B] hover:bg-[#f7f9fc] hover:text-[#0C1732]'
                         }`}
                     >
                       {module.label}
@@ -1094,8 +1245,8 @@ function MarketCentrePage() {
 
           </div>
 
-          <div className="mx-auto mt-3 w-full max-w-[1600px] md:hidden md:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
+          <div className="mx-auto mt-1 w-full max-w-[1600px] md:hidden px-2">
+            <div className="flex h-12 items-center justify-between gap-3">
               <button
                 ref={mobileMenuButtonRef}
                 type="button"
@@ -1103,7 +1254,7 @@ function MarketCentrePage() {
                 aria-expanded={isSidebarOpen}
                 aria-controls="mobile-sidebar"
                 onClick={() => setIsSidebarOpen(true)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700"
               >
                 <svg
                   width="18"
@@ -1121,43 +1272,67 @@ function MarketCentrePage() {
                 </svg>
               </button>
 
+              <img
+                src="/unleash_banner.png"
+                alt="Unleash"
+                className="h-6 w-auto"
+              />
+
               <button
                 type="button"
-                aria-label="Theme mode"
-                className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
+                aria-label="Profile"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700"
               >
                 <svg
-                  width="24"
-                  height="24"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M12 4V2M12 22V20M4 12H2M22 12H20M18.36 5.64L16.95 7.05M7.05 16.95L5.64 18.36M18.36 18.36L16.95 16.95M7.05 7.05L5.64 5.64"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
+                    d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                    fill="currentColor"
                   />
-                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="2" />
+                  <path
+                    d="M4 22C4 18.6863 7.58172 16 12 16C16.4183 16 20 18.6863 20 22"
+                    fill="currentColor"
+                  />
                 </svg>
-                <span className="absolute -right-1 -top-1 rounded-full bg-[#1d4ed8] px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                  Beta
-                </span>
               </button>
             </div>
           </div>
         </header>
-        <div className="mx-auto w-full max-w-[1600px] px-4 pb-12 pt-3 sm:px-6 lg:px-8">
+        <div className={`mx-auto w-full max-w-[1600px] px-4 pb-12 pt-5 sm:px-6 lg:px-8 ${isMobileViewport && isMarketingOverview ? 'bg-[#f6f7fb]' : ''}`}>
           <main className="min-w-0">
             {isMarketingOverview ? (
-              <>
-                <MarketingHero />
-                <MarketingToolsPanel
-                  sections={toolSections}
-                  onToolSelect={handleToolSelect}
-                />
-              </>
+              isMobileViewport ? (
+                <section className="mx-auto max-w-[520px] space-y-5">
+                  <div className="rounded-[26px] border border-slate-100 bg-white p-5 shadow-[0_12px_34px_-30px_rgba(12,23,50,0.28)]">
+                    <MarketingHero shopName={shopName} isMobile />
+                    <div className="mt-4">
+                      <MarketingToolsPanel
+                        sections={toolSections}
+                        onToolSelect={handleToolSelect}
+                        isMobile
+                      />
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <section className="mx-auto max-w-[1320px] space-y-8">
+                  <MarketingHero
+                    shopName={shopName}
+                  />
+                  <div className="space-y-8">
+                    <QuickActionsRow actions={quickActions} />
+                    <MarketingToolsPanel
+                      sections={toolSections}
+                      onToolSelect={handleToolSelect}
+                    />
+                  </div>
+                </section>
+              )
             ) : placeholderConfig ? (
               <PlaceholderView
                 title={placeholderConfig.title}

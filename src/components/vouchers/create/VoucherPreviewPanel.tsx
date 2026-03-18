@@ -16,7 +16,7 @@ function formatDiscountLabel(value: CreateVoucherForm) {
 }
 
 const typeColors: Record<VoucherType, { bg: string; text: string; border: string }> = {
-  shop: { bg: 'bg-[#eff6ff]', text: 'text-[#2563EB]', border: 'border-[#bfdbfe]' },
+  shop: { bg: 'bg-[#F2F4FF]', text: 'text-[#3A56C5]', border: 'border-[#D0DBF7]' },
   product: { bg: 'bg-[#f0fdf4]', text: 'text-[#16a34a]', border: 'border-[#86efac]' },
   private: { bg: 'bg-[#f5f3ff]', text: 'text-[#7c3aed]', border: 'border-[#c4b5fd]' },
   live: { bg: 'bg-[#fffbeb]', text: 'text-[#d97706]', border: 'border-[#fbbf24]' },
@@ -64,11 +64,11 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
         <div className="overflow-hidden rounded-[20px] bg-[#f8fafc]">
           <div className="h-6 bg-[#111827]" />
           <div className="space-y-2 p-2">
-            <div className="rounded-lg border border-[#bfdbfe] bg-white p-2">
+            <div className="rounded-lg border border-[#D0DBF7] bg-white p-2">
               <div className="mb-1.5">
                 <TypeBadge voucherType={voucherType} />
               </div>
-              <p className="text-[10px] font-semibold text-[#2563EB]">
+              <p className="text-[10px] font-semibold text-[#3A56C5]">
                 {formatDiscountLabel(value)}
               </p>
               {voucherType === 'private' && value.voucherCode.trim() ? (
@@ -79,7 +79,7 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
               <p className="text-[9px] text-slate-500">Min. spend ₱{minimumBasketPrice}</p>
               <button
                 type="button"
-                className="mt-2 inline-flex h-5 items-center rounded bg-[#2563EB] px-2 text-[9px] font-semibold text-white"
+                className="mt-2 inline-flex h-5 items-center rounded bg-[#3A56C5] px-2 text-[9px] font-semibold text-white"
               >
                 Claim
               </button>
@@ -122,7 +122,7 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
 
             <div className="grid grid-cols-3 gap-1.5">
               <div className="h-12 rounded bg-[#e2e8f0]" />
-              <div className="h-12 rounded bg-[#dbeafe]" />
+              <div className="h-12 rounded bg-[#E6EBFF]" />
               <div className="h-12 rounded bg-[#e2e8f0]" />
             </div>
           </div>
@@ -135,3 +135,4 @@ function VoucherPreviewPanel({ value }: VoucherPreviewPanelProps) {
 }
 
 export default VoucherPreviewPanel
+

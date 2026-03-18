@@ -284,7 +284,7 @@ function CreateVoucherPage({
       <div className="mt-4 rounded-xl border border-[#dbe1ea] bg-white px-4 py-3 sm:hidden">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#3347A8]">
               Step {currentStep + 1} of {stepTitles.length}
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -294,7 +294,7 @@ function CreateVoucherPage({
           <button
             type="button"
             onClick={onBack}
-            className="text-sm font-medium text-[#1d4ed8] transition hover:text-[#1e3a8a]"
+            className="text-sm font-medium text-[#3347A8] transition hover:text-[#2F3F7E]"
           >
             Cancel
           </button>
@@ -363,7 +363,7 @@ function CreateVoucherPage({
               type="button"
               onClick={() => void handleConfirm()}
               disabled={isSubmitting}
-              className="inline-flex h-10 items-center rounded-md bg-[#2563EB] px-5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex h-10 items-center rounded-md bg-[#3A56C5] px-5 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {isSubmitting ? 'Saving...' : desktopConfirmLabel}
             </button>
@@ -389,7 +389,7 @@ function CreateVoucherPage({
             type="button"
             onClick={handleNextStep}
             disabled={isSubmitting}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-45"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-45"
           >
             {currentStep === lastStepIndex
               ? isSubmitting
@@ -404,3 +404,4 @@ function CreateVoucherPage({
 }
 
 export default CreateVoucherPage
+

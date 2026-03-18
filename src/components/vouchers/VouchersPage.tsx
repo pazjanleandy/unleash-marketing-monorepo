@@ -105,7 +105,7 @@ const voucherCreateGroups: VoucherCreateGroup[] = [
 ]
 
 const voucherTypeBadgeColors: Record<VoucherType, { bg: string; text: string }> = {
-  shop: { bg: 'bg-[#eff6ff]', text: 'text-[#2563EB]' },
+  shop: { bg: 'bg-[#F2F4FF]', text: 'text-[#3A56C5]' },
   product: { bg: 'bg-[#f0fdf4]', text: 'text-[#16a34a]' },
   private: { bg: 'bg-[#f5f3ff]', text: 'text-[#7c3aed]' },
   live: { bg: 'bg-[#fffbeb]', text: 'text-[#d97706]' },
@@ -368,7 +368,7 @@ function MobileVoucherCard({
             type="button"
             onClick={() => handleActionClick(primaryAction)}
             disabled={!canManage}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#2563EB] px-3 text-[13px] font-semibold text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#3347A8] bg-[#3A56C5] px-3 text-[13px] font-semibold text-white transition hover:bg-[#3347A8] active:scale-[0.98]"
           >
             {primaryAction.label}
           </button>
@@ -502,7 +502,7 @@ function DesktopCreateVoucherTypeCard({
           type="button"
           onClick={() => onCreate(card.voucherType)}
           disabled={!canManage}
-          className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-4 text-xs font-semibold text-[#2563EB] transition hover:bg-[#eff6ff] disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-8 items-center rounded-md border border-[#3A56C5] px-4 text-xs font-semibold text-[#3A56C5] transition hover:bg-[#F2F4FF] disabled:cursor-not-allowed disabled:opacity-45"
         >
           Create
         </button>
@@ -641,7 +641,7 @@ function VouchersPage({
                   <button
                     type="button"
                     onClick={onRetry}
-                    className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-3 text-xs font-semibold text-[#2563EB]"
+                    className="inline-flex h-8 items-center rounded-md border border-[#3A56C5] px-3 text-xs font-semibold text-[#3A56C5]"
                   >
                     Retry
                   </button>
@@ -657,7 +657,7 @@ function VouchersPage({
 
         <div className="relative mt-3 rounded-full bg-slate-200 p-1 shadow-inner">
           <div
-            className="absolute bottom-1 top-1 rounded-full bg-[#2563EB] shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)] transition-all duration-300 ease-out"
+            className="absolute bottom-1 top-1 rounded-full bg-[#3A56C5] shadow-[0_8px_18px_-12px_rgba(51,69,143,0.9)] transition-all duration-300 ease-out"
             style={{
               left: `calc(${activeTabIndex * tabWidthPercent}% + 0.25rem)`,
               width: `calc(${tabWidthPercent}% - 0.5rem)`,
@@ -689,7 +689,7 @@ function VouchersPage({
               type="button"
               onClick={() => setQuickFilter(chip)}
               className={`inline-flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[12px] font-semibold transition ${quickFilter === chip
-                  ? 'bg-[#2563EB] text-white shadow-[0_10px_18px_-12px_rgba(30,64,175,0.95)]'
+                  ? 'bg-[#3A56C5] text-white shadow-[0_10px_18px_-12px_rgba(51,69,143,0.95)]'
                   : 'border border-slate-200 bg-white text-slate-700'
                 }`}
             >
@@ -723,7 +723,7 @@ function VouchersPage({
               type="button"
               onClick={() => setShowMobileTypePicker(true)}
               disabled={!canManage}
-              className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+              className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8]"
               aria-label="Create new voucher"
             >
               Create Voucher
@@ -780,7 +780,7 @@ function VouchersPage({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center rounded-full bg-[#eff6ff] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8] transition hover:bg-[#dbeafe]"
+          className="inline-flex items-center rounded-full bg-[#F2F4FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
         >
           &larr; Back to Marketing Centre
         </button>
@@ -796,7 +796,7 @@ function VouchersPage({
                   <button
                     type="button"
                     onClick={onRetry}
-                    className="inline-flex h-8 items-center rounded-md border border-[#2563EB] px-3 text-xs font-semibold text-[#2563EB]"
+                    className="inline-flex h-8 items-center rounded-md border border-[#3A56C5] px-3 text-xs font-semibold text-[#3A56C5]"
                   >
                     Retry
                   </button>
@@ -814,7 +814,7 @@ function VouchersPage({
           <h1 className="text-[28px] font-semibold text-slate-800">Create Voucher</h1>
           <p className="mt-1.5 text-sm text-slate-500">
             Create your own vouchers for your shop and products on Unleash.
-            <button type="button" className="ml-1 font-semibold text-[#2563EB] hover:underline">
+            <button type="button" className="ml-1 font-semibold text-[#3A56C5] hover:underline">
               Learn More
             </button>
           </p>
@@ -842,7 +842,7 @@ function VouchersPage({
 
           <button
             type="button"
-            className="mt-4 inline-flex w-full items-center justify-center border-t border-dashed border-slate-200 pt-3 text-sm font-medium text-[#2563EB]"
+            className="mt-4 inline-flex w-full items-center justify-center border-t border-dashed border-slate-200 pt-3 text-sm font-medium text-[#3A56C5]"
           >
             More Voucher Types for Specific Buyers
           </button>
@@ -856,7 +856,7 @@ function VouchersPage({
                 Data from 02-11-2026 (Wed) to 18-02-2026 (Wed) GMT+8
               </span>
             </h2>
-            <button type="button" className="text-sm font-medium text-[#2563EB]">
+            <button type="button" className="text-sm font-medium text-[#3A56C5]">
               More &gt;
             </button>
           </div>
@@ -897,12 +897,12 @@ function VouchersPage({
                   key={tab}
                   type="button"
                   onClick={() => setDesktopTab(tab)}
-                  className={`relative pb-2 text-sm font-medium transition ${active ? 'text-[#2563EB]' : 'text-slate-500 hover:text-[#2563EB]'
+                  className={`relative pb-2 text-sm font-medium transition ${active ? 'text-[#3A56C5]' : 'text-slate-500 hover:text-[#3A56C5]'
                     }`}
                 >
                   {tab}
                   {active ? (
-                    <span className="absolute -bottom-[9px] left-0 right-0 h-0.5 bg-[#2563EB]" />
+                    <span className="absolute -bottom-[9px] left-0 right-0 h-0.5 bg-[#3A56C5]" />
                   ) : null}
                 </button>
               )
@@ -912,7 +912,7 @@ function VouchersPage({
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
             <span className="text-sm text-slate-500">Search</span>
             <select
-              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-600 focus:border-[#93c5fd] focus:outline-none"
+              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-600 focus:border-[#B1C2EC] focus:outline-none"
               defaultValue="Voucher Name"
             >
               <option>Voucher Name</option>
@@ -922,11 +922,11 @@ function VouchersPage({
               value={desktopSearch}
               onChange={(event) => setDesktopSearch(event.target.value)}
               placeholder="Input"
-              className="h-9 min-w-[220px] rounded-md border border-slate-200 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+              className="h-9 min-w-[220px] rounded-md border border-slate-200 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
             />
             <button
               type="button"
-              className="inline-flex h-9 items-center rounded-md border border-[#2563EB] px-4 text-sm font-medium text-[#2563EB] transition hover:bg-[#eff6ff]"
+              className="inline-flex h-9 items-center rounded-md border border-[#3A56C5] px-4 text-sm font-medium text-[#3A56C5] transition hover:bg-[#F2F4FF]"
             >
               Search
             </button>
@@ -975,5 +975,6 @@ function VouchersPage({
 }
 
 export default VouchersPage
+
 
 

@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getDemoShopId,
@@ -51,6 +57,21 @@ function computeAddonDiscountedPrice(price: number, discountType: 'percentage' |
   return Math.max(price - discountValue, 0)
 }
 
+type AddonSuggestion = {
+  dealId: string
+  dealName: string
+  shopId: string
+  triggerProductId: string
+  triggerProductName: string
+  addonProductId: string
+  addonProductName: string
+  addonProductImage: string | null
+  addonProductPrice: number
+  discountedPrice: number
+  discountLabel: string
+  requiredQuantity: number
+}
+
 /* ------------------------------------------------------------------ */
 /*  Countdown timer hook                                               */
 /* ------------------------------------------------------------------ */
@@ -81,80 +102,66 @@ function useCountdown(endAt: string) {
 function FlashDealCard({
   deal,
   onAdd,
+  variant = 'compact',
 }: {
   deal: MarketplaceFlashDeal
   onAdd: (deal: MarketplaceFlashDeal) => void
+  variant?: 'featured' | 'compact'
 }) {
+  const isFeatured = variant === 'featured'
   const { h, m, s, expired } = useCountdown(deal.endAt)
-  const remaining = deal.flashQuantity - deal.soldQuantity
+  const remaining = Math.max(deal.flashQuantity - deal.soldQuantity, 0)
   const pct = deal.flashQuantity > 0 ? (deal.soldQuantity / deal.flashQuantity) * 100 : 0
   const off = discountPercent(deal.originalPrice, deal.flashPrice)
+  const savings = Math.max(deal.originalPrice - deal.flashPrice, 0)
 
   return (
-    <div className="group relative flex w-[220px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#111c3a] to-[#0a1228] shadow-[0_12px_36px_-12px_rgba(0,0,0,.6)] transition hover:border-white/20 hover:shadow-[0_16px_48px_-12px_rgba(80,120,255,.25)]">
-      {off > 0 && (
-        <span className="absolute left-2 top-2 z-10 rounded-lg bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-lg">
-          -{off}%
-        </span>
-      )}
-      <div className="relative h-[140px] w-full overflow-hidden bg-white/5">
+    <div className={`flex h-full flex-col rounded-2xl bg-white p-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,.4)] ring-1 ring-orange-100 ${isFeatured ? 'gap-3' : 'gap-2.5'}`}>
+      <div className={`relative overflow-hidden rounded-xl bg-orange-50 ${isFeatured ? 'h-36' : 'h-28'}`}>
         {deal.productImage ? (
-          <img
-            src={deal.productImage}
-            alt={deal.productName}
-            className="h-full w-full object-cover transition group-hover:scale-105"
-          />
+          <img src={deal.productImage} alt={deal.productName} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center text-3xl text-white/20">⚡</div>
+          <div className="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-[0.2em] text-orange-300">
+            Flash
+          </div>
         )}
+        {off > 0 && (
+          <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-[10px] font-bold text-white">
+            -{off}%
+          </span>
+        )}
+        <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
+          {expired ? 'Ended' : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`}
+        </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <h4 className="line-clamp-2 text-[13px] font-semibold leading-tight text-white/90">
-          {deal.productName}
-        </h4>
-        <span className="text-[10px] font-medium uppercase tracking-wider text-white/50">
-          {deal.shopName}
-        </span>
-
-        <div className="flex items-baseline gap-2">
-          <span className="text-base font-bold text-orange-400">{formatPrice(deal.flashPrice)}</span>
-          <span className="text-xs text-white/40 line-through">{formatPrice(deal.originalPrice)}</span>
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className={`line-clamp-2 font-semibold leading-tight text-slate-900 ${isFeatured ? 'text-base' : 'text-sm'}`}>
+            {deal.productName}
+          </h4>
+          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">Flash</span>
         </div>
 
-        {/* Stock progress */}
-        <div className="mt-auto">
-          <div className="mb-1 flex items-center justify-between text-[10px] text-white/50">
-            <span>{deal.soldQuantity} sold</span>
-            <span>{remaining} left</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-700"
-              style={{ width: `${Math.min(pct, 100)}%` }}
-            />
-          </div>
+        <div className="flex items-end gap-2">
+          <span className="text-lg font-extrabold text-orange-600">{formatPrice(deal.flashPrice)}</span>
+          <span className="pb-1 text-xs text-slate-400 line-through">{formatPrice(deal.originalPrice)}</span>
         </div>
-
-        {/* Timer */}
-        <div className="flex items-center justify-center gap-1 text-[11px] font-mono">
-          {expired ? (
-            <span className="text-red-400">Ended</span>
-          ) : (
-            <>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-white/80">{String(h).padStart(2, '0')}</span>
-              <span className="text-white/40">:</span>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-white/80">{String(m).padStart(2, '0')}</span>
-              <span className="text-white/40">:</span>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-white/80">{String(s).padStart(2, '0')}</span>
-            </>
-          )}
+        <div className="flex items-center justify-between text-[11px] text-slate-500">
+          <span>{deal.soldQuantity} sold</span>
+          <span>{remaining} left</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-orange-100">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700"
+            style={{ width: `${Math.min(pct, 100)}%` }}
+          />
         </div>
 
         <button
           onClick={() => onAdd(deal)}
           disabled={remaining <= 0 || expired}
-          className="mt-1 h-8 w-full rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-xs font-bold text-white shadow-[0_4px_16px_-4px_rgba(255,107,0,.6)] transition hover:brightness-110 active:scale-[.97] disabled:opacity-40"
+          className="mt-auto h-9 w-full rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(239,68,68,.6)] transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {remaining <= 0 ? 'Sold Out' : expired ? 'Ended' : 'Add to Cart'}
         </button>
@@ -162,7 +169,6 @@ function FlashDealCard({
     </div>
   )
 }
-
 /* ------------------------------------------------------------------ */
 /*  ProductCard                                                        */
 /* ------------------------------------------------------------------ */
@@ -170,13 +176,25 @@ function FlashDealCard({
 function ProductCard({
   product,
   onAdd,
+  isVoucherEligible,
+  isBundleItem,
 }: {
   product: MarketplaceProduct
   onAdd: (product: MarketplaceProduct) => void
+  isVoucherEligible: boolean
+  isBundleItem: boolean
 }) {
   const discPrice = computeDiscountedPrice(product)
   const hasDiscount = discPrice < product.price
   const off = hasDiscount ? discountPercent(product.price, discPrice) : 0
+  const savings = hasDiscount ? Math.max(product.price - discPrice, 0) : 0
+
+  const promoTags: Array<{ label: string; tone: 'flash' | 'voucher' | 'bundle' | 'discount' }> = []
+  if (product.flashDeal) promoTags.push({ label: 'Flash Deal', tone: 'flash' })
+  if (isVoucherEligible) promoTags.push({ label: 'Voucher Eligible', tone: 'voucher' })
+  if (isBundleItem) promoTags.push({ label: 'Bundle Item', tone: 'bundle' })
+  if (hasDiscount) promoTags.push({ label: 'Discounted', tone: 'discount' })
+
   const discountLabel = product.discount
     ? product.discount.discountType === 'percentage'
       ? `${product.discount.discountValue}% OFF`
@@ -186,54 +204,55 @@ function ProductCard({
       : ''
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_24px_-8px_rgba(0,0,0,.08)] transition hover:border-blue-200 hover:shadow-[0_8px_32px_-8px_rgba(37,99,235,.12)]">
-      {off > 0 && (
-        <span className="absolute left-2 top-2 z-10 rounded-lg bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white shadow">
-          -{off}%
-        </span>
-      )}
-      <div className="relative h-[160px] w-full overflow-hidden bg-slate-50">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_14px_30px_-26px_rgba(15,23,42,.4)] ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:ring-blue-200">
+      <div className="relative h-36 w-full overflow-hidden bg-slate-100">
         {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="h-full w-full object-cover transition group-hover:scale-105"
-          />
+          <img src={product.image} alt={product.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
         ) : (
-          <div className="flex h-full items-center justify-center text-4xl text-slate-200">📦</div>
-        )}
-        {product.flashDeal && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-orange-600/90 to-transparent px-2 pb-1 pt-4">
-            <span className="text-[10px] font-bold text-white">⚡ FLASH DEAL</span>
+          <div className="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+            No Image
           </div>
         )}
-      </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-blue-500">
-          {product.category}
-        </span>
-        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-          {product.shopName}
-        </span>
-        <h4 className="line-clamp-2 text-sm font-semibold text-slate-800">{product.name}</h4>
-        <div className="mt-auto flex items-baseline gap-2">
-          <span className={`text-base font-bold ${hasDiscount ? 'text-red-600' : 'text-slate-900'}`}>
-            {formatPrice(discPrice)}
+        {promoTags[0] && (
+          <span
+            className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+              promoTags[0].tone === 'flash'
+                ? 'bg-orange-500 text-white'
+                : promoTags[0].tone === 'voucher'
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : promoTags[0].tone === 'bundle'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-emerald-100 text-emerald-700'
+            }`}
+          >
+            {promoTags[0].label}
           </span>
-          {hasDiscount && (
-            <span className="text-xs text-slate-400 line-through">{formatPrice(product.price)}</span>
-          )}
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 px-3 pb-3 pt-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {product.category} • {product.shopName}
+        </p>
+        <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{product.name}</h4>
+
+        <div className="space-y-1">
+          <div className="flex items-end gap-2">
+            <span className={`text-lg font-bold ${hasDiscount ? 'text-red-600' : 'text-slate-900'}`}>
+              {formatPrice(discPrice)}
+            </span>
+            {hasDiscount && <span className="text-xs text-slate-400 line-through">{formatPrice(product.price)}</span>}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>{product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}</span>
+            {discountLabel && <span className="text-red-500">{discountLabel}</span>}
+          </div>
         </div>
-        {discountLabel ? (
-          <span className="text-[11px] font-medium text-red-500">Discount: {discountLabel}</span>
-        ) : null}
-        <span className="text-[11px] text-slate-400">
-          {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}
-        </span>
+
         <button
           onClick={() => onAdd(product)}
           disabled={product.quantity <= 0}
-          className="mt-2 h-9 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-semibold text-white shadow-[0_4px_16px_-4px_rgba(37,99,235,.5)] transition hover:brightness-110 active:scale-[.97] disabled:opacity-40"
+          className="mt-auto h-10 w-full rounded-xl bg-blue-600 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(37,99,235,.6)] transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
         </button>
@@ -241,7 +260,6 @@ function ProductCard({
     </div>
   )
 }
-
 /* ------------------------------------------------------------------ */
 /*  BundleCard                                                         */
 /* ------------------------------------------------------------------ */
@@ -255,48 +273,390 @@ function BundleCard({
 }) {
   const originalTotal = bundle.items.reduce((s, i) => s + i.productPrice * i.quantity, 0)
   const bundlePrice = bundle.price ?? originalTotal
-  const savings = originalTotal - bundlePrice
+  const savings = Math.max(originalTotal - bundlePrice, 0)
+  const itemCount = bundle.items.length
+  const heroItem = bundle.items[0] ?? null
+  const includedNames = bundle.items.slice(0, 2).map((item) => item.productName)
+  const remainingIncludedCount = Math.max(bundle.items.length - includedNames.length, 0)
+  const includedSummary =
+    includedNames.length === 0
+      ? 'Includes curated pet essentials.'
+      : includedNames.length === 1
+        ? `Includes ${includedNames[0]}.`
+        : includedNames.length === 2
+          ? `Includes ${includedNames[0]} and ${includedNames[1]}.`
+          : `Includes ${includedNames[0]}, ${includedNames[1]}, and ${includedNames[2]}.`
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-purple-200/60 bg-gradient-to-br from-purple-50 to-white shadow-[0_4px_24px_-8px_rgba(128,0,255,.1)]">
-      <div className="border-b border-purple-100 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
-        <h4 className="text-sm font-bold text-white">🎁 {bundle.name || 'Bundle Deal'}</h4>
-        {savings > 0 && (
-          <p className="text-xs text-purple-200">Save {formatPrice(savings)}</p>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-purple-500">
-          {bundle.shopName}
+    <div className="flex h-full flex-col gap-3 rounded-2xl bg-white p-3 shadow-[0_14px_30px_-26px_rgba(15,23,42,.4)] ring-1 ring-purple-100 transition hover:-translate-y-0.5 hover:ring-purple-200">
+      {/* Header */}
+      <div className="flex items-center gap-2 text-[11px] font-semibold text-purple-700">
+        <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-purple-700">
+          Bundle
         </span>
-        {bundle.items.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
-            <span className="flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-[10px] font-bold text-purple-600">
-              {item.quantity}x
-            </span>
-            <span className="flex-1 truncate">{item.productName}</span>
-            <span className="text-xs text-slate-400">{formatPrice(item.productPrice)}</span>
-          </div>
-        ))}
-        <div className="mt-auto border-t border-purple-100 pt-2">
-          <div className="flex items-baseline justify-between">
-            <span className="text-lg font-bold text-purple-700">{formatPrice(bundlePrice)}</span>
-            {savings > 0 && (
-              <span className="text-xs text-slate-400 line-through">{formatPrice(originalTotal)}</span>
+        <span className="text-slate-600">{itemCount > 0 ? `${itemCount} item${itemCount > 1 ? 's' : ''}` : 'Bundle'}</span>
+      </div>
+
+      {/* Body */}
+      <div className="flex gap-3">
+        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+          {heroItem?.productImage ? (
+            <img src={heroItem.productImage} alt={heroItem.productName} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+              Bundle
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{bundle.shopName}</p>
+          <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{bundle.name || 'Everyday Pet Essentials Bundle'}</h4>
+          <p className="line-clamp-2 text-xs text-slate-500">{includedSummary}</p>
+
+          <div className="flex flex-wrap gap-1 text-[11px] text-slate-600">
+            {includedNames.map((name, index) => (
+              <span key={`${bundle.id}-name-${index}`} className="max-w-[140px] truncate rounded-full bg-slate-100 px-2 py-0.5">
+                {name}
+              </span>
+            ))}
+            {remainingIncludedCount > 0 && (
+              <span className="rounded-full bg-purple-50 px-2 py-0.5 font-semibold text-purple-700">+{remainingIncludedCount}</span>
             )}
           </div>
         </div>
-        <button
-          onClick={() => onAdd(bundle)}
-          className="h-9 w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-xs font-semibold text-white shadow-[0_4px_16px_-4px_rgba(128,0,255,.4)] transition hover:brightness-110 active:scale-[.97]"
-        >
-          Add Bundle to Cart
-        </button>
       </div>
+
+      {/* Price area */}
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-baseline gap-2 text-slate-900">
+          <span className="text-xl font-extrabold text-purple-700">{formatPrice(bundlePrice)}</span>
+          <span className="text-xs text-slate-400 line-through">{formatPrice(originalTotal)}</span>
+        </div>
+        {savings > 0 && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+            Save {formatPrice(savings)}
+          </span>
+        )}
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={() => onAdd(bundle)}
+        className="h-10 w-full rounded-lg bg-purple-600 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(109,40,217,.5)] transition hover:brightness-110 active:scale-[.99]"
+      >
+        Add Bundle
+      </button>
     </div>
   )
 }
 
+function VoucherAvailabilityHint({ voucherCount }: { voucherCount: number }) {
+  const label =
+    voucherCount > 0
+      ? `${voucherCount} shop voucher${voucherCount > 1 ? 's' : ''} available at checkout`
+      : 'No shop vouchers currently active'
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-violet-200/80 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700">
+      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-violet-100 text-[10px] font-bold">
+        i
+      </span>
+      <span>{label}</span>
+    </div>
+  )
+}
+
+function ShopPromotionsHeader({
+  flashDealsCount,
+  bundlesCount,
+  vouchersCount,
+}: {
+  flashDealsCount: number
+  bundlesCount: number
+  vouchersCount: number
+}) {
+  return (
+    <section className="mb-5 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Store promos</p>
+          <h2 className="text-xl font-semibold text-slate-900">Shop Promotions</h2>
+          <p className="text-xs text-slate-500">Fresh offers curated for this storefront.</p>
+        </div>
+        <VoucherAvailabilityHint voucherCount={vouchersCount} />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+          <span className="h-2 w-2 rounded-full bg-orange-400" />
+          {flashDealsCount} Flash Deal{flashDealsCount === 1 ? '' : 's'}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
+          <span className="h-2 w-2 rounded-full bg-purple-400" />
+          {bundlesCount} Bundle{bundlesCount === 1 ? '' : 's'}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <span className="h-2 w-2 rounded-full bg-indigo-400" />
+          {vouchersCount} Voucher{vouchersCount === 1 ? '' : 's'}
+        </span>
+      </div>
+    </section>
+  )
+}
+
+function FeaturedFlashDeal({
+  deal,
+  voucherCount,
+  onAdd,
+}: {
+  deal: MarketplaceFlashDeal | null
+  voucherCount: number
+  onAdd: (deal: MarketplaceFlashDeal) => void
+}) {
+  const { h, m, s, expired } = useCountdown(deal?.endAt ?? '2099-01-01T00:00:00.000Z')
+  const off = deal ? discountPercent(deal.originalPrice, deal.flashPrice) : 0
+  const remaining = deal ? Math.max(deal.flashQuantity - deal.soldQuantity, 0) : 0
+  const soldPct = deal && deal.flashQuantity > 0 ? (deal.soldQuantity / deal.flashQuantity) * 100 : 0
+
+  return (
+    <section className="mb-6">
+      {deal ? (
+        <div className="flex gap-3 rounded-2xl bg-white p-4 shadow-[0_16px_32px_-26px_rgba(15,23,42,.35)] ring-1 ring-orange-100">
+          <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl bg-orange-50">
+            {deal.productImage ? (
+              <img src={deal.productImage} alt={deal.productName} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-[0.2em] text-orange-300">
+                Deal
+              </div>
+            )}
+            {off > 0 && (
+              <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-[10px] font-bold text-white">
+                -{off}%
+              </span>
+            )}
+            <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
+              {expired ? 'Ended' : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`}
+            </span>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-500">Featured Flash Deal</p>
+                <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900">{deal.productName}</h3>
+              </div>
+              <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-semibold text-violet-700">
+                {voucherCount} voucher{voucherCount === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-extrabold text-orange-600">{formatPrice(deal.flashPrice)}</span>
+              <span className="pb-1 text-xs text-slate-400 line-through">{formatPrice(deal.originalPrice)}</span>
+              {off > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">Save {off}%</span>}
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-slate-600">
+              <span>{deal.soldQuantity} sold</span>
+              <span>{remaining} left</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-orange-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700"
+                style={{ width: `${Math.min(soldPct, 100)}%` }}
+              />
+            </div>
+
+            <button
+              onClick={() => onAdd(deal)}
+              disabled={remaining <= 0 || expired}
+              className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-12px_rgba(239,68,68,.7)] transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {remaining <= 0 ? 'Sold Out' : expired ? 'Deal Ended' : 'Add to Cart'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">No active flash deal right now.</div>
+      )}
+    </section>
+  )
+}
+
+function FlashDealsSection({
+  deals,
+  onAdd,
+}: {
+  deals: MarketplaceFlashDeal[]
+  onAdd: (deal: MarketplaceFlashDeal) => void
+}) {
+  const initialLimit = 4
+  const [showAll, setShowAll] = useState(false)
+  const visibleDeals = showAll ? deals : deals.slice(0, initialLimit)
+  const canExpand = deals.length > initialLimit
+
+  return (
+    <section className="mb-8 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-slate-900">Flash Deals</h3>
+        <button
+          type="button"
+          onClick={() => setShowAll((prev) => !prev)}
+          disabled={!canExpand}
+          className={`text-xs font-semibold transition ${canExpand ? 'text-orange-600' : 'text-slate-400'}`}
+        >
+          {showAll ? 'Show less' : canExpand ? `View all (${deals.length})` : 'All shown'}
+        </button>
+      </div>
+
+      {deals.length === 0 ? (
+        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">No other flash deals right now.</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {visibleDeals.map((deal) => (
+            <FlashDealCard key={deal.id} deal={deal} onAdd={onAdd} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function BundleDealsSection({
+  bundles,
+  onAdd,
+}: {
+  bundles: MarketplaceBundle[]
+  onAdd: (bundle: MarketplaceBundle) => void
+}) {
+  const initialLimit = 4
+  const [showAll, setShowAll] = useState(false)
+  const visibleBundles = showAll ? bundles : bundles.slice(0, initialLimit)
+  const canExpand = bundles.length > initialLimit
+
+  return (
+    <section className="mb-8 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-slate-900">Bundle Deals</h3>
+        <button
+          type="button"
+          onClick={() => setShowAll((prev) => !prev)}
+          disabled={!canExpand}
+          className={`text-xs font-semibold transition ${canExpand ? 'text-purple-700' : 'text-slate-400'}`}
+        >
+          {showAll ? 'Show less' : canExpand ? `View all (${bundles.length})` : 'All shown'}
+        </button>
+      </div>
+
+      {bundles.length === 0 ? (
+        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">No bundle deals right now.</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {visibleBundles.map((bundle) => (
+            <BundleCard key={bundle.id} bundle={bundle} onAdd={onAdd} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function VouchersSection({
+  vouchers,
+  onSelect,
+}: {
+  vouchers: MarketplaceVoucher[]
+  onSelect: (code: string) => void
+}) {
+  return (
+    <section className="mb-8 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Vouchers</h3>
+        <span className="text-xs font-semibold text-slate-500">{vouchers.length} available</span>
+      </div>
+
+      {vouchers.length === 0 ? (
+        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">No vouchers right now.</div>
+      ) : (
+        <div className="space-y-2">
+          {vouchers.map((voucher) => {
+            const discountLabel =
+              voucher.discountType === 'percentage'
+                ? `${voucher.discountValue}% off${voucher.maxDiscount ? ` (max ${formatPrice(voucher.maxDiscount)})` : ''}`
+                : `${formatPrice(voucher.discountValue)} off`
+            const remaining = voucher.usageLimit ? Math.max(voucher.usageLimit - voucher.usedCount, 0) : null
+
+            return (
+              <div
+                key={voucher.id}
+                className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,.4)] ring-1 ring-indigo-50"
+              >
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-sm font-semibold text-slate-900">{voucher.name || voucher.code}</p>
+                  <p className="text-xs font-semibold text-indigo-600">{discountLabel}</p>
+                  <p className="text-[11px] text-slate-500">
+                    Min spend {formatPrice(voucher.minSpend)} {remaining !== null ? `• ${remaining} left` : '• Unlimited'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onSelect(voucher.code)}
+                  className="h-9 flex-shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(79,70,229,.55)] transition hover:brightness-110 active:scale-[.99]"
+                >
+                  Apply
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ProductBrowseSection({
+  title,
+  subtitle,
+  products,
+  onAdd,
+  voucherEligibleShopIds,
+  bundleProductIds,
+}: {
+  title: string
+  subtitle: string
+  products: MarketplaceProduct[]
+  onAdd: (product: MarketplaceProduct) => void
+  voucherEligibleShopIds: Set<string>
+  bundleProductIds: Set<string>
+}) {
+  return (
+    <section className="mb-8">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <p className="text-xs text-slate-500">{subtitle}</p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">
+          {products.length} items
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAdd={onAdd}
+            isVoucherEligible={voucherEligibleShopIds.has(product.shopId)}
+            isBundleItem={bundleProductIds.has(product.id)}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
 /* ------------------------------------------------------------------ */
 /*  CartDrawer                                                         */
 /* ------------------------------------------------------------------ */
@@ -517,9 +877,9 @@ function OrderDetailsModal({
   onConfirm: () => void
   isCheckingOut: boolean
 }) {
+  const [showVouchers, setShowVouchers] = useState(false)
   if (!open) return null
 
-  const [showVouchers, setShowVouchers] = useState(false)
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
   const discounts = items.reduce((s, i) => s + (i.originalPrice - i.price) * i.quantity, 0)
   const total = Math.max(subtotal - voucherDiscount, 0)
@@ -818,38 +1178,6 @@ function CheckoutSuccessModal({
 }
 
 /* ------------------------------------------------------------------ */
-/*  VoucherBadge (buyer can see available vouchers)                     */
-/* ------------------------------------------------------------------ */
-
-function VoucherBadge({ voucher }: { voucher: MarketplaceVoucher }) {
-  const discLabel =
-    voucher.discountType === 'percentage'
-      ? `${voucher.discountValue}% OFF`
-      : `\u20B1${voucher.discountValue} OFF`
-
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-dashed border-orange-300 bg-orange-50 px-4 py-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-lg">🏷️</div>
-      <div className="flex-1">
-        <p className="text-sm font-bold text-orange-700">{discLabel}</p>
-        <p className="text-[10px] font-medium uppercase tracking-wider text-orange-500/80">
-          {voucher.shopName}
-        </p>
-        <p className="text-xs text-orange-500">
-          Code: <span className="font-mono font-bold">{voucher.code}</span>
-          {voucher.minSpend > 0 && ` · Min. spend \u20B1${voucher.minSpend}`}
-        </p>
-      </div>
-      <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[10px] font-semibold text-orange-600">
-        {(voucher.usageLimit ?? 0) - voucher.usedCount > 0
-          ? `${(voucher.usageLimit ?? 0) - voucher.usedCount} left`
-          : 'Active'}
-      </span>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 /*  Main ShopDemoPage                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -888,11 +1216,11 @@ function ShopDemoPage() {
   // Filter
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
+  const [showSearchBar, setShowSearchBar] = useState(false)
+  const [activePromoTab, setActivePromoTab] = useState<'all' | 'flash' | 'bundles' | 'vouchers'>('all')
 
   // Reset
   const [isResetting, setIsResetting] = useState(false)
-
-  const flashScrollRef = useRef<HTMLDivElement>(null)
 
   const categories = useMemo(() => {
     const cats = new Set(products.map((p) => p.category))
@@ -907,6 +1235,19 @@ function ShopDemoPage() {
     })
   }, [products, activeCategory, search])
 
+  const featuredFlashDeal = flashDeals[0] ?? null
+  const secondaryFlashDeals = featuredFlashDeal ? flashDeals.slice(1) : flashDeals
+  const voucherEligibleShopIds = useMemo(() => new Set(vouchers.map((voucher) => voucher.shopId)), [vouchers])
+  const bundleProductIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const bundle of bundles) {
+      for (const item of bundle.items) {
+        ids.add(item.productId)
+      }
+    }
+    return ids
+  }, [bundles])
+
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
   const cartShopLabel = useMemo(() => {
     if (cart.length === 0) return null
@@ -916,6 +1257,21 @@ function ShopDemoPage() {
     const shop = products.find((p) => p.shopId === shopId)
     return shop?.shopName ?? shopId
   }, [cart, products])
+
+  const promoTabs: Array<{ key: typeof activePromoTab; label: string; count: number }> = useMemo(
+    () => [
+      { key: 'all', label: 'All', count: flashDeals.length + bundles.length + vouchers.length },
+      { key: 'flash', label: 'Flash Deals', count: flashDeals.length },
+      { key: 'bundles', label: 'Bundles', count: bundles.length },
+      { key: 'vouchers', label: 'Vouchers', count: vouchers.length },
+    ],
+    [flashDeals.length, bundles.length, vouchers.length],
+  )
+
+  const handleVoucherPrefill = (code: string) => {
+    setVoucherCode(code)
+    setShowOrderDetails(true)
+  }
 
   const addonSuggestions = useMemo<AddonSuggestion[]>(() => {
     if (addonDeals.length === 0 || cart.length === 0) return []
@@ -1212,10 +1568,10 @@ function ShopDemoPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fc]">
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f6f1]">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-          <p className="text-sm text-slate-500">Loading marketplace…</p>
+          <p className="text-sm text-slate-500">Loading marketplace...</p>
         </div>
       </div>
     )
@@ -1223,7 +1579,7 @@ function ShopDemoPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fc] p-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f6f1] p-4">
         <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <p className="text-red-500">{error}</p>
           <button
@@ -1238,127 +1594,146 @@ function ShopDemoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fc]">
+    <div className="min-h-screen bg-[#f8f6f1]">
       {/* ===== Top Header ===== */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4 sm:px-6">
-          <img src="/Asset/unleash_logo.png" alt="Unleash" className="h-8 w-8 object-contain" />
-          <h1 className="text-lg font-bold text-slate-800">
-            Unleash <span className="font-normal text-slate-400">Marketplace</span>
-          </h1>
-
-          {/* Search */}
-          <div className="ml-auto flex max-w-xs flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-slate-400">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-            />
+      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 backdrop-blur">
+        <div className="mx-auto max-w-[720px] px-4">
+          <div className="flex h-14 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Back"
+              onClick={() => navigate(-1)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 19L8 12L15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <img src="/Asset/unleash_logo.png" alt="Unleash" className="h-7 w-7 object-contain" />
+              <span className="text-sm font-semibold text-slate-800">Unleash Store</span>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Search"
+                onClick={() => setShowSearchBar((prev) => !prev)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCartOpen(true)}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6H22L20 14H8L6 6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M6 6L4 2H1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <circle cx="9" cy="20" r="1.5" fill="currentColor" />
+                  <circle cx="19" cy="20" r="1.5" fill="currentColor" />
+                </svg>
+                {cartCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={async () => {
+                  if (isLoggingOut) return
+                  setIsLoggingOut(true)
+                  await supabase.auth.signOut()
+                  setIsLoggingOut(false)
+                  navigate('/', { replace: true })
+                }}
+                disabled={isLoggingOut}
+                aria-label="Logout"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 disabled:opacity-60"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
           </div>
-
-          {/* Cart button */}
-          <button
-            onClick={() => setCartOpen(true)}
-            className="relative ml-2 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6H22L20 14H8L6 6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-              <path d="M6 6L4 2H1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="9" cy="20" r="1.5" fill="currentColor" />
-              <circle cx="19" cy="20" r="1.5" fill="currentColor" />
-            </svg>
-            {cartCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
-                {cartCount}
-              </span>
-            )}
-          </button>
-
-          {/* Back button */}
-          <button
-            onClick={async () => {
-              if (isLoggingOut) return
-              setIsLoggingOut(true)
-              await supabase.auth.signOut()
-              setIsLoggingOut(false)
-              navigate('/', { replace: true })
-            }}
-            disabled={isLoggingOut}
-            className="hidden h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-600 transition hover:border-red-200 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60 sm:flex"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            {isLoggingOut ? 'Logging out...' : 'Logout'}
-          </button>
+          <div className={`${showSearchBar ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden transition-all duration-200`}>
+            <div className="mb-3 flex items-center gap-2 rounded-full bg-slate-100 px-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-slate-400">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              />
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-6 sm:px-6">
-        {/* ===== Flash Deals ===== */}
-        {flashDeals.length > 0 && (
-          <section className="mb-10">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-8 items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-3">
-                <span className="text-sm">⚡</span>
-                <span className="text-xs font-bold text-white">FLASH DEALS</span>
-              </div>
-              <div className="h-px flex-1 bg-gradient-to-r from-orange-200 to-transparent" />
-            </div>
-            <div
-              ref={flashScrollRef}
-              className="scrollbar-hide -mx-4 flex gap-4 overflow-x-auto px-4 pb-2"
-            >
-              {flashDeals.map((deal) => (
-                <FlashDealCard key={deal.id} deal={deal} onAdd={addFlashDealToCart} />
-              ))}
-            </div>
-          </section>
+      <main className="mx-auto max-w-[720px] px-4 pb-24 pt-4 sm:px-5">
+        <ShopPromotionsHeader
+          flashDealsCount={flashDeals.length}
+          bundlesCount={bundles.length}
+          vouchersCount={vouchers.length}
+        />
+
+        <FeaturedFlashDeal deal={featuredFlashDeal} voucherCount={vouchers.length} onAdd={addFlashDealToCart} />
+
+        <div className="sticky top-[56px] z-30 mb-4 bg-white/95 pb-3 backdrop-blur">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {promoTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActivePromoTab(tab.key)}
+                className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  activePromoTab === tab.key
+                    ? 'bg-slate-900 text-white shadow-[0_10px_24px_-16px_rgba(15,23,42,.55)]'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {tab.label}{' '}
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/20 px-1 text-[10px]">
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {(activePromoTab === 'all' || activePromoTab === 'flash') && (
+          <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
         )}
 
-        {/* ===== Available Vouchers ===== */}
-        {vouchers.length > 0 && (
-          <section className="mb-10">
-            <h2 className="mb-3 text-sm font-bold text-slate-700">🏷️ Available Vouchers</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {vouchers.slice(0, 6).map((v) => (
-                <VoucherBadge key={v.id} voucher={v} />
-              ))}
-            </div>
-          </section>
+        {(activePromoTab === 'all' || activePromoTab === 'bundles') && (
+          <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
         )}
 
-        {/* ===== Bundles ===== */}
-        {bundles.length > 0 && (
-          <section className="mb-10">
-            <h2 className="mb-3 text-sm font-bold text-slate-700">🎁 Bundle Deals</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {bundles.map((b) => (
-                <BundleCard key={b.id} bundle={b} onAdd={addBundleToCart} />
-              ))}
+        <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Shop by category</h2>
+              <p className="text-xs text-slate-500">Tap a category or browse all.</p>
             </div>
-          </section>
-        )}
-
-        {/* ===== Category tabs ===== */}
-        <section className="mb-6">
-          <div className="scrollbar-hide -mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
+            <span className="text-xs font-semibold text-slate-500">{filteredProducts.length} items</span>
+          </div>
+          <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                className={`flex-shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
                   activeCategory === cat
-                    ? 'bg-blue-600 text-white shadow-[0_2px_8px_-2px_rgba(37,99,235,.5)]'
-                    : 'bg-white text-slate-600 hover:bg-slate-100'
+                    ? 'bg-indigo-600 text-white shadow-[0_10px_24px_-14px_rgba(79,70,229,.6)]'
+                    : 'bg-slate-100 text-slate-700'
                 }`}
               >
                 {cat}
@@ -1367,23 +1742,20 @@ function ShopDemoPage() {
           </div>
         </section>
 
-        {/* ===== Product Grid ===== */}
-        <section>
-          <h2 className="mb-4 text-sm font-bold text-slate-700">
-            All Products {activeCategory !== 'All' && `· ${activeCategory}`}
-          </h2>
-          {filteredProducts.length === 0 ? (
-            <div className="rounded-2xl bg-white py-16 text-center text-slate-400 shadow-sm">
-              <p className="text-sm">No products found.</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAdd={addProductToCart} />
-              ))}
-            </div>
-          )}
-        </section>
+        {filteredProducts.length === 0 ? (
+          <section className="rounded-2xl bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            No products match this filter.
+          </section>
+        ) : (
+          <ProductBrowseSection
+            title={activeCategory === 'All' ? 'All products' : activeCategory}
+            subtitle={activeCategory === 'All' ? 'Fresh picks from this shop.' : 'Matching products from this category.'}
+            products={filteredProducts}
+            onAdd={addProductToCart}
+            voucherEligibleShopIds={voucherEligibleShopIds}
+            bundleProductIds={bundleProductIds}
+          />
+        )}
       </main>
 
       {/* ===== Cart Drawer ===== */}
@@ -1437,17 +1809,17 @@ function ShopDemoPage() {
       />
 
       {/* ===== Floating Actions ===== */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+      <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={handleReset}
           disabled={isResetting}
-          className="flex h-12 items-center gap-2 rounded-2xl bg-white px-5 text-xs font-semibold text-slate-600 shadow-[0_8px_30px_-8px_rgba(0,0,0,.2)] ring-1 ring-slate-200/80 transition hover:ring-blue-300 hover:text-blue-600 disabled:opacity-50"
+          className="flex h-11 items-center gap-2 rounded-full bg-white px-4 text-xs font-semibold text-slate-700 shadow-[0_10px_26px_-12px_rgba(0,0,0,.25)] ring-1 ring-slate-200/80 transition hover:ring-blue-300 hover:text-blue-600 disabled:opacity-50"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M3.51 15A9 9 0 1 0 5.64 5.64L1 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {isResetting ? 'Resetting…' : 'Reset Demo'}
+          {isResetting ? 'Resetting...' : 'Reset Demo'}
         </button>
       </div>
     </div>
@@ -1455,8 +1827,6 @@ function ShopDemoPage() {
 }
 
 export default ShopDemoPage
-
-
 
 
 

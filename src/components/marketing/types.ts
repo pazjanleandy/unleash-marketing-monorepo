@@ -16,6 +16,7 @@ export type IconName =
   | 'top'
 
 export type ToolTone = 'blue' | 'mint' | 'amber'
+export type ToolPriority = 'primary' | 'secondary' | 'tertiary'
 
 export type ToolCard = {
   id?: string
@@ -23,9 +24,15 @@ export type ToolCard = {
   description: string
   icon: IconName
   tone: ToolTone
+  status?: string
+  priority?: ToolPriority
+  badge?: string
+  hasActiveCampaigns?: boolean
+  isOptional?: boolean
 }
 
 export type ToolSection = {
   title: string
+  description?: string
   tools: ToolCard[]
 }

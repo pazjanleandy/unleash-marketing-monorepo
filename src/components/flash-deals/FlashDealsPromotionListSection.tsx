@@ -377,7 +377,7 @@ function SwipeablePromotionCard({
           <button
             type="button"
             onClick={handlePrimaryAction}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#2563EB] px-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-[#3347A8] bg-[#3A56C5] px-3 text-sm font-semibold text-white transition active:scale-[0.98]"
           >
             {primaryActionLabel}
           </button>
@@ -432,10 +432,10 @@ function FlashDealDetailsPopover({
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#dbeafe] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
+      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#E6EBFF] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#1d4ed8]">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#3347A8]">
               Flash Deal Details
             </p>
             <h3 className="mt-1 text-lg font-semibold text-slate-900">{row.productName}</h3>
@@ -570,10 +570,10 @@ function FlashDealEditPopover({
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#dbeafe] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
+      <article className="relative z-10 w-full max-w-lg rounded-2xl border border-[#E6EBFF] bg-white p-5 shadow-[0_24px_50px_-25px_rgba(15,23,42,0.45)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#1d4ed8]">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#3347A8]">
               Edit Flash Deal
             </p>
             <h3 className="mt-1 text-lg font-semibold text-slate-900">{row.productName}</h3>
@@ -602,7 +602,7 @@ function FlashDealEditPopover({
               type="datetime-local"
               value={startAt}
               onChange={(event) => setStartAt(event.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
             />
           </label>
           <label className="text-sm text-slate-600">
@@ -611,7 +611,7 @@ function FlashDealEditPopover({
               type="datetime-local"
               value={endAt}
               onChange={(event) => setEndAt(event.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
             />
           </label>
           <label className="text-sm text-slate-600">
@@ -623,7 +623,7 @@ function FlashDealEditPopover({
               step={0.01}
               value={discountPercent}
               onChange={(event) => setDiscountPercent(event.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
             />
           </label>
           <label className="text-sm text-slate-600">
@@ -634,7 +634,7 @@ function FlashDealEditPopover({
               step={1}
               value={flashQuantity}
               onChange={(event) => setFlashQuantity(event.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 focus:border-[#B1C2EC] focus:outline-none"
             />
           </label>
           <label className="text-sm text-slate-600 sm:col-span-2">
@@ -646,7 +646,7 @@ function FlashDealEditPopover({
               value={purchaseLimit}
               onChange={(event) => setPurchaseLimit(event.target.value)}
               placeholder="No limit"
-              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#93c5fd] focus:outline-none"
+              className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#B1C2EC] focus:outline-none"
             />
           </label>
         </div>
@@ -664,7 +664,7 @@ function FlashDealEditPopover({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={isSaving}
-            className="inline-flex h-9 items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
@@ -866,11 +866,11 @@ function FlashDealsPromotionListSection({
 
     return normalized === 'delete' || normalized === 'end'
       ? 'text-[#dc4f1f] hover:text-[#c2410c]'
-      : 'text-[#2563EB] hover:text-[#1d4ed8]'
+      : 'text-[#3A56C5] hover:text-[#3347A8]'
   }
 
   return (
-    <article className="bg-transparent pb-28 sm:rounded-2xl sm:border sm:border-[#dbeafe] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(37,99,235,0.8)]">
+    <article className="bg-transparent pb-28 sm:rounded-2xl sm:border sm:border-[#E6EBFF] sm:bg-white sm:p-5 sm:shadow-[0_14px_30px_-28px_rgba(58,86,197,0.8)]">
       {actionError ? (
         <p className="mb-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-sm text-[#b91c1c]">
           {actionError}
@@ -879,7 +879,7 @@ function FlashDealsPromotionListSection({
       <div className="hidden sm:block">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[#1E40AF] sm:text-xl">Promotion List</h2>
+            <h2 className="text-lg font-semibold text-[#33458F] sm:text-xl">Promotion List</h2>
             <p className="mt-0.5 text-sm text-slate-600">
               Run your own Flash Deals in your shop&apos;s page to boost sales.
             </p>
@@ -889,7 +889,7 @@ function FlashDealsPromotionListSection({
             <button
               type="button"
               onClick={() => onCreate?.()}
-              className="inline-flex h-9 items-center rounded-md bg-[#2563EB] px-3.5 text-xs font-semibold text-white transition hover:bg-[#1d4ed8]"
+              className="inline-flex h-9 items-center rounded-md bg-[#3A56C5] px-3.5 text-xs font-semibold text-white transition hover:bg-[#3347A8]"
             >
               + Create
             </button>
@@ -897,9 +897,9 @@ function FlashDealsPromotionListSection({
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[1080px] w-full border-separate border-spacing-0 rounded-xl border border-[#dbeafe] bg-white">
+          <table className="min-w-[1080px] w-full border-separate border-spacing-0 rounded-xl border border-[#E6EBFF] bg-white">
             <thead>
-              <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-[#1d4ed8]">
+              <tr className="bg-[#f8fbff] text-left text-xs uppercase tracking-wide text-[#3347A8]">
                 <th className="px-3 py-3 font-semibold">Time Slot</th>
                 <th className="px-3 py-3 font-semibold">Products</th>
                 <th className="px-3 py-3 font-semibold">No. of Reminders Set</th>
@@ -983,7 +983,7 @@ function FlashDealsPromotionListSection({
                   onClick={() => setActiveTab(tab)}
                   className={`inline-flex h-10 items-center justify-center rounded-full px-2 text-[15px] font-semibold transition-colors ${
                     active
-                      ? 'bg-[#2563EB] text-white shadow-[0_8px_18px_-12px_rgba(30,64,175,0.9)]'
+                      ? 'bg-[#3A56C5] text-white shadow-[0_8px_18px_-12px_rgba(51,69,143,0.9)]'
                       : 'text-slate-600'
                   }`}
                 >
@@ -1047,7 +1047,7 @@ function FlashDealsPromotionListSection({
                   onClick={() => setDatePreset(option.id as DatePreset)}
                   className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${
                     datePreset === option.id
-                      ? 'bg-[#eff6ff] font-semibold text-[#1d4ed8]'
+                      ? 'bg-[#F2F4FF] font-semibold text-[#3347A8]'
                       : 'text-slate-700'
                   }`}
                 >
@@ -1065,7 +1065,7 @@ function FlashDealsPromotionListSection({
                 className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700"
               >
                 <span className="truncate">{customDate || 'Select custom date'}</span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#1d4ed8]">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#3347A8]">
                   Pick
                 </span>
               </button>
@@ -1119,7 +1119,7 @@ function FlashDealsPromotionListSection({
               <button
                 type="button"
                 onClick={() => onCreate?.()}
-                className="mx-12 mt-4 inline-flex h-11 w-[calc(100%-6rem)] items-center justify-center rounded-xl bg-[#2563EB] text-sm font-semibold text-white"
+                className="mx-12 mt-4 inline-flex h-11 w-[calc(100%-6rem)] items-center justify-center rounded-xl bg-[#3A56C5] text-sm font-semibold text-white"
               >
                 + Create Flash Deal
               </button>
@@ -1162,3 +1162,4 @@ function FlashDealsPromotionListSection({
 }
 
 export default FlashDealsPromotionListSection
+

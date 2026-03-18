@@ -12,10 +12,18 @@ function ToolSectionBlock({
   sectionIndex,
   onToolSelect,
 }: ToolSectionBlockProps) {
+  const isPrimaryGroup = section.title === 'Promotion Tools'
+
   return (
     <div>
-      <h3 className="text-xl font-semibold text-slate-800">{section.title}</h3>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 className={`font-bold tracking-tight ${isPrimaryGroup ? 'text-[28px] text-slate-800' : 'text-[24px] text-slate-800'}`}>
+            {section.title}
+          </h3>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-3 lg:grid-cols-3">
         {section.tools.map((tool, toolIndex) => (
           <ToolCardItem
             key={tool.title}

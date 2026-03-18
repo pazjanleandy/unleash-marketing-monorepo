@@ -49,7 +49,7 @@ function SegmentedOption({ checked, label, name, onSelect }: SegmentedOptionProp
         onChange={onSelect}
         className="peer sr-only"
       />
-      <span className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#d1d9e6] bg-white px-3 text-[14px] font-medium text-slate-700 transition peer-checked:border-[#2563EB] peer-checked:bg-[#eff6ff] peer-checked:text-[#1d4ed8] peer-focus-visible:ring-2 peer-focus-visible:ring-[#93c5fd] peer-focus-visible:ring-offset-1">
+      <span className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#d1d9e6] bg-white px-3 text-[14px] font-medium text-slate-700 transition peer-checked:border-[#3A56C5] peer-checked:bg-[#F2F4FF] peer-checked:text-[#3347A8] peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
         {label}
       </span>
     </label>
@@ -375,8 +375,8 @@ function RewardSettingsCard({
                 onClick={() => setActivePickerField('startDateTime')}
                 className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
                   activePickerField === 'startDateTime'
-                    ? 'border-[#2563EB] bg-[#eff6ff]'
-                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                    ? 'border-[#3A56C5] bg-[#F2F4FF]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#B1C2EC]'
                 }`}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -393,8 +393,8 @@ function RewardSettingsCard({
                 onClick={() => setActivePickerField('endDateTime')}
                 className={`flex min-h-11 flex-col items-start justify-center rounded-md border px-3 text-left transition ${
                   activePickerField === 'endDateTime'
-                    ? 'border-[#2563EB] bg-[#eff6ff]'
-                    : 'border-[#cbd5e1] bg-white hover:border-[#93c5fd]'
+                    ? 'border-[#3A56C5] bg-[#F2F4FF]'
+                    : 'border-[#cbd5e1] bg-white hover:border-[#B1C2EC]'
                 }`}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -431,3 +431,4 @@ function RewardSettingsCard({
 }
 
 export default RewardSettingsCard
+

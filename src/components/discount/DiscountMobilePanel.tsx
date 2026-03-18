@@ -220,7 +220,7 @@ function DiscountMobilePanel({
                 >
                   {status}
                   {isActive ? (
-                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#2563EB]" />
+                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#3A56C5]" />
                   ) : null}
                 </button>
               )
@@ -273,7 +273,7 @@ function DiscountMobilePanel({
         <button
           type="button"
           onClick={() => setIsCreateChoiceOpen((previous) => !previous)}
-          className="inline-flex h-11 w-full items-center justify-center rounded-md bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+          className="inline-flex h-11 w-full items-center justify-center rounded-md bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8]"
         >
           Create New Discount
         </button>
@@ -283,3 +283,4 @@ function DiscountMobilePanel({
 }
 
 export default DiscountMobilePanel
+
