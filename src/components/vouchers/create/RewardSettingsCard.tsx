@@ -100,6 +100,50 @@ function CurrencyInput({
   )
 }
 
+type PercentageInputProps = {
+  id?: string
+  value: string
+  onChange: (value: string) => void
+  ariaLabel: string
+  placeholder?: string
+  invalid?: boolean
+}
+
+function PercentageInput({
+  id,
+  value,
+  onChange,
+  ariaLabel,
+  placeholder,
+  invalid = false,
+}: PercentageInputProps) {
+  return (
+    <div
+      className={`flex h-11 w-full items-center rounded-md border bg-white px-3 focus-within:border-[#64748b] ${
+        invalid ? 'border-[#fca5a5]' : 'border-[#b8c2d3]'
+      }`}
+    >
+      <input
+        id={id}
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        aria-invalid={invalid}
+        className="w-full border-0 bg-transparent text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+      />
+      <span
+        aria-hidden="true"
+        className="ml-2 select-none text-[14px] font-medium text-slate-600"
+      >
+        %
+      </span>
+    </div>
+  )
+}
+
 type VoucherDateTimeField = 'startDateTime' | 'endDateTime'
 
 function fromLocalDateTimeInputValue(value: string) {
@@ -265,30 +309,39 @@ function RewardSettingsCard({
               name={rewardTypeGroupName}
               onSelect={() => handleRewardTypeChange('discount')}
             />
-            <SegmentedOption
-              checked={value.rewardType === 'coins-cashback'}
-              label="Coins Cashback"
-              name={rewardTypeGroupName}
-              onSelect={() => handleRewardTypeChange('coins-cashback')}
-            />
           </div>
         </fieldset>
 
         <div className="space-y-4 rounded-lg bg-slate-50/90 p-3 sm:p-4">
-          <FieldRow label="Discount">
-            <div className="grid gap-3 md:grid-cols-[170px_minmax(0,1fr)]">
-              <select
-                id={fieldIds?.discountType}
-                value={value.discountType}
-                onChange={(event) =>
-                  handleDiscountTypeChange(event.target.value as DiscountType)
-                }
-                aria-label="Discount type"
-                className="h-11 w-full rounded-md border border-[#b8c2d3] bg-white px-3 text-[14px] text-slate-800 focus:border-[#64748b] focus:outline-none"
-              >
-                <option value="fixed-amount">Fix Amount</option>
-                <option value="percentage">Percentage</option>
-              </select>
+          <FieldRow label="Discount Type" error={fieldErrors?.discountType}>
+            <select
+              id={fieldIds?.discountType}
+              value={value.discountType}
+              onChange={(event) =>
+                handleDiscountTypeChange(event.target.value as DiscountType)
+              }
+              aria-label="Discount type"
+              aria-invalid={Boolean(fieldErrors?.discountType)}
+              className={`h-11 w-full rounded-md border bg-white px-3 text-[14px] text-slate-800 focus:border-[#64748b] focus:outline-none ${
+                fieldErrors?.discountType ? 'border-[#fca5a5]' : 'border-[#b8c2d3]'
+              }`}
+            >
+              <option value="fixed-amount">Fix Amount</option>
+              <option value="percentage">Percentage</option>
+            </select>
+          </FieldRow>
+
+          <FieldRow label="Discount" error={fieldErrors?.discountAmount}>
+            {value.discountType === 'percentage' ? (
+              <PercentageInput
+                id={fieldIds?.discountAmount}
+                value={value.discountAmount}
+                onChange={(nextValue) => setField('discountAmount', nextValue)}
+                ariaLabel="Discount percentage"
+                placeholder="10"
+                invalid={Boolean(fieldErrors?.discountAmount)}
+              />
+            ) : (
               <CurrencyInput
                 id={fieldIds?.discountAmount}
                 value={value.discountAmount}
@@ -297,12 +350,7 @@ function RewardSettingsCard({
                 placeholder="20.00"
                 invalid={Boolean(fieldErrors?.discountAmount)}
               />
-            </div>
-            {fieldErrors?.discountAmount ? (
-              <p className="mt-1.5 text-[13px] text-[#b91c1c]">
-                {fieldErrors.discountAmount}
-              </p>
-            ) : null}
+            )}
           </FieldRow>
 
           <FieldRow

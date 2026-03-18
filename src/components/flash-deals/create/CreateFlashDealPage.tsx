@@ -301,8 +301,9 @@ function getNearestSlotHour(hour: number) {
 
 function getInitialSlotStartDate() {
   const date = new Date()
-  date.setMinutes(0, 0, 0)
-  date.setHours(date.getHours() + 1)
+  // Default to "live as soon as possible" (current minute) so newly created deals
+  // don't unnecessarily become "pending" just because we rounded to the next hour.
+  date.setSeconds(0, 0)
   return date
 }
 
@@ -2094,7 +2095,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
         onChange={handleDateTimeConfirm}
         mode="datetime"
         disablePast
-        minuteStep={30}
+        minuteStep={1}
         title="Select Flash Deal Start"
       />
 

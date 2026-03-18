@@ -40,6 +40,9 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
   const [loadError, setLoadError] = useState('')
   const [isAuthRequired, setIsAuthRequired] = useState(false)
   const [hasNoShop, setHasNoShop] = useState(false)
+  const [quantityWarningByProductId, setQuantityWarningByProductId] = useState<
+    Record<string, string>
+  >({})
 
   const loadProducts = async () => {
     setIsLoading(true)
@@ -114,11 +117,38 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
     onChange({ ...value, items: nextItems })
   }
 
-  const handleQuantityChange = (index: number, nextValue: string) => {
+  const handleQuantityChange = (index: number, nextValue: string, maxStock: number) => {
     const sanitized = nextValue.replace(/\D/g, '')
     const parsed = sanitized.length === 0 ? 0 : Math.max(1, Math.floor(Number(sanitized)))
+    const productId = value.items[index]?.productId ?? ''
+    const hasMaxStock = Number.isFinite(maxStock) && maxStock >= 0
+    const clamped = hasMaxStock ? Math.min(parsed, maxStock) : parsed
+
+    if (productId && parsed > clamped) {
+      setQuantityWarningByProductId((previous) => ({
+        ...previous,
+        [productId]: "Can't input quantity more than the product stock",
+      }))
+      window.setTimeout(() => {
+        setQuantityWarningByProductId((previous) => {
+          if (previous[productId] !== "Can't input quantity more than the product stock") {
+            return previous
+          }
+          const next = { ...previous }
+          delete next[productId]
+          return next
+        })
+      }, 2500)
+    } else if (productId && quantityWarningByProductId[productId]) {
+      setQuantityWarningByProductId((previous) => {
+        const next = { ...previous }
+        delete next[productId]
+        return next
+      })
+    }
+
     const nextItems = value.items.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, quantity: parsed } : item,
+      itemIndex === index ? { ...item, quantity: clamped } : item,
     )
     onChange({ ...value, items: nextItems })
   }
@@ -193,16 +223,25 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
 
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <p className="text-xs text-slate-600">Quantity</p>
-                    <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={item?.quantity ? `${item.quantity}` : ''}
-                        onChange={(event) => handleQuantityChange(index, event.target.value)}
-                        placeholder="Qty"
-                        className="w-12 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                      />
-                      <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
+                    <div className="text-right">
+                      <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={item?.quantity ? `${item.quantity}` : ''}
+                          onChange={(event) =>
+                            handleQuantityChange(index, event.target.value, product.stock)
+                          }
+                          placeholder="Qty"
+                          className="w-12 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                        />
+                        <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
+                      </div>
+                      {item?.productId && quantityWarningByProductId[item.productId] ? (
+                        <p className="mt-1 text-[11px] font-medium text-[#b91c1c]">
+                          {quantityWarningByProductId[item.productId]}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -299,16 +338,25 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
                     PHP {toCurrency(product.price)}
                   </p>
 
-                  <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={item?.quantity ? `${item.quantity}` : ''}
-                      onChange={(event) => handleQuantityChange(index, event.target.value)}
-                      placeholder="Qty"
-                      className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                    />
-                    <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
+                  <div className="text-right">
+                    <div className="flex h-9 items-center rounded-md border border-[#cbd5e1] bg-white px-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={item?.quantity ? `${item.quantity}` : ''}
+                        onChange={(event) =>
+                          handleQuantityChange(index, event.target.value, product.stock)
+                        }
+                        placeholder="Qty"
+                        className="w-14 border-0 bg-transparent text-right text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                      />
+                      <span className="ml-1 text-[11px] font-semibold text-slate-400">pcs</span>
+                    </div>
+                    {item?.productId && quantityWarningByProductId[item.productId] ? (
+                      <p className="mt-1 text-[11px] font-medium text-[#b91c1c]">
+                        {quantityWarningByProductId[item.productId]}
+                      </p>
+                    ) : null}
                   </div>
 
                   <button
