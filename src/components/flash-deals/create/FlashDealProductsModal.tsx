@@ -261,40 +261,15 @@ function FlashDealProductsModal({
             </div>
 
             <div className="mt-2 flex gap-4 border-b border-[#E6EBFF] text-sm font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveTab('select')}
-                className={`relative pb-2 ${
-                  activeTab === 'select' ? 'text-[#3A56C5]' : 'text-slate-500'
-                }`}
-              >
+              <span className="relative pb-2 text-[#3A56C5]">
                 Select
-                {activeTab === 'select' ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#3A56C5]" />
-                ) : null}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('upload')}
-                className={`relative pb-2 ${
-                  activeTab === 'upload' ? 'text-[#3A56C5]' : 'text-slate-500'
-                }`}
-              >
-                Upload Product List
-                {activeTab === 'upload' ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#3A56C5]" />
-                ) : null}
-              </button>
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded bg-[#3A56C5]" />
+              </span>
             </div>
           </header>
 
           <div className="flex-1 overflow-y-auto px-3 py-2.5 pb-4 sm:px-5 sm:py-3">
-            {activeTab === 'upload' ? (
-              <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
-                Upload flow can be added next. Use Select tab for now.
-              </div>
-            ) : isLoadingProducts ? (
+            {isLoadingProducts ? (
               <div className="py-6 text-center text-sm text-slate-500 sm:py-8">
                 Loading products...
               </div>

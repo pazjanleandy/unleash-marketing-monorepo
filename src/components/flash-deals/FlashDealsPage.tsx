@@ -108,6 +108,13 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
     return `Data from ${format(past)} to ${format(now)} GMT+8`
   }, [])
 
+  const statusCounts = useMemo(() => {
+    const ongoing = flashDealRows.filter((row) => row.status === 'Ongoing').length
+    const upcoming = flashDealRows.filter((row) => row.status === 'Upcoming').length
+    const expired = flashDealRows.filter((row) => row.status === 'Expired').length
+    return { total: flashDealRows.length, ongoing, upcoming, expired }
+  }, [flashDealRows])
+
   const flashDealsPerformanceMetrics = useMemo<FlashDealsMetric[]>(() => {
     const totalDeals = flashDealRows.length
     const activeDeals = flashDealRows.filter((item) => item.status === 'Ongoing' && item.enabled)
@@ -209,24 +216,26 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
             {refreshing ? 'Refreshing...' : 'Pull to refresh'}
           </div>
 
-          <header className="rounded-2xl bg-gradient-to-r from-[#f8fafc] via-[#f1f5f9] to-white p-4 shadow-[0_14px_30px_-26px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center gap-2.5">
+          <header className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-slate-700 shadow-sm transition active:scale-95"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700 transition active:scale-95"
                 aria-label="Back to Marketing Centre"
               >
                 &larr;
               </button>
-              <h1 className="text-[34px] font-bold leading-none text-slate-900">Flash Deals</h1>
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900">Flash Deals</h1>
+                <p className="text-xs text-slate-500">
+                  {statusCounts.total} total · {statusCounts.ongoing} live · {statusCounts.upcoming} upcoming
+                </p>
+              </div>
             </div>
-            <p className="mt-2 text-[12px] text-slate-600">
-              Pull to refresh, tap cards, or swipe for quick actions.
-            </p>
           </header>
 
-          <div className="space-y-5 pt-5">
+          <div className="space-y-4 pt-4">
             {showDataState ? (
               <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
                 {isLoading ? (
@@ -240,10 +249,20 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
                 ) : null}
               </div>
             ) : null}
-            <FlashDealsPerformanceSection
-              dateLabel={flashDealsPerformanceDateLabel}
-              metrics={flashDealsPerformanceMetrics}
-            />
+            <div className="flex flex-wrap gap-2 px-1">
+              {[
+                { label: 'Live', value: statusCounts.ongoing },
+                { label: 'Upcoming', value: statusCounts.upcoming },
+                { label: 'Expired', value: statusCounts.expired },
+              ].map((chip) => (
+                <span
+                  key={chip.label}
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+                >
+                  {chip.label} <span className="text-slate-900">{chip.value}</span>
+                </span>
+              ))}
+            </div>
             <FlashDealsPromotionListSection
               rows={flashDealRows}
               refreshNonce={refreshNonce}
@@ -312,7 +331,7 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
         <button
           type="button"
           onClick={onCreate}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#3A56C5] text-3xl font-semibold leading-none text-white shadow-[0_16px_32px_-14px_rgba(58,86,197,0.9)] transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] sm:hidden"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.85rem)] right-3 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#3A56C5] text-2xl font-semibold leading-none text-white shadow-[0_12px_28px_-14px_rgba(58,86,197,0.9)] transition hover:bg-[#3347A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B1C2EC] sm:hidden"
           aria-label="Create Flash Deal"
         >
           +
