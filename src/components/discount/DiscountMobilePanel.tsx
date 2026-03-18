@@ -22,31 +22,42 @@ const createDiscountChoices: {
 ] as const
 
 const statusTextClasses: Record<PromotionStatus, string> = {
-  Upcoming: 'text-amber-700',
-  Ongoing: 'text-emerald-700',
-  Expired: 'text-slate-500',
+  Upcoming: 'text-slate-900',
+  Ongoing: 'text-slate-900',
+  Expired: 'text-slate-900',
 }
 
-const thumbClasses = [
-  'bg-gradient-to-br from-[#e2e8f0] to-[#cbd5e1] text-[#334155]',
-  'bg-gradient-to-br from-[#e6f7ee] to-[#c9ead8] text-[#166534]',
-  'bg-gradient-to-br from-[#fef3c7] to-[#fde68a] text-[#92400e]',
-] as const
+function ProductThumbnailGroup({ products }: { products: string[] }) {
+  if (products.length === 0) {
+    return null
+  }
 
-function ProductThumbStrip({ products }: { products: string[] }) {
-  const visibleProducts = products.slice(0, 3)
+  const visible = products.slice(0, 3)
+  const overflow = Math.max(products.length - visible.length, 0)
+  const single = products.length === 1
+
+  const thumbClass =
+    'flex items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-600';
 
   return (
-    <div className="flex items-center gap-1">
-      {visibleProducts.map((product, index) => (
-        <span
-          key={`${product}-${index}`}
-          className={`inline-flex h-5 w-5 items-center justify-center rounded border border-white text-[9px] font-semibold shadow ${thumbClasses[index % thumbClasses.length]}`}
-          title={product}
-        >
-          {product.slice(0, 1).toUpperCase()}
-        </span>
-      ))}
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+        Products
+      </span>
+      <div className="flex items-center gap-1.5">
+        {visible.map((name, index) => (
+          <div
+            key={`${name}-${index}`}
+            className={`${thumbClass} ${single ? 'h-12 w-12' : 'h-9 w-9'}`}
+            title={name}
+          >
+            {name.trim().slice(0, 1).toUpperCase()}
+          </div>
+        ))}
+        {overflow > 0 ? (
+          <div className={`${thumbClass} h-9 w-9`}>+{overflow}</div>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -234,27 +245,46 @@ function DiscountMobilePanel({
               {activePromotions.map((promotion) => (
                 <article
                   key={`${promotion.status}-${promotion.id}`}
-                  className="rounded-md border border-slate-200 bg-white p-2.5"
+                  className="rounded-md border border-slate-200 bg-white p-3 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className={`text-sm font-semibold ${statusTextClasses[promotion.status]}`}>
-                        {promotion.name}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">
-                        {promotion.period.start} - {promotion.period.end}
-                      </p>
-                    </div>
-                    <ProductThumbStrip products={promotion.products} />
+                    <p className="text-sm font-semibold text-slate-900">{promotion.name}</p>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700">
+                      {promotion.status}
+                    </span>
                   </div>
 
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {promotion.period.start} – {promotion.period.end}
+                  </p>
+
                   <div className="mt-2">
-                    <StatusActions
-                      promotion={promotion}
-                      onEditPromotion={onEditPromotion}
-                      onViewPromotion={onViewPromotion}
-                      onDeletePromotion={onDeletePromotion}
-                    />
+                    <ProductThumbnailGroup products={promotion.products} />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-[1fr,auto] items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        promotion.status === 'Expired'
+                          ? onViewPromotion?.(promotion)
+                          : onEditPromotion?.(promotion)
+                      }
+                      className="inline-flex h-9 items-center justify-center rounded-md bg-[#3A56C5] px-3 text-xs font-semibold text-white transition active:scale-[0.98]"
+                    >
+                      {promotion.status === 'Expired' ? 'View' : 'Edit'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        promotion.status === 'Expired'
+                          ? void onDeletePromotion?.(promotion)
+                          : onViewPromotion?.(promotion)
+                      }
+                      className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition active:scale-[0.98]"
+                    >
+                      More
+                    </button>
                   </div>
                 </article>
               ))}
