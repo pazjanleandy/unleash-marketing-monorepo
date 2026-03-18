@@ -1136,7 +1136,6 @@ function ShopDemoPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [showSearchBar, setShowSearchBar] = useState(false)
-  const [activePromoTab, setActivePromoTab] = useState<'all' | 'flash' | 'bundles' | 'vouchers'>('all')
 
   // Reset
   const [isResetting, setIsResetting] = useState(false)
@@ -1175,16 +1174,6 @@ function ShopDemoPage() {
     const shop = products.find((p) => p.shopId === shopId)
     return shop?.shopName ?? shopId
   }, [cart, products])
-
-  const promoTabs: Array<{ key: typeof activePromoTab; label: string; count: number }> = useMemo(
-    () => [
-      { key: 'all', label: 'All', count: flashDeals.length + bundles.length + vouchers.length },
-      { key: 'flash', label: 'Flash Deals', count: flashDeals.length },
-      { key: 'bundles', label: 'Bundles', count: bundles.length },
-      { key: 'vouchers', label: 'Vouchers', count: vouchers.length },
-    ],
-    [flashDeals.length, bundles.length, vouchers.length],
-  )
 
   const handleVoucherPrefill = (code: string) => {
     setVoucherCode(code)
@@ -1604,34 +1593,9 @@ function ShopDemoPage() {
           vouchersCount={vouchers.length}
         />
 
-        <div className="sticky top-[56px] z-30 mb-4 bg-white/95 pb-3 backdrop-blur">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {promoTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePromoTab(tab.key)}
-                className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                  activePromoTab === tab.key
-                    ? 'bg-slate-900 text-white shadow-[0_10px_24px_-16px_rgba(15,23,42,.55)]'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {tab.label}{' '}
-                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/20 px-1 text-[10px]">
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
 
-        {(activePromoTab === 'all' || activePromoTab === 'flash') && (
-          <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
-        )}
-
-        {(activePromoTab === 'all' || activePromoTab === 'bundles') && (
-          <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
-        )}
+        <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
 
         <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
           <div className="mb-3 flex items-center justify-between">
