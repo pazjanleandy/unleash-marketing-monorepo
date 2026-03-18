@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,7 +14,6 @@ import {
   listActiveAddonDeals,
   validateVoucher,
   simulateCheckout,
-  resetDemoData,
   type MarketplaceProduct,
   type MarketplaceFlashDeal,
   type MarketplaceVoucher,
@@ -401,86 +399,6 @@ function ShopPromotionsHeader({
           {vouchersCount} Voucher{vouchersCount === 1 ? '' : 's'}
         </span>
       </div>
-    </section>
-  )
-}
-
-function FeaturedFlashDeal({
-  deal,
-  voucherCount,
-  onAdd,
-}: {
-  deal: MarketplaceFlashDeal | null
-  voucherCount: number
-  onAdd: (deal: MarketplaceFlashDeal) => void
-}) {
-  const { h, m, s, expired } = useCountdown(deal?.endAt ?? '2099-01-01T00:00:00.000Z')
-  const off = deal ? discountPercent(deal.originalPrice, deal.flashPrice) : 0
-  const remaining = deal ? Math.max(deal.flashQuantity - deal.soldQuantity, 0) : 0
-  const soldPct = deal && deal.flashQuantity > 0 ? (deal.soldQuantity / deal.flashQuantity) * 100 : 0
-
-  return (
-    <section className="mb-6">
-      {deal ? (
-        <div className="flex gap-3 rounded-2xl bg-white p-4 shadow-[0_16px_32px_-26px_rgba(15,23,42,.35)] ring-1 ring-orange-100">
-          <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl bg-orange-50">
-            {deal.productImage ? (
-              <img src={deal.productImage} alt={deal.productName} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-[0.2em] text-orange-300">
-                Deal
-              </div>
-            )}
-            {off > 0 && (
-              <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-[10px] font-bold text-white">
-                -{off}%
-              </span>
-            )}
-            <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
-              {expired ? 'Ended' : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`}
-            </span>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-0.5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-500">Featured Flash Deal</p>
-                <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900">{deal.productName}</h3>
-              </div>
-              <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-semibold text-violet-700">
-                {voucherCount} voucher{voucherCount === 1 ? '' : 's'}
-              </span>
-            </div>
-
-            <div className="flex items-end gap-2">
-              <span className="text-2xl font-extrabold text-orange-600">{formatPrice(deal.flashPrice)}</span>
-              <span className="pb-1 text-xs text-slate-400 line-through">{formatPrice(deal.originalPrice)}</span>
-              {off > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">Save {off}%</span>}
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-slate-600">
-              <span>{deal.soldQuantity} sold</span>
-              <span>{remaining} left</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-orange-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700"
-                style={{ width: `${Math.min(soldPct, 100)}%` }}
-              />
-            </div>
-
-            <button
-              onClick={() => onAdd(deal)}
-              disabled={remaining <= 0 || expired}
-              className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-12px_rgba(239,68,68,.7)] transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {remaining <= 0 ? 'Sold Out' : expired ? 'Deal Ended' : 'Add to Cart'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">No active flash deal right now.</div>
-      )}
     </section>
   )
 }
@@ -1217,10 +1135,6 @@ function ShopDemoPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [showSearchBar, setShowSearchBar] = useState(false)
-  const [activePromoTab, setActivePromoTab] = useState<'all' | 'flash' | 'bundles' | 'vouchers'>('all')
-
-  // Reset
-  const [isResetting, setIsResetting] = useState(false)
 
   const categories = useMemo(() => {
     const cats = new Set(products.map((p) => p.category))
@@ -1235,8 +1149,7 @@ function ShopDemoPage() {
     })
   }, [products, activeCategory, search])
 
-  const featuredFlashDeal = flashDeals[0] ?? null
-  const secondaryFlashDeals = featuredFlashDeal ? flashDeals.slice(1) : flashDeals
+  const secondaryFlashDeals = flashDeals
   const voucherEligibleShopIds = useMemo(() => new Set(vouchers.map((voucher) => voucher.shopId)), [vouchers])
   const bundleProductIds = useMemo(() => {
     const ids = new Set<string>()
@@ -1257,16 +1170,6 @@ function ShopDemoPage() {
     const shop = products.find((p) => p.shopId === shopId)
     return shop?.shopName ?? shopId
   }, [cart, products])
-
-  const promoTabs: Array<{ key: typeof activePromoTab; label: string; count: number }> = useMemo(
-    () => [
-      { key: 'all', label: 'All', count: flashDeals.length + bundles.length + vouchers.length },
-      { key: 'flash', label: 'Flash Deals', count: flashDeals.length },
-      { key: 'bundles', label: 'Bundles', count: bundles.length },
-      { key: 'vouchers', label: 'Vouchers', count: vouchers.length },
-    ],
-    [flashDeals.length, bundles.length, vouchers.length],
-  )
 
   const handleVoucherPrefill = (code: string) => {
     setVoucherCode(code)
@@ -1552,18 +1455,6 @@ function ShopDemoPage() {
 
   // ---- Reset ----
 
-  const handleReset = async () => {
-    if (!shopId) return
-    setIsResetting(true)
-    const result = await resetDemoData(shopId)
-    if (result.success) {
-      void loadData()
-    } else {
-      setError(result.message)
-    }
-    setIsResetting(false)
-  }
-
   // ---- Render ----
 
   if (loading) {
@@ -1686,36 +1577,9 @@ function ShopDemoPage() {
           vouchersCount={vouchers.length}
         />
 
-        <FeaturedFlashDeal deal={featuredFlashDeal} voucherCount={vouchers.length} onAdd={addFlashDealToCart} />
+        <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
 
-        <div className="sticky top-[56px] z-30 mb-4 bg-white/95 pb-3 backdrop-blur">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {promoTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePromoTab(tab.key)}
-                className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                  activePromoTab === tab.key
-                    ? 'bg-slate-900 text-white shadow-[0_10px_24px_-16px_rgba(15,23,42,.55)]'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {tab.label}{' '}
-                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/20 px-1 text-[10px]">
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {(activePromoTab === 'all' || activePromoTab === 'flash') && (
-          <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
-        )}
-
-        {(activePromoTab === 'all' || activePromoTab === 'bundles') && (
-          <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
-        )}
+        <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
 
         <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
           <div className="mb-3 flex items-center justify-between">
@@ -1808,20 +1672,6 @@ function ShopDemoPage() {
         onClose={() => setShowSuccess(false)}
       />
 
-      {/* ===== Floating Actions ===== */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          onClick={handleReset}
-          disabled={isResetting}
-          className="flex h-11 items-center gap-2 rounded-full bg-white px-4 text-xs font-semibold text-slate-700 shadow-[0_10px_26px_-12px_rgba(0,0,0,.25)] ring-1 ring-slate-200/80 transition hover:ring-blue-300 hover:text-blue-600 disabled:opacity-50"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3.51 15A9 9 0 1 0 5.64 5.64L1 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {isResetting ? 'Resetting...' : 'Reset Demo'}
-        </button>
-      </div>
     </div>
   )
 }
