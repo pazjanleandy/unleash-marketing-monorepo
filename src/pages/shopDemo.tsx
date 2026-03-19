@@ -1218,6 +1218,7 @@ function ShopDemoPage() {
   const [pendingAddItems, setPendingAddItems] = useState<CartItem[]>([])
   const [cartAlert, setCartAlert] = useState<{ type: 'limit' | 'stock'; message: string } | null>(null)
   const cartAlertTimerRef = useRef<number | null>(null)
+  const lastCartSignatureRef = useRef<string>('')
 
   // Filter
   const [search, setSearch] = useState('')
@@ -1817,7 +1818,6 @@ function ShopDemoPage() {
     setPendingAddItems(items)
     setPendingAddAction(() => onConfirm)
     setShowOrderDetails(true)
-    handleRemoveVoucher()
   }
 
   const handleInitiateAddFlashDeal = (deal: MarketplaceFlashDeal) => {
@@ -2002,6 +2002,55 @@ function ShopDemoPage() {
     setVoucherDiscount(0)
     setAppliedVoucherId(null)
   }
+
+  useEffect(() => {
+    const signature = cart
+      .map((item) => [
+        item.productId,
+        item.bundleId ?? '',
+        item.addonDealId ?? '',
+        item.flashDealId ?? '',
+        item.discountId ?? '',
+        item.quantity,
+      ].join(':'))
+      .sort()
+      .join('|')
+
+    if (lastCartSignatureRef.current === '') {
+      lastCartSignatureRef.current = signature
+      return
+    }
+
+    if (!appliedVoucherId || !shopId) {
+      lastCartSignatureRef.current = signature
+      return
+    }
+
+    if (signature === lastCartSignatureRef.current) return
+
+    lastCartSignatureRef.current = signature
+    let cancelled = false
+
+    const revalidate = async () => {
+      const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
+      const result = await validateVoucher(voucherCode, subtotal, shopId, cart)
+      if (cancelled) return
+      if (!result.valid) {
+        handleRemoveVoucher()
+        setVoucherMessage(result.message)
+        return
+      }
+      setVoucherMessage(result.message)
+      setVoucherDiscount(result.discount)
+      setAppliedVoucherId(result.voucherId)
+    }
+
+    void revalidate()
+
+    return () => {
+      cancelled = true
+    }
+  }, [appliedVoucherId, cart, handleRemoveVoucher, shopId, voucherCode])
 
   // ---- Checkout ----
 
@@ -2255,14 +2304,12 @@ function ShopDemoPage() {
           setShowOrderDetails(false)
           setPendingAddAction(null)
           setPendingAddItems([])
-          handleRemoveVoucher()
         }}
         onConfirm={() => {
           setShowOrderDetails(false)
           pendingAddAction?.()
           setPendingAddAction(null)
           setPendingAddItems([])
-          handleRemoveVoucher()
         }}
         isCheckingOut={isCheckingOut}
       />
