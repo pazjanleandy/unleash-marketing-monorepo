@@ -756,8 +756,8 @@ function CartDrawer({
               disabled={isCheckingOut}
               className="h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,.7)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
             >
-              {isCheckingOut ? 'Processing...' : `Checkout - ${formatPrice(total)}`}
-            </button>
+            {isCheckingOut ? 'Processing...' : `Checkout - ${formatPrice(total)}`}
+          </button>
           </div>
         )}
       </div>
@@ -786,7 +786,7 @@ function OrderDetailsModal({
   voucherDiscount: number
   voucherCode: string
   onVoucherCodeChange: (v: string) => void
-  onApplyVoucher: () => void
+  onApplyVoucher: (codeOverride?: string) => void
   onRemoveVoucher: () => void
   voucherMessage: string | null
   isApplyingVoucher: boolean
@@ -853,7 +853,7 @@ function OrderDetailsModal({
                 </button>
               )}
               <button
-                onClick={onApplyVoucher}
+                onClick={() => onApplyVoucher()}
                 disabled={isApplyingVoucher || !voucherCode.trim()}
                 className="h-10 rounded-xl bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
               >
@@ -886,7 +886,10 @@ function OrderDetailsModal({
                           </div>
                           <button
                             type="button"
-                            onClick={() => onVoucherCodeChange(v.code)}
+                            onClick={() => {
+                              onVoucherCodeChange(v.code)
+                              onApplyVoucher(v.code)
+                            }}
                             className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
                           >
                             Use
@@ -945,7 +948,7 @@ function OrderDetailsModal({
             disabled={isCheckingOut}
             className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,.7)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
           >
-            {isCheckingOut ? 'Processing...' : 'Buy Now'}
+            {isCheckingOut ? 'Processing...' : 'Confirm & Add to Cart'}
           </button>
         </div>
       </div>
@@ -1131,6 +1134,8 @@ function ShopDemoPage() {
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResult | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showOrderDetails, setShowOrderDetails] = useState(false)
+  const [pendingAddAction, setPendingAddAction] = useState<(() => void) | null>(null)
+  const [pendingAddItems, setPendingAddItems] = useState<CartItem[]>([])
 
   // Filter
   const [search, setSearch] = useState('')
@@ -1166,14 +1171,20 @@ function ShopDemoPage() {
   }, [bundles])
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const cartShopLabel = useMemo(() => {
-    if (cart.length === 0) return null
-    const shopIds = Array.from(new Set(cart.map((item) => item.shopId)))
+
+  const preAddItems = useMemo(() => {
+    if (pendingAddItems.length === 0) return []
+    return [...cart, ...pendingAddItems]
+  }, [cart, pendingAddItems])
+
+  const preAddShopLabel = useMemo(() => {
+    if (preAddItems.length === 0) return null
+    const shopIds = Array.from(new Set(preAddItems.map((item) => item.shopId)))
     if (shopIds.length !== 1) return 'Multiple shops'
     const shopId = shopIds[0]
     const shop = products.find((p) => p.shopId === shopId)
     return shop?.shopName ?? shopId
-  }, [cart, products])
+  }, [preAddItems, products])
 
   const handleVoucherPrefill = (code: string) => {
     setVoucherCode(code)
@@ -1391,6 +1402,80 @@ function ShopDemoPage() {
     setPendingAddonTriggerIds(triggerIds)
   }
 
+  const openPreAddDetails = (items: CartItem[], onConfirm: () => void) => {
+    setPendingAddItems(items)
+    setPendingAddAction(() => onConfirm)
+    setShowOrderDetails(true)
+    handleRemoveVoucher()
+  }
+
+  const handleInitiateAddFlashDeal = (deal: MarketplaceFlashDeal) => {
+    const previewItem: CartItem = {
+      productId: deal.productId,
+      name: deal.productName,
+      price: deal.flashPrice,
+      originalPrice: deal.originalPrice,
+      quantity: 1,
+      image: deal.productImage,
+      flashDealId: deal.id,
+      discountId: null,
+      shopId: deal.shopId,
+    }
+    openPreAddDetails([previewItem], () => addFlashDealToCart(deal))
+  }
+
+  const handleInitiateAddProduct = (product: MarketplaceProduct) => {
+    const discPrice = computeDiscountedPrice(product)
+    const previewItem: CartItem = {
+      productId: product.id,
+      name: product.name,
+      price: discPrice,
+      originalPrice: product.price,
+      quantity: 1,
+      image: product.image,
+      flashDealId: product.flashDeal?.id ?? null,
+      discountId: product.discount?.id ?? null,
+      shopId: product.shopId,
+    }
+    openPreAddDetails([previewItem], () => addProductToCart(product))
+  }
+
+  const handleInitiateAddAddon = (addon: AddonSuggestion) => {
+    setAddonModalOpen(false)
+    const previewItem: CartItem = {
+      productId: addon.addonProductId,
+      name: addon.addonProductName,
+      price: addon.discountedPrice,
+      originalPrice: addon.addonProductPrice,
+      quantity: 1,
+      image: addon.addonProductImage,
+      flashDealId: null,
+      discountId: null,
+      shopId: addon.shopId,
+    }
+    openPreAddDetails([previewItem], () => addAddonToCart(addon))
+  }
+
+  const handleInitiateAddBundle = (bundle: MarketplaceBundle) => {
+    const totalBundleQty = bundle.items.reduce((s, b) => s + b.quantity, 0)
+    const perUnitBundlePrice =
+      bundle.price && totalBundleQty > 0 ? bundle.price / totalBundleQty : null
+    const previewItems: CartItem[] = bundle.items.map((item) => ({
+      productId: item.productId,
+      name: item.productName,
+      price: perUnitBundlePrice ?? item.productPrice,
+      originalPrice: item.productPrice,
+      quantity: item.quantity,
+      image: item.productImage,
+      flashDealId: null,
+      discountId: null,
+      bundleId: bundle.id,
+      bundleName: bundle.name ?? null,
+      shopId: bundle.shopId,
+    }))
+    openPreAddDetails(previewItems, () => addBundleToCart(bundle))
+  }
+
   const updateCartQty = (productId: string, delta: number) => {
     setCart((prev) =>
       prev
@@ -1411,11 +1496,15 @@ function ShopDemoPage() {
 
   // ---- Voucher ----
 
-  const handleApplyVoucher = async () => {
-    if (!shopId || !voucherCode.trim()) return
+  const handleApplyVoucher = async (items: CartItem[], codeOverride?: string) => {
+    const resolvedCode = (codeOverride ?? voucherCode).trim()
+    if (!shopId || !resolvedCode) return
     setIsApplyingVoucher(true)
-    const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-    const cartShopIds = new Set(cart.map((item) => item.shopId).filter(Boolean))
+    if (codeOverride) {
+      setVoucherCode(codeOverride)
+    }
+    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+    const cartShopIds = new Set(items.map((item) => item.shopId).filter(Boolean))
     if (cartShopIds.size > 1) {
       setVoucherMessage('Vouchers can only be used for items from a single shop.')
       setVoucherDiscount(0)
@@ -1423,7 +1512,7 @@ function ShopDemoPage() {
       setIsApplyingVoucher(false)
       return
     }
-    const result = await validateVoucher(voucherCode, subtotal, shopId, cart)
+    const result = await validateVoucher(resolvedCode, subtotal, shopId, items)
     setVoucherMessage(result.message)
     setVoucherDiscount(result.discount)
     setAppliedVoucherId(result.voucherId)
@@ -1593,9 +1682,9 @@ function ShopDemoPage() {
           vouchersCount={vouchers.length}
         />
 
-        <FlashDealsSection deals={secondaryFlashDeals} onAdd={addFlashDealToCart} />
+        <FlashDealsSection deals={secondaryFlashDeals} onAdd={handleInitiateAddFlashDeal} />
 
-        <BundleDealsSection bundles={bundles} onAdd={addBundleToCart} />
+        <BundleDealsSection bundles={bundles} onAdd={handleInitiateAddBundle} />
 
         <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
           <div className="mb-3 flex items-center justify-between">
@@ -1631,7 +1720,7 @@ function ShopDemoPage() {
             title={activeCategory === 'All' ? 'All products' : activeCategory}
             subtitle={activeCategory === 'All' ? 'Fresh picks from this shop.' : 'Matching products from this category.'}
             products={filteredProducts}
-            onAdd={addProductToCart}
+            onAdd={handleInitiateAddProduct}
             voucherEligibleShopIds={voucherEligibleShopIds}
             bundleProductIds={bundleProductIds}
           />
@@ -1647,29 +1736,34 @@ function ShopDemoPage() {
         onRemove={removeFromCart}
         onRemoveBundle={removeBundleFromCart}
         voucherDiscount={voucherDiscount}
-        onReviewCheckout={() => setShowOrderDetails(true)}
+        onReviewCheckout={handleCheckout}
         isCheckingOut={isCheckingOut}
       />
 
       <OrderDetailsModal
         open={showOrderDetails}
-        items={cart}
+        items={preAddItems}
         voucherDiscount={voucherDiscount}
         voucherCode={voucherCode}
         onVoucherCodeChange={setVoucherCode}
-        onApplyVoucher={handleApplyVoucher}
+        onApplyVoucher={(codeOverride) => void handleApplyVoucher(preAddItems, codeOverride)}
         onRemoveVoucher={handleRemoveVoucher}
         voucherMessage={voucherMessage}
         isApplyingVoucher={isApplyingVoucher}
         vouchers={vouchers}
-        shopLabel={cartShopLabel}
+        shopLabel={preAddShopLabel}
         onClose={() => {
           setShowOrderDetails(false)
+          setPendingAddAction(null)
+          setPendingAddItems([])
           handleRemoveVoucher()
         }}
         onConfirm={() => {
           setShowOrderDetails(false)
-          void handleCheckout()
+          pendingAddAction?.()
+          setPendingAddAction(null)
+          setPendingAddItems([])
+          handleRemoveVoucher()
         }}
         isCheckingOut={isCheckingOut}
       />
@@ -1678,7 +1772,7 @@ function ShopDemoPage() {
         open={addonModalOpen}
         suggestions={addonModalItems}
         onClose={() => setAddonModalOpen(false)}
-        onAddAddon={addAddonToCart}
+        onAddAddon={handleInitiateAddAddon}
       />
 
       {/* ===== Checkout Success Modal ===== */}
