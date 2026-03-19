@@ -736,7 +736,7 @@ function CartDrawer({
                 </div>
               )}
               {voucherDiscount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-blue-600">
                   <span>Voucher Discount</span>
                   <span>-{formatPrice(voucherDiscount)}</span>
                 </div>
@@ -775,6 +775,7 @@ function OrderDetailsModal({
   onRemoveVoucher,
   voucherMessage,
   isApplyingVoucher,
+  appliedVoucherId,
   vouchers,
   shopLabel,
   onClose,
@@ -790,13 +791,15 @@ function OrderDetailsModal({
   onRemoveVoucher: () => void
   voucherMessage: string | null
   isApplyingVoucher: boolean
+  appliedVoucherId: string | null
   vouchers: MarketplaceVoucher[]
   shopLabel: string | null
   onClose: () => void
   onConfirm: () => void
   isCheckingOut: boolean
 }) {
-  const [showVouchers, setShowVouchers] = useState(false)
+  const [showVoucherModal, setShowVoucherModal] = useState(false)
+  const [privateVoucherCode, setPrivateVoucherCode] = useState('')
   if (!open) return null
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -807,137 +810,146 @@ function OrderDetailsModal({
     items.length === 0 || cartShopIds.length !== 1
       ? []
       : vouchers.filter((v) => v.shopId === cartShopIds[0] && subtotal >= v.minSpend)
+  const hasProductSavings = discounts > 0
+  const hasVoucherSavings = voucherDiscount > 0
+  const hasSavings = hasProductSavings || hasVoucherSavings
 
   return (
     <>
       <div className="fixed inset-0 z-[80] bg-black/50" onClick={onClose} />
       <div className="fixed left-1/2 top-1/2 z-[90] w-[92vw] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h3 className="text-lg font-bold text-slate-800">Order Details</h3>
+        <div className="flex items-center justify-between px-4 py-3">
+          <h3 className="text-base font-semibold text-slate-900">Order Details</h3>
           <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
-          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-            <p className="text-xs font-semibold text-slate-500">Shop</p>
-            <p className="font-semibold text-slate-800">{shopLabel ?? 'Unknown Shop'}</p>
+        <div className="max-h-[65vh] overflow-y-auto px-4 pb-4">
+          <div className="flex items-center justify-between rounded-lg bg-slate-50/80 px-3 py-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Shop</p>
+              <p className="text-sm font-semibold text-slate-900">{shopLabel ?? 'Unknown Shop'}</p>
+            </div>
           </div>
 
-          <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Voucher</label>
-            <div className="flex flex-wrap gap-2">
-              <input
-                type="text"
+          <div className="mt-3 space-y-3">
+            <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-3">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                Voucher
+              </label>
+              {/*
+                Single action button: switches from "View" to "Remove" when a voucher is applied,
+                so users don't see both actions at once.
+              */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
                 value={voucherCode}
-                onChange={(e) => onVoucherCodeChange(e.target.value)}
-                placeholder="Enter voucher code"
-                className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                readOnly
+                aria-readonly="true"
+                placeholder="Select a voucher"
+                className="h-10 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-100"
               />
-              <button
-                type="button"
-                onClick={() => setShowVouchers((prev) => !prev)}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                {showVouchers ? 'Hide vouchers' : 'View vouchers'}
-              </button>
-              {(voucherDiscount > 0 || voucherCode.trim()) && (
                 <button
                   type="button"
-                  onClick={onRemoveVoucher}
-                  className="h-10 rounded-xl border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                  onClick={() => {
+                    if (appliedVoucherId || voucherDiscount > 0 || voucherCode.trim()) {
+                      onRemoveVoucher()
+                    } else {
+                      setShowVoucherModal(true)
+                    }
+                  }}
+                  className={`h-10 rounded-lg px-3 text-[12px] font-semibold transition ${
+                    appliedVoucherId || voucherDiscount > 0 || voucherCode.trim()
+                      ? 'border border-red-200 bg-white text-red-600 hover:bg-red-50'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
-                  Remove
+                  {appliedVoucherId || voucherDiscount > 0 || voucherCode.trim() ? 'Remove' : 'View'}
                 </button>
-              )}
-              <button
-                onClick={() => onApplyVoucher()}
-                disabled={isApplyingVoucher || !voucherCode.trim()}
-                className="h-10 rounded-xl bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isApplyingVoucher ? '…' : 'Apply'}
-              </button>
+              </div>
             </div>
-            {voucherMessage && (
-              <p className={`mt-1.5 text-xs ${voucherDiscount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {voucherMessage}
-              </p>
-            )}
-            {showVouchers && (
-              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                {eligibleVouchers.length === 0 ? (
-                  <p className="text-slate-500">No available vouchers for this cart.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {eligibleVouchers.slice(0, 5).map((v) => {
-                      const label =
-                        v.discountType === 'percentage'
-                          ? `${v.discountValue}% OFF`
-                          : `${formatPrice(v.discountValue)} OFF`
-                      return (
-                        <div key={v.id} className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-800">{v.code}</p>
-                            <p className="truncate text-[11px] text-slate-500">
-                              {v.name || 'Voucher'} · {label}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onVoucherCodeChange(v.code)
-                              onApplyVoucher(v.code)
-                            }}
-                            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
-                          >
-                            Use
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.productId} className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {item.quantity} x {formatPrice(item.price)}
-                  </p>
-                </div>
-                <div className="text-sm font-semibold text-slate-800">
-                  {formatPrice(item.price * item.quantity)}
-                </div>
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                  Private Voucher
+                </label>
+                <span className="rounded-full bg-white px-2 py-[2px] text-[10px] font-semibold text-blue-600">
+                  Exclusive
+                </span>
               </div>
-            ))}
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={privateVoucherCode}
+                  onChange={(e) => setPrivateVoucherCode(e.target.value)}
+                  placeholder="Enter private voucher code"
+                  className="h-10 flex-1 rounded-lg border border-blue-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                />
+                <button
+                  onClick={() => onApplyVoucher(privateVoucherCode)}
+                  disabled={isApplyingVoucher || !privateVoucherCode.trim()}
+                  className="h-10 rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isApplyingVoucher ? '…' : 'Apply'}
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">Enter codes shared privately for special buyers.</p>
+              {voucherMessage && (
+                <p className={`mt-1 text-[11px] ${voucherDiscount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {voucherMessage}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div key={item.productId} className="flex items-start justify-between gap-3 rounded-lg border border-slate-200/70 bg-white px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900 line-clamp-2">{item.name}</p>
+                    <p className="text-[12px] text-slate-500">
+                      {item.quantity} × {formatPrice(item.price)}
+                    </p>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {formatPrice(item.price * item.quantity)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-slate-200 px-5 py-4">
-          <div className="space-y-1.5 text-sm">
+        <div className="border-t border-slate-200 px-4 pb-4 pt-3">
+          <div className="space-y-2 text-sm">
             <div className="flex justify-between text-slate-500">
               <span>Subtotal</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span className="text-slate-700">{formatPrice(subtotal)}</span>
             </div>
-            {discounts > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Product Discounts</span>
-                <span>-{formatPrice(discounts)}</span>
+
+            {hasSavings && (
+              <div className="rounded-lg border border-slate-200/80 bg-slate-50 px-3 py-2.5">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">Savings</p>
+                <div className="space-y-1">
+                  {hasProductSavings && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Product</span>
+                      <span className="font-semibold text-green-600">-{formatPrice(discounts)}</span>
+                    </div>
+                  )}
+                  {hasVoucherSavings && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Voucher</span>
+                      <span className="font-semibold text-blue-600">-{formatPrice(voucherDiscount)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-            {voucherDiscount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Voucher Discount</span>
-                <span>-{formatPrice(voucherDiscount)}</span>
-              </div>
-            )}
+
             <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
               <span>Total</span>
               <span>{formatPrice(total)}</span>
@@ -946,12 +958,79 @@ function OrderDetailsModal({
           <button
             onClick={onConfirm}
             disabled={isCheckingOut}
-            className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,.7)] transition hover:brightness-110 active:scale-[.98] disabled:opacity-50"
+            className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_10px_24px_-12px_rgba(37,99,235,.6)] transition hover:brightness-110 active:scale-[.99] disabled:opacity-50"
           >
             {isCheckingOut ? 'Processing...' : 'Confirm & Add to Cart'}
           </button>
         </div>
       </div>
+
+      {showVoucherModal && (
+        <>
+          <div
+            className="fixed inset-0 z-[95] bg-black/50"
+            onClick={() => setShowVoucherModal(false)}
+            aria-hidden
+          />
+          <div className="fixed left-1/2 top-1/2 z-[96] w-[92vw] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Available Vouchers</p>
+                <p className="text-xs text-slate-500">Valid for this shop and cart total.</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close voucher list"
+                onClick={() => setShowVoucherModal(false)}
+                className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+              {eligibleVouchers.length === 0 ? (
+                <p className="text-sm text-slate-500">No available vouchers for this cart.</p>
+              ) : (
+                <div className="space-y-3">
+                  {eligibleVouchers.map((v) => {
+                    const label =
+                      v.discountType === 'percentage'
+                        ? `${v.discountValue}% OFF`
+                        : `${formatPrice(v.discountValue)} OFF`
+                    return (
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800">{v.code}</p>
+                          <p className="truncate text-[11px] text-slate-500">
+                            {v.name || 'Voucher'} · {label}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onVoucherCodeChange(v.code)
+                            onApplyVoucher(v.code)
+                            setShowVoucherModal(false)
+                          }}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          Use
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }
@@ -1750,6 +1829,7 @@ function ShopDemoPage() {
         onRemoveVoucher={handleRemoveVoucher}
         voucherMessage={voucherMessage}
         isApplyingVoucher={isApplyingVoucher}
+        appliedVoucherId={appliedVoucherId}
         vouchers={vouchers}
         shopLabel={preAddShopLabel}
         onClose={() => {

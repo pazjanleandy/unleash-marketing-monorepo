@@ -12,6 +12,7 @@ interface SidebarProps {
   mobileMode?: boolean
   mobileOpen?: boolean
   onCloseMobile?: () => void
+  onLogout?: () => Promise<void> | void
 }
 
 interface NavItemProps {
@@ -122,6 +123,7 @@ function Sidebar({
   mobileMode = false,
   mobileOpen = false,
   onCloseMobile,
+  onLogout,
 }: SidebarProps) {
   const navigate = useNavigate()
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null)
@@ -185,7 +187,7 @@ function Sidebar({
     closeAccountSheet()
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const confirmed = window.confirm('Are you sure you want to log out?')
 
     if (!confirmed) {
@@ -194,7 +196,11 @@ function Sidebar({
 
     closeAccountSheet()
     onCloseMobile?.()
-    navigate('/', { replace: true })
+    if (onLogout) {
+      await onLogout()
+    } else {
+      navigate('/', { replace: true })
+    }
   }
 
   useEffect(() => {
@@ -667,11 +673,50 @@ function Sidebar({
                   Admin
                 </span>
               </button>
+
+              <div className="mt-3 border-t border-slate-200/80 pt-3">
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:bg-red-50"
+                >
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M14 7L9 12L14 17"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 12H20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M4 4H10V20H4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           ) : (
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               className={`w-full rounded-xl px-3 py-3 text-sm font-medium transition ${
                 collapsed
                   ? 'inline-flex items-center justify-center text-slate-400 hover:bg-slate-100'
@@ -803,7 +848,7 @@ function Sidebar({
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
                 className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:bg-red-50"
               >
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">

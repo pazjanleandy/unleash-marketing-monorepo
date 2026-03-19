@@ -969,6 +969,7 @@ function MarketCentrePage() {
           mobileMode
           mobileOpen={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
+          onLogout={handleLogout}
         />
       </aside>
 
