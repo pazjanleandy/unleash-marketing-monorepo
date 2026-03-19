@@ -588,16 +588,22 @@ function CartDrawer({
   onRemove,
   onRemoveBundle,
   voucherDiscount,
+  limitAlert,
+  onClearAlert,
+  getItemLimitState,
   onReviewCheckout,
   isCheckingOut,
 }: {
   open: boolean
   items: CartItem[]
   onClose: () => void
-  onUpdateQty: (productId: string, delta: number) => void
-  onRemove: (productId: string) => void
+  onUpdateQty: (item: CartItem, delta: number) => void
+  onRemove: (item: CartItem) => void
   onRemoveBundle: (bundleId: string) => void
   voucherDiscount: number
+  limitAlert: { type: 'limit' | 'stock'; message: string } | null
+  onClearAlert: () => void
+  getItemLimitState: (item: CartItem) => { canIncrease: boolean; message: string | null }
   onReviewCheckout: () => void
   isCheckingOut: boolean
 }) {
@@ -633,6 +639,24 @@ function CartDrawer({
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-36">
+          {limitAlert && (
+            <div
+              className={`mb-3 flex items-start justify-between gap-3 rounded-xl border px-3 py-2 text-xs font-medium ${
+                limitAlert.type === 'stock'
+                  ? 'border-orange-200 bg-orange-50 text-orange-700'
+                  : 'border-rose-200 bg-rose-50 text-rose-700'
+              }`}
+            >
+              <span>{limitAlert.message}</span>
+              <button
+                type="button"
+                onClick={onClearAlert}
+                className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-400">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -645,11 +669,17 @@ function CartDrawer({
             </div>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => (
-                <div
-                  key={item.productId}
-                  className="flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_6px_18px_-12px_rgba(15,23,42,.35)]"
-                >
+              {items.map((item) => {
+                const limitState = getItemLimitState(item)
+                const isBundleItem = Boolean(item.bundleId)
+                const cartKey = item.bundleId
+                  ? `${item.bundleId}-${item.productId}-${item.addonDealId ?? ''}`
+                  : `${item.productId}-${item.flashDealId ?? ''}-${item.discountId ?? ''}-${item.addonDealId ?? ''}`
+                return (
+                  <div
+                    key={cartKey}
+                    className="flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_6px_18px_-12px_rgba(15,23,42,.35)]"
+                  >
                   <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-200">
                     {item.image ? (
                       <img src={item.image} alt="" className="h-full w-full object-cover" />
@@ -679,23 +709,23 @@ function CartDrawer({
                     )}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => onUpdateQty(item.productId, -1)}
-                        disabled={Boolean(item.bundleId)}
+                        onClick={() => onUpdateQty(item, -1)}
+                        disabled={isBundleItem}
                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                       >
                         −
                       </button>
                       <span className="w-7 text-center text-sm font-semibold">{item.quantity}</span>
                       <button
-                        onClick={() => onUpdateQty(item.productId, 1)}
-                        disabled={Boolean(item.bundleId)}
+                        onClick={() => onUpdateQty(item, 1)}
+                        disabled={isBundleItem || !limitState.canIncrease}
                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                       >
                         +
                       </button>
                       <button
                         onClick={() =>
-                          item.bundleId ? onRemoveBundle(item.bundleId) : onRemove(item.productId)
+                          item.bundleId ? onRemoveBundle(item.bundleId) : onRemove(item)
                         }
                         className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-red-100 hover:bg-red-50 hover:text-red-600"
                         aria-label="Remove item"
@@ -713,9 +743,13 @@ function CartDrawer({
                         </svg>
                       </button>
                     </div>
+                    {limitState.message && (
+                      <p className="text-[11px] font-medium text-rose-500">{limitState.message}</p>
+                    )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -1128,50 +1162,71 @@ function CheckoutSuccessModal({
   onClose: () => void
 }) {
   if (!show || !result) return null
+  const isSuccess = result.success
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4">
       <div className="motion-rise w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13L9 17L19 7" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-bold text-slate-800">Purchase Successful!</h3>
-        <p className="mt-2 text-sm text-slate-500">This is a demo transaction — no real payment was made.</p>
-
-        <div className="mt-6 space-y-2 rounded-xl bg-slate-50 p-4 text-left text-sm">
-          <div className="flex justify-between">
-            <span className="text-slate-500">Items Purchased</span>
-            <span className="font-semibold text-slate-700">{result.itemsPurchased}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500">Total Paid</span>
-            <span className="font-semibold text-slate-700">{formatPrice(result.totalPaid)}</span>
-          </div>
-          {result.discountsSaved > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Product Discounts</span>
-              <span className="font-semibold">-{formatPrice(result.discountsSaved)}</span>
-            </div>
-          )}
-          {result.voucherSaved > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Voucher Savings</span>
-              <span className="font-semibold">-{formatPrice(result.voucherSaved)}</span>
-            </div>
+        <div
+          className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${
+            isSuccess ? 'bg-green-100' : 'bg-rose-100'
+          }`}
+        >
+          {isSuccess ? (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M5 13L9 17L19 7" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6L18 18M6 18L18 6" stroke="#e11d48" strokeWidth="3" strokeLinecap="round" />
+            </svg>
           )}
         </div>
-
-        <p className="mt-4 text-xs text-slate-400">
-          Flash deal stock, discount usage, and voucher counts have been updated.
+        <h3 className="text-xl font-bold text-slate-800">
+          {isSuccess ? 'Purchase Successful!' : 'Purchase Failed'}
+        </h3>
+        <p className="mt-2 text-sm text-slate-500">
+          {isSuccess
+            ? 'This is a demo transaction - no real payment was made.'
+            : result.message}
         </p>
+
+        {isSuccess && (
+          <>
+            <div className="mt-6 space-y-2 rounded-xl bg-slate-50 p-4 text-left text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Items Purchased</span>
+                <span className="font-semibold text-slate-700">{result.itemsPurchased}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total Paid</span>
+                <span className="font-semibold text-slate-700">{formatPrice(result.totalPaid)}</span>
+              </div>
+              {result.discountsSaved > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Product Discounts</span>
+                  <span className="font-semibold">-{formatPrice(result.discountsSaved)}</span>
+                </div>
+              )}
+              {result.voucherSaved > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Voucher Savings</span>
+                  <span className="font-semibold">-{formatPrice(result.voucherSaved)}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-4 text-xs text-slate-400">
+              Flash deal stock, discount usage, and voucher counts have been updated.
+            </p>
+          </>
+        )}
 
         <button
           onClick={onClose}
           className="mt-6 h-11 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-[0_4px_16px_-4px_rgba(37,99,235,.5)] transition hover:brightness-110"
         >
-          Continue Shopping
+          {isSuccess ? 'Continue Shopping' : 'Review Cart'}
         </button>
       </div>
     </div>
@@ -1215,6 +1270,8 @@ function ShopDemoPage() {
   const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [pendingAddAction, setPendingAddAction] = useState<(() => void) | null>(null)
   const [pendingAddItems, setPendingAddItems] = useState<CartItem[]>([])
+  const [cartAlert, setCartAlert] = useState<{ type: 'limit' | 'stock'; message: string } | null>(null)
+  const cartAlertTimerRef = useRef<number | null>(null)
 
   // Filter
   const [search, setSearch] = useState('')
@@ -1248,6 +1305,215 @@ function ShopDemoPage() {
     }
     return ids
   }, [bundles])
+
+  const showCartAlert = useCallback((type: 'limit' | 'stock', message: string) => {
+    setCartAlert({ type, message })
+    if (cartAlertTimerRef.current) {
+      window.clearTimeout(cartAlertTimerRef.current)
+    }
+    cartAlertTimerRef.current = window.setTimeout(() => {
+      setCartAlert(null)
+    }, 3000)
+  }, [])
+
+  const ensureSingleShopCart = useCallback(
+    (shopId: string | null) => {
+      if (!shopId) return true
+      const cartShopIds = new Set(cart.map((item) => item.shopId).filter(Boolean))
+      if (cartShopIds.size === 0) return true
+      if (cartShopIds.size === 1 && cartShopIds.has(shopId)) return true
+      showCartAlert('limit', 'You can only add items from one shop per order.')
+      return false
+    },
+    [cart, showCartAlert],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (cartAlertTimerRef.current) {
+        window.clearTimeout(cartAlertTimerRef.current)
+      }
+    }
+  }, [])
+
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
+  const flashDealById = useMemo(() => new Map(flashDeals.map((d) => [d.id, d])), [flashDeals])
+
+  const cartQtyByProductId = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const item of cart) {
+      map.set(item.productId, (map.get(item.productId) ?? 0) + item.quantity)
+    }
+    return map
+  }, [cart])
+
+  const getProductStockLimit = useCallback(
+    (productId: string, flashDealId?: string | null) => {
+      const product = productById.get(productId)
+      const baseStock = product?.quantity ?? null
+      const flashDeal =
+        (flashDealId ? flashDealById.get(flashDealId) : null) ?? product?.flashDeal ?? null
+      if (flashDeal) {
+        const remaining = Math.max(flashDeal.flashQuantity - flashDeal.soldQuantity, 0)
+        if (typeof baseStock === 'number') {
+          return Math.min(baseStock, remaining)
+        }
+        return remaining
+      }
+      return baseStock
+    },
+    [productById, flashDealById],
+  )
+
+  const getProductPurchaseLimit = useCallback(
+    (productId: string, flashDealId?: string | null) => {
+      const product = productById.get(productId)
+      const flashDeal =
+        (flashDealId ? flashDealById.get(flashDealId) : null) ?? product?.flashDeal ?? null
+      const limits: number[] = []
+      if (typeof product?.purchaseLimit === 'number') {
+        limits.push(product.purchaseLimit)
+      }
+      if (typeof flashDeal?.purchaseLimit === 'number') {
+        limits.push(flashDeal.purchaseLimit)
+      }
+      if (limits.length === 0) return null
+      return Math.min(...limits)
+    },
+    [productById, flashDealById],
+  )
+
+  const validateProductIncrement = useCallback(
+    (productId: string, addQty: number, flashDealId?: string | null) => {
+      const currentQty = cartQtyByProductId.get(productId) ?? 0
+      const nextQty = currentQty + addQty
+      const stockLimit = getProductStockLimit(productId, flashDealId)
+      if (typeof stockLimit === 'number' && nextQty > stockLimit) {
+        return {
+          ok: false,
+          type: 'stock' as const,
+          message: 'Requested quantity exceeds available stock.',
+        }
+      }
+      const purchaseLimit = getProductPurchaseLimit(productId, flashDealId)
+      if (typeof purchaseLimit === 'number' && nextQty > purchaseLimit) {
+        return {
+          ok: false,
+          type: 'limit' as const,
+          message: 'You have reached the maximum purchase limit for this item.',
+        }
+      }
+      return { ok: true as const }
+    },
+    [cartQtyByProductId, getProductPurchaseLimit, getProductStockLimit],
+  )
+
+  const getBundleCountInCart = useCallback(
+    (bundle: MarketplaceBundle) => {
+      const cartItems = cart.filter((item) => item.bundleId === bundle.id)
+      if (cartItems.length === 0 || bundle.items.length === 0) return 0
+      const qtyByProductId = new Map<string, number>()
+      for (const item of cartItems) {
+        qtyByProductId.set(item.productId, (qtyByProductId.get(item.productId) ?? 0) + item.quantity)
+      }
+      let bundleCount = Infinity
+      for (const bundleItem of bundle.items) {
+        const required = bundleItem.quantity
+        const inCart = qtyByProductId.get(bundleItem.productId) ?? 0
+        const possible = required > 0 ? Math.floor(inCart / required) : 0
+        bundleCount = Math.min(bundleCount, possible)
+      }
+      return bundleCount === Infinity ? 0 : bundleCount
+    },
+    [cart],
+  )
+
+  const validateBundleAdd = useCallback(
+    (bundle: MarketplaceBundle) => {
+      const currentBundles = getBundleCountInCart(bundle)
+      const bundleLimit = bundle.purchaseLimit
+      const usedCount = bundle.usedCount ?? 0
+      if (typeof bundleLimit === 'number') {
+        const remaining = bundleLimit - usedCount
+        if (remaining <= 0) {
+          return {
+            ok: false,
+            type: 'limit' as const,
+            message: 'You have reached the maximum purchase limit for this item.',
+          }
+        }
+        if (currentBundles + 1 > remaining) {
+          return {
+            ok: false,
+            type: 'limit' as const,
+            message: 'You have reached the maximum purchase limit for this item.',
+          }
+        }
+      }
+
+      for (const item of bundle.items) {
+        const validation = validateProductIncrement(item.productId, item.quantity, null)
+        if (!validation.ok) {
+          return validation
+        }
+      }
+
+      return { ok: true as const }
+    },
+    [getBundleCountInCart, validateProductIncrement],
+  )
+
+  const getItemLimitState = useCallback(
+    (item: CartItem) => {
+      if (item.bundleId) {
+        return { canIncrease: false, message: 'Bundle quantities are fixed.' }
+      }
+      const validation = validateProductIncrement(item.productId, 1, item.flashDealId)
+      if (!validation.ok) {
+        return { canIncrease: false, message: validation.message }
+      }
+      return { canIncrease: true, message: null }
+    },
+    [validateProductIncrement],
+  )
+
+  const isSameCartLine = useCallback((a: CartItem, b: CartItem) => {
+    return (
+      a.productId === b.productId &&
+      (a.bundleId ?? null) === (b.bundleId ?? null) &&
+      (a.flashDealId ?? null) === (b.flashDealId ?? null) &&
+      (a.discountId ?? null) === (b.discountId ?? null) &&
+      (a.addonDealId ?? null) === (b.addonDealId ?? null) &&
+      Boolean(a.isAddonDiscounted) === Boolean(b.isAddonDiscounted)
+    )
+  }, [])
+
+  const validateCartSnapshot = useCallback(() => {
+    for (const [productId, qty] of cartQtyByProductId) {
+      const stockLimit = getProductStockLimit(productId)
+      if (typeof stockLimit === 'number' && qty > stockLimit) {
+        return {
+          ok: false,
+          type: 'stock' as const,
+          message: 'Requested quantity exceeds available stock.',
+        }
+      }
+      const purchaseLimit = getProductPurchaseLimit(productId)
+      if (typeof purchaseLimit === 'number' && qty > purchaseLimit) {
+        return {
+          ok: false,
+          type: 'limit' as const,
+          message: 'You have reached the maximum purchase limit for this item.',
+        }
+      }
+    }
+
+    return { ok: true as const }
+  }, [
+    cartQtyByProductId,
+    getProductStockLimit,
+    getProductPurchaseLimit,
+  ])
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -1317,6 +1583,55 @@ function ShopDemoPage() {
   }, [addonDeals, cart])
 
   useEffect(() => {
+    if (cart.length === 0) return
+    if (addonDeals.length === 0) return
+
+    const dealById = new Map(addonDeals.map((deal) => [deal.id, deal]))
+    const cartQtyMap = new Map<string, number>()
+    for (const item of cart) {
+      cartQtyMap.set(item.productId, (cartQtyMap.get(item.productId) ?? 0) + item.quantity)
+    }
+
+    setCart((prev) => {
+      let changed = false
+      const next: CartItem[] = []
+
+      for (const item of prev) {
+        if (!item.isAddonDiscounted || !item.addonDealId) {
+          next.push(item)
+          continue
+        }
+
+        const deal = dealById.get(item.addonDealId) ?? null
+        const requiredQty = deal?.addonItems[0]?.requiredQuantity ?? 1
+        const triggerQty = deal ? (cartQtyMap.get(deal.triggerProductId) ?? 0) : 0
+
+        if (!deal || triggerQty < requiredQty) {
+          changed = true
+          const fullPriceId = `full-price:${item.productId}`
+          const existing = next.find((line) => line.addonDealId === fullPriceId)
+          if (existing) {
+            existing.quantity += item.quantity
+          } else {
+            next.push({
+              ...item,
+              price: item.originalPrice,
+              originalPrice: item.originalPrice,
+              addonDealId: fullPriceId,
+              isAddonDiscounted: false,
+            })
+          }
+          continue
+        }
+
+        next.push(item)
+      }
+
+      return changed ? next : prev
+    })
+  }, [addonDeals, cart])
+
+  useEffect(() => {
     if (pendingAddonTriggerIds.length === 0) return
     const triggerSet = new Set(pendingAddonTriggerIds)
     const suggestions = addonSuggestions.filter((suggestion) => triggerSet.has(suggestion.triggerProductId))
@@ -1361,11 +1676,26 @@ function ShopDemoPage() {
   // ---- Cart actions ----
 
   const addFlashDealToCart = (deal: MarketplaceFlashDeal) => {
+    if (!ensureSingleShopCart(deal.shopId)) return
+    const validation = validateProductIncrement(deal.productId, 1, deal.id)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     setCart((prev) => {
-      const existing = prev.find((c) => c.productId === deal.productId && c.flashDealId === deal.id)
+      const existing = prev.find(
+        (c) =>
+          c.productId === deal.productId &&
+          c.flashDealId === deal.id &&
+          !c.bundleId &&
+          !c.addonDealId,
+      )
       if (existing) {
         return prev.map((c) =>
-          c.productId === deal.productId && c.flashDealId === deal.id
+          c.productId === deal.productId &&
+          c.flashDealId === deal.id &&
+          !c.bundleId &&
+          !c.addonDealId
             ? { ...c, quantity: c.quantity + 1 }
             : c,
         )
@@ -1381,6 +1711,8 @@ function ShopDemoPage() {
           image: deal.productImage,
           flashDealId: deal.id,
           discountId: null,
+          addonDealId: null,
+          isAddonDiscounted: false,
           shopId: deal.shopId,
         },
       ]
@@ -1390,12 +1722,22 @@ function ShopDemoPage() {
   }
 
   const addProductToCart = (product: MarketplaceProduct) => {
+    if (!ensureSingleShopCart(product.shopId)) return
+    const validation = validateProductIncrement(product.id, 1, product.flashDeal?.id ?? null)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     const discPrice = computeDiscountedPrice(product)
     setCart((prev) => {
-      const existing = prev.find((c) => c.productId === product.id)
+      const existing = prev.find(
+        (c) => c.productId === product.id && !c.bundleId && !c.addonDealId,
+      )
       if (existing) {
         return prev.map((c) =>
-          c.productId === product.id ? { ...c, quantity: c.quantity + 1 } : c,
+          c.productId === product.id && !c.bundleId && !c.addonDealId
+            ? { ...c, quantity: c.quantity + 1 }
+            : c,
         )
       }
       return [
@@ -1409,6 +1751,8 @@ function ShopDemoPage() {
           image: product.image,
           flashDealId: product.flashDeal?.id ?? null,
           discountId: product.discount?.id ?? null,
+          addonDealId: null,
+          isAddonDiscounted: false,
           shopId: product.shopId,
         },
       ]
@@ -1418,12 +1762,47 @@ function ShopDemoPage() {
   }
 
   const addAddonToCart = (addon: AddonSuggestion) => {
+    if (!ensureSingleShopCart(addon.shopId)) return
+    const deal = addonDeals.find((entry) => entry.id === addon.dealId) ?? null
+    const addonLimit = deal?.maxUses ?? null
+    const addonUsed = deal?.usedCount ?? 0
+    if (addonLimit !== null && addonUsed >= addonLimit) {
+      showCartAlert('limit', 'You have reached the maximum purchase limit for this item.')
+      return
+    }
+    const validation = validateProductIncrement(addon.addonProductId, 1, null)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     setCart((prev) => {
-      const existing = prev.find((c) => c.productId === addon.addonProductId)
-      if (existing) {
-        return prev.map((c) =>
-          c.productId === addon.addonProductId ? { ...c, quantity: c.quantity + 1 } : c,
-        )
+      const discountedLine = prev.find(
+        (c) => c.addonDealId === addon.dealId && c.isAddonDiscounted,
+      )
+      if (discountedLine) {
+        const fullPriceId = `full-price:${addon.addonProductId}`
+        const fullPriceLine = prev.find((c) => c.addonDealId === fullPriceId)
+        if (fullPriceLine) {
+          return prev.map((c) =>
+            c.addonDealId === fullPriceId ? { ...c, quantity: c.quantity + 1 } : c,
+          )
+        }
+        return [
+          ...prev,
+          {
+            productId: addon.addonProductId,
+            name: addon.addonProductName,
+            price: addon.addonProductPrice,
+            originalPrice: addon.addonProductPrice,
+            quantity: 1,
+            image: addon.addonProductImage,
+            flashDealId: null,
+            discountId: null,
+            addonDealId: fullPriceId,
+            isAddonDiscounted: false,
+            shopId: addon.shopId,
+          },
+        ]
       }
       return [
         ...prev,
@@ -1436,6 +1815,8 @@ function ShopDemoPage() {
           image: addon.addonProductImage,
           flashDealId: null,
           discountId: null,
+          addonDealId: addon.dealId,
+          isAddonDiscounted: true,
           shopId: addon.shopId,
         },
       ]
@@ -1445,15 +1826,23 @@ function ShopDemoPage() {
   }
 
   const addBundleToCart = (bundle: MarketplaceBundle) => {
+    if (!ensureSingleShopCart(bundle.shopId)) return
+    const validation = validateBundleAdd(bundle)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     const totalBundleQty = bundle.items.reduce((s, b) => s + b.quantity, 0)
     const perUnitBundlePrice =
       bundle.price && totalBundleQty > 0 ? bundle.price / totalBundleQty : null
     for (const item of bundle.items) {
       setCart((prev) => {
-        const existing = prev.find((c) => c.productId === item.productId)
+        const existing = prev.find(
+          (c) => c.productId === item.productId && c.bundleId === bundle.id,
+        )
         if (existing) {
           return prev.map((c) =>
-            c.productId === item.productId
+            c.productId === item.productId && c.bundleId === bundle.id
               ? { ...c, quantity: c.quantity + item.quantity }
               : c,
           )
@@ -1467,14 +1856,16 @@ function ShopDemoPage() {
             originalPrice: item.productPrice,
             quantity: item.quantity,
             image: item.productImage,
-            flashDealId: null,
-            discountId: null,
-            bundleId: bundle.id,
-            bundleName: bundle.name ?? null,
-            shopId: bundle.shopId,
-          },
-        ]
-      })
+          flashDealId: null,
+          discountId: null,
+          bundleId: bundle.id,
+          bundleName: bundle.name ?? null,
+          addonDealId: null,
+          isAddonDiscounted: false,
+          shopId: bundle.shopId,
+        },
+      ]
+    })
     }
     setCartOpen(true)
     const triggerIds = Array.from(new Set(bundle.items.map((item) => item.productId)))
@@ -1489,6 +1880,12 @@ function ShopDemoPage() {
   }
 
   const handleInitiateAddFlashDeal = (deal: MarketplaceFlashDeal) => {
+    if (!ensureSingleShopCart(deal.shopId)) return
+    const validation = validateProductIncrement(deal.productId, 1, deal.id)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     const previewItem: CartItem = {
       productId: deal.productId,
       name: deal.productName,
@@ -1504,6 +1901,12 @@ function ShopDemoPage() {
   }
 
   const handleInitiateAddProduct = (product: MarketplaceProduct) => {
+    if (!ensureSingleShopCart(product.shopId)) return
+    const validation = validateProductIncrement(product.id, 1, product.flashDeal?.id ?? null)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     const discPrice = computeDiscountedPrice(product)
     const previewItem: CartItem = {
       productId: product.id,
@@ -1520,22 +1923,47 @@ function ShopDemoPage() {
   }
 
   const handleInitiateAddAddon = (addon: AddonSuggestion) => {
+    if (!ensureSingleShopCart(addon.shopId)) return
+    const deal = addonDeals.find((entry) => entry.id === addon.dealId) ?? null
+    const addonLimit = deal?.maxUses ?? null
+    const addonUsed = deal?.usedCount ?? 0
+    if (addonLimit !== null && addonUsed >= addonLimit) {
+      showCartAlert('limit', 'You have reached the maximum purchase limit for this item.')
+      return
+    }
+    const validation = validateProductIncrement(addon.addonProductId, 1, null)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
+    const alreadyDiscounted = cart.some(
+      (item) => item.addonDealId === addon.dealId && item.isAddonDiscounted,
+    )
+    const previewPrice = alreadyDiscounted ? addon.addonProductPrice : addon.discountedPrice
     setAddonModalOpen(false)
     const previewItem: CartItem = {
       productId: addon.addonProductId,
       name: addon.addonProductName,
-      price: addon.discountedPrice,
+      price: previewPrice,
       originalPrice: addon.addonProductPrice,
       quantity: 1,
       image: addon.addonProductImage,
       flashDealId: null,
       discountId: null,
+      addonDealId: alreadyDiscounted ? `full-price:${addon.addonProductId}` : addon.dealId,
+      isAddonDiscounted: !alreadyDiscounted,
       shopId: addon.shopId,
     }
     openPreAddDetails([previewItem], () => addAddonToCart(addon))
   }
 
   const handleInitiateAddBundle = (bundle: MarketplaceBundle) => {
+    if (!ensureSingleShopCart(bundle.shopId)) return
+    const validation = validateBundleAdd(bundle)
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      return
+    }
     const totalBundleQty = bundle.items.reduce((s, b) => s + b.quantity, 0)
     const perUnitBundlePrice =
       bundle.price && totalBundleQty > 0 ? bundle.price / totalBundleQty : null
@@ -1555,18 +1983,47 @@ function ShopDemoPage() {
     openPreAddDetails(previewItems, () => addBundleToCart(bundle))
   }
 
-  const updateCartQty = (productId: string, delta: number) => {
+  const updateCartQty = (item: CartItem, delta: number) => {
+    if (item.bundleId) return
+    if (delta > 0) {
+      const validation = validateProductIncrement(item.productId, delta, item.flashDealId)
+      if (!validation.ok) {
+        showCartAlert(validation.type, validation.message)
+        return
+      }
+    }
+    if (item.isAddonDiscounted && delta > 0) {
+      const fullPriceId = `full-price:${item.productId}`
+      setCart((prev) => {
+        const existing = prev.find((c) => c.addonDealId === fullPriceId)
+        if (existing) {
+          return prev.map((c) =>
+            c.addonDealId === fullPriceId ? { ...c, quantity: c.quantity + 1 } : c,
+          )
+        }
+        return [
+          ...prev,
+          {
+            ...item,
+            price: item.originalPrice,
+            originalPrice: item.originalPrice,
+            quantity: 1,
+            addonDealId: fullPriceId,
+            isAddonDiscounted: false,
+          },
+        ]
+      })
+      return
+    }
     setCart((prev) =>
       prev
-        .map((c) =>
-          c.productId === productId && !c.bundleId ? { ...c, quantity: c.quantity + delta } : c,
-        )
+        .map((c) => (isSameCartLine(c, item) ? { ...c, quantity: c.quantity + delta } : c))
         .filter((c) => c.quantity > 0),
     )
   }
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((c) => c.productId !== productId))
+  const removeFromCart = (item: CartItem) => {
+    setCart((prev) => prev.filter((c) => !isSameCartLine(c, item)))
   }
 
   const removeBundleFromCart = (bundleId: string) => {
@@ -1609,6 +2066,20 @@ function ShopDemoPage() {
 
   const handleCheckout = async () => {
     if (!shopId || cart.length === 0) return
+    const validation = validateCartSnapshot()
+    if (!validation.ok) {
+      showCartAlert(validation.type, validation.message)
+      setCheckoutResult({
+        success: false,
+        message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+        itemsPurchased: 0,
+        totalPaid: 0,
+        discountsSaved: 0,
+        voucherSaved: 0,
+      })
+      setShowSuccess(true)
+      return
+    }
     setIsCheckingOut(true)
     const result = await simulateCheckout(cart, appliedVoucherId, voucherDiscount, shopId)
     setCheckoutResult(result)
@@ -1761,9 +2232,13 @@ function ShopDemoPage() {
           vouchersCount={vouchers.length}
         />
 
-        <FlashDealsSection deals={secondaryFlashDeals} onAdd={handleInitiateAddFlashDeal} />
+        {secondaryFlashDeals.length > 0 && (
+          <FlashDealsSection deals={secondaryFlashDeals} onAdd={handleInitiateAddFlashDeal} />
+        )}
 
-        <BundleDealsSection bundles={bundles} onAdd={handleInitiateAddBundle} />
+        {bundles.length > 0 && (
+          <BundleDealsSection bundles={bundles} onAdd={handleInitiateAddBundle} />
+        )}
 
         <section className="mb-6 rounded-2xl bg-white/90 p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,.35)] ring-1 ring-slate-200/70">
           <div className="mb-3 flex items-center justify-between">
@@ -1815,6 +2290,9 @@ function ShopDemoPage() {
         onRemove={removeFromCart}
         onRemoveBundle={removeBundleFromCart}
         voucherDiscount={voucherDiscount}
+        limitAlert={cartAlert}
+        onClearAlert={() => setCartAlert(null)}
+        getItemLimitState={getItemLimitState}
         onReviewCheckout={handleCheckout}
         isCheckingOut={isCheckingOut}
       />
@@ -1854,6 +2332,27 @@ function ShopDemoPage() {
         onClose={() => setAddonModalOpen(false)}
         onAddAddon={handleInitiateAddAddon}
       />
+
+      {cartAlert && (
+        <div className="fixed bottom-20 left-1/2 z-[85] w-[92vw] max-w-[520px] -translate-x-1/2">
+          <div
+            className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-lg ${
+              cartAlert.type === 'stock'
+                ? 'border-orange-200 bg-orange-50 text-orange-700'
+                : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            <span>{cartAlert.message}</span>
+            <button
+              type="button"
+              onClick={() => setCartAlert(null)}
+              className="rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ===== Checkout Success Modal ===== */}
       <CheckoutSuccessModal

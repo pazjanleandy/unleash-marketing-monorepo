@@ -11,6 +11,7 @@ export type MarketplaceProduct = {
   image: string | null
   category: string
   quantity: number
+  purchaseLimit: number | null
   shopId: string
   shopName: string
   shopOwnerId: string | null
@@ -22,6 +23,7 @@ export type MarketplaceProduct = {
     soldQuantity: number
     startAt: string
     endAt: string
+    purchaseLimit: number | null
   } | null
   discount: {
     id: string
@@ -70,6 +72,9 @@ export type MarketplaceBundle = {
   name: string | null
   price: number | null
   currency: string
+  purchaseLimit: number | null
+  usedCount: number
+  promotionUsedCount: number
   shopId: string
   shopName: string
   shopOwnerId: string | null
@@ -85,6 +90,8 @@ export type MarketplaceBundle = {
 export type MarketplaceAddonDeal = {
   id: string
   name: string
+  maxUses: number | null
+  usedCount: number
   shopId: string
   shopName: string
   triggerProductId: string
@@ -109,6 +116,8 @@ export type CartItem = {
   image: string | null
   flashDealId: string | null
   discountId: string | null
+  addonDealId?: string | null
+  isAddonDiscounted?: boolean
   bundleId?: string | null
   bundleName?: string | null
   shopId: string
@@ -165,7 +174,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
   // Fetch active flash deals
   const flashDealsQuery = supabase
     .from('flash_deals')
-    .select('id,product_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at')
+    .select('id,product_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit')
     .eq('is_active', true)
     .or('voucher_type.is.null,voucher_type.neq.private')
     .lte('start_at', now)
@@ -178,7 +187,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
   // Fetch active product discounts
   const discountsQuery = supabase
     .from('product_discounts')
-    .select('id,product_id,discount_type,discount_value,promotion_id')
+    .select('id,product_id,discount_type,discount_value,promotion_id,used_count')
     .eq('is_active', true)
     .lte('start_at', now)
     .gte('end_at', now)
@@ -197,7 +206,37 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
     discountMap.set(d.product_id, d)
   }
 
-  return (products ?? []).map((p: any) => {
+  const promotionIds = Array.from(
+    new Set(
+      (discounts ?? [])
+        .map((d: any) => d?.promotion_id)
+        .filter((value: string | null | undefined): value is string => Boolean(value)),
+    ),
+  )
+  const promotionLimitMap = new Map<string, { limit: number | null }>()
+  if (promotionIds.length > 0) {
+    const { data: sections } = await supabase
+      .from('discount_section')
+      .select('id,max_uses')
+      .in('id', promotionIds)
+    const resolvedSections = (sections ?? []) as Array<{ id: string; max_uses: number | null }>
+    for (const section of resolvedSections) {
+      promotionLimitMap.set(section.id, { limit: section.max_uses ?? null })
+    }
+  }
+
+  return (products ?? [])
+    .filter((p: any) => (p.quantity ?? 0) > 0)
+    .filter((p: any) => {
+      const d = discountMap.get(p.product_id) as
+        | { promotion_id?: string | null; used_count?: number | null }
+        | undefined
+      if (!d?.promotion_id) return true
+      const limit = promotionLimitMap.get(d.promotion_id)?.limit ?? null
+      if (limit === null) return true
+      return (d.used_count ?? 0) < limit
+    })
+    .map((p: any) => {
     const fd = flashMap.get(p.product_id)
     const d = discountMap.get(p.product_id)
 
@@ -208,6 +247,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
       image: p.image_url ?? p.image ?? null,
       category: p.categories?.name?.trim() || 'Uncategorized',
       quantity: p.quantity ?? 0,
+      purchaseLimit: d?.promotion_id ? promotionLimitMap.get(d.promotion_id)?.limit ?? null : null,
       shopId: p.shop_id,
       shopName: p.shops?.name?.trim() || 'Unknown Shop',
       shopOwnerId: p.shops?.owner_id ?? null,
@@ -220,6 +260,7 @@ export async function listMarketplaceProducts(shopId: string): Promise<Marketpla
             soldQuantity: fd.sold_quantity ?? 0,
             startAt: fd.start_at,
             endAt: fd.end_at,
+            purchaseLimit: fd.purchase_limit ?? null,
           }
         : null,
       discount: d
@@ -244,7 +285,7 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
   const query = supabase
     .from('flash_deals')
     .select(
-      'id,product_id,shop_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image,image_url),shops:shops!flash_deals_shop_fkey(name,owner_id)',
+      'id,product_id,shop_id,flash_price,original_price,flash_quantity,sold_quantity,start_at,end_at,purchase_limit,products:products!flash_deals_product_fkey(prodname,image,image_url,quantity),shops:shops!flash_deals_shop_fkey(name,owner_id)',
     )
     .eq('is_active', true)
     .lte('start_at', now)
@@ -255,7 +296,17 @@ export async function listActiveFlashDeals(shopId: string): Promise<MarketplaceF
 
   if (error) throw error
 
-  return (data ?? []).map((row: any) => ({
+  return (data ?? [])
+    .filter((row: any) => (row.products?.quantity ?? 0) > 0)
+    .filter((row: any) => {
+      const remaining = Math.max((row.flash_quantity ?? 0) - (row.sold_quantity ?? 0), 0)
+      if (remaining <= 0) return false
+      if (row.purchase_limit !== null && row.purchase_limit !== undefined) {
+        return (row.sold_quantity ?? 0) < row.purchase_limit
+      }
+      return true
+    })
+    .map((row: any) => ({
     id: row.id,
     productId: row.product_id,
     productName: row.products?.prodname?.trim() || 'Unnamed Product',
@@ -342,7 +393,7 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
 
   const bundlesQuery = supabase
     .from('bundles')
-    .select('id,name,price,currency,shop_id,shops:shops!bundles_shop_id_fkey(name,owner_id),bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,image_url,price))')
+    .select('id,name,price,currency,shop_id,max_uses,used_count,promotion_id,discount_section:discount_section!bundles_promotion_id_fkey(id,max_uses,used_count),shops:shops!bundles_shop_id_fkey(name,owner_id),bundle_items:bundle_items(product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,image_url,price))')
     .eq('is_active', true)
     .in('promotion_id', sectionIds)
 
@@ -352,22 +403,42 @@ export async function listActiveBundles(shopId: string): Promise<MarketplaceBund
 
   if (error) throw error
 
-  return (bundles ?? []).map((b: any) => ({
-    id: b.id,
-    name: b.name,
-    price: b.price ? Number(b.price) : null,
-    currency: b.currency ?? 'USD',
-    shopId: b.shop_id,
-    shopName: b.shops?.name?.trim() || 'Unknown Shop',
-    shopOwnerId: b.shops?.owner_id ?? null,
-    items: (b.bundle_items ?? []).map((item: any) => ({
-      productId: item.product_id,
-      productName: item.products?.prodname?.trim() || 'Unnamed Product',
-      productImage: item.products?.image_url ?? item.products?.image ?? null,
-      productPrice: item.products?.price ?? 0,
-      quantity: item.quantity ?? 1,
-    })),
-  }))
+  return (bundles ?? [])
+    .filter((b: any) => {
+      const section = (b.discount_section ?? null) as {
+        max_uses?: number | null
+        used_count?: number | null
+      } | null
+      const limit = b.max_uses ?? section?.max_uses ?? null
+      const usedCount = b.used_count ?? 0
+      if (limit === null) return true
+      return usedCount < limit
+    })
+    .map((b: any) => {
+    const section = (b.discount_section ?? null) as {
+      max_uses?: number | null
+      used_count?: number | null
+    } | null
+    return {
+      id: b.id,
+      name: b.name,
+      price: b.price ? Number(b.price) : null,
+      currency: b.currency ?? 'USD',
+      purchaseLimit: section?.max_uses ?? b.max_uses ?? null,
+      usedCount: b.used_count ?? 0,
+      promotionUsedCount: section?.used_count ?? 0,
+      shopId: b.shop_id,
+      shopName: b.shops?.name?.trim() || 'Unknown Shop',
+      shopOwnerId: b.shops?.owner_id ?? null,
+      items: (b.bundle_items ?? []).map((item: any) => ({
+        productId: item.product_id,
+        productName: item.products?.prodname?.trim() || 'Unnamed Product',
+        productImage: item.products?.image_url ?? item.products?.image ?? null,
+        productPrice: item.products?.price ?? 0,
+        quantity: item.quantity ?? 1,
+      })),
+    }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -380,7 +451,7 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
   const query = supabase
     .from('addon_deals')
     .select(
-      'id,name,shop_id,trigger_product_id,discount_type,discount_value,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,image_url,price))',
+      'id,name,shop_id,trigger_product_id,discount_type,discount_value,max_uses,used_count,products:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(product_id,required_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,image_url,price))',
     )
     .eq('is_active', true)
     .lte('start_at', now)
@@ -390,9 +461,17 @@ export async function listActiveAddonDeals(shopId: string): Promise<MarketplaceA
 
   if (error) throw error
 
-  return (data ?? []).map((deal: any) => ({
+  return (data ?? [])
+    .filter((deal: any) => {
+      const limit = deal.max_uses ?? null
+      if (limit === null) return true
+      return (deal.used_count ?? 0) < limit
+    })
+    .map((deal: any) => ({
     id: deal.id,
     name: deal.name,
+    maxUses: deal.max_uses ?? null,
+    usedCount: deal.used_count ?? 0,
     shopId: deal.shop_id,
     shopName: 'Unknown Shop',
     triggerProductId: deal.trigger_product_id,
@@ -592,6 +671,34 @@ export async function simulateCheckout(
       productQtyMap.set(item.productId, (productQtyMap.get(item.productId) ?? 0) + item.quantity)
     }
 
+    const flashDealQtyMap = new Map<string, number>()
+    const discountQtyMap = new Map<string, number>()
+    const bundleIds = new Set<string>()
+    const addonDealQtyMap = new Map<string, number>()
+    for (const item of items) {
+      if (item.flashDealId) {
+        flashDealQtyMap.set(
+          item.flashDealId,
+          (flashDealQtyMap.get(item.flashDealId) ?? 0) + item.quantity,
+        )
+      }
+      if (item.discountId) {
+        discountQtyMap.set(
+          item.discountId,
+          (discountQtyMap.get(item.discountId) ?? 0) + item.quantity,
+        )
+      }
+      if (item.bundleId) {
+        bundleIds.add(item.bundleId)
+      }
+      if (item.addonDealId && item.isAddonDiscounted) {
+        addonDealQtyMap.set(
+          item.addonDealId,
+          (addonDealQtyMap.get(item.addonDealId) ?? 0) + item.quantity,
+        )
+      }
+    }
+
     let resolvedVoucherDiscount = 0
     let resolvedVoucherId: string | null = null
 
@@ -721,6 +828,302 @@ export async function simulateCheckout(
     let totalPaid = 0
     let discountsSaved = 0
 
+    // ---- Purchase limit + stock validation (backend safety) ----
+    const productIds = Array.from(productQtyMap.keys())
+    if (productIds.length > 0) {
+      const { data: productRows, error: productError } = await supabase
+        .from('products')
+        .select('product_id,quantity')
+        .in('product_id', productIds)
+      if (productError) {
+        return {
+          success: false,
+          message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      const productStockMap = new Map<string, number>()
+      for (const row of productRows ?? []) {
+        productStockMap.set(row.product_id, row.quantity ?? 0)
+      }
+      for (const [productId, qty] of productQtyMap) {
+        const stock = productStockMap.get(productId)
+        if (typeof stock === 'number' && qty > stock) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+    }
+
+    const flashDealIds = Array.from(flashDealQtyMap.keys())
+    if (flashDealIds.length > 0) {
+      const { data: flashRows, error: flashError } = await supabase
+        .from('flash_deals')
+        .select('id,flash_quantity,sold_quantity,purchase_limit')
+        .in('id', flashDealIds)
+      if (flashError) {
+        return {
+          success: false,
+          message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      const flashMap = new Map<string, { remaining: number; limit: number | null }>()
+      for (const row of flashRows ?? []) {
+        const remaining = Math.max((row.flash_quantity ?? 0) - (row.sold_quantity ?? 0), 0)
+        flashMap.set(row.id, { remaining, limit: row.purchase_limit ?? null })
+      }
+      for (const [flashId, qty] of flashDealQtyMap) {
+        const snapshot = flashMap.get(flashId)
+        if (!snapshot) continue
+        if (qty > snapshot.remaining) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+        if (snapshot.limit !== null && qty > snapshot.limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+    }
+
+    const discountIds = Array.from(discountQtyMap.keys())
+    if (discountIds.length > 0) {
+      const { data: discountRows, error: discountError } = await supabase
+        .from('product_discounts')
+        .select('id,promotion_id')
+        .in('id', discountIds)
+      if (discountError) {
+        return {
+          success: false,
+          message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      const promotionIds = Array.from(
+        new Set(
+          (discountRows ?? [])
+            .map((row: any) => row?.promotion_id)
+            .filter((value: string | null | undefined): value is string => Boolean(value)),
+        ),
+      )
+      const promotionLimitMap = new Map<string, { limit: number | null; used: number }>()
+      if (promotionIds.length > 0) {
+        const { data: sections, error: sectionError } = await supabase
+          .from('discount_section')
+          .select('id,max_uses,used_count')
+          .in('id', promotionIds)
+        if (sectionError) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+        for (const section of sections ?? []) {
+          promotionLimitMap.set(section.id, {
+            limit: section.max_uses ?? null,
+            used: section.used_count ?? 0,
+          })
+        }
+      }
+      for (const row of discountRows ?? []) {
+        const qty = discountQtyMap.get(row.id) ?? 0
+        const promotionSnapshot = row.promotion_id
+          ? promotionLimitMap.get(row.promotion_id) ?? null
+          : null
+        const limit = promotionSnapshot ? promotionSnapshot.limit : null
+        if (limit !== null && qty > limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+    }
+
+    if (bundleIds.size > 0) {
+      const bundleIdList = Array.from(bundleIds)
+      const { data: bundleRows, error: bundleError } = await supabase
+        .from('bundles')
+        .select('id,max_uses,used_count,promotion_id,bundle_items(product_id,quantity)')
+        .in('id', bundleIdList)
+      if (bundleError) {
+        return {
+          success: false,
+          message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      if (!bundleRows || bundleRows.length === 0) {
+        return {
+          success: false,
+          message: 'Purchase failed: Unable to load bundle usage (check permissions).',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      const promotionIds = Array.from(
+        new Set(
+          (bundleRows ?? [])
+            .map((row: any) => row?.promotion_id)
+            .filter((value: string | null | undefined): value is string => Boolean(value)),
+        ),
+      )
+      const resolvedBundleRows = (bundleRows ?? []) as Array<{
+        id: string
+        max_uses: number | null
+        used_count: number | null
+        promotion_id: string | null
+        bundle_items: Array<{ product_id: string; quantity: number | null }> | null
+      }>
+
+      const bundleCartQtyById = new Map<string, Map<string, number>>()
+      for (const item of items) {
+        if (!item.bundleId) continue
+        const map = bundleCartQtyById.get(item.bundleId) ?? new Map<string, number>()
+        map.set(item.productId, (map.get(item.productId) ?? 0) + item.quantity)
+        bundleCartQtyById.set(item.bundleId, map)
+      }
+
+      for (const bundle of resolvedBundleRows) {
+        const cartMap = bundleCartQtyById.get(bundle.id) ?? new Map<string, number>()
+        const itemsList = bundle.bundle_items ?? []
+        if (itemsList.length === 0) continue
+        let bundleCount = Infinity
+        for (const item of itemsList) {
+          const required = item.quantity ?? 1
+          const inCart = cartMap.get(item.product_id) ?? 0
+          const possible = required > 0 ? Math.floor(inCart / required) : 0
+          bundleCount = Math.min(bundleCount, possible)
+        }
+        if (bundleCount === 0 && cartMap.size > 0) {
+          return {
+            success: false,
+            message: 'Purchase failed: Bundle items mismatch (cannot determine bundle count).',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+        const limit = bundle.max_uses ?? null
+        const usedCount = bundle.used_count ?? 0
+        if (limit !== null && usedCount >= limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+        if (limit !== null && usedCount + bundleCount > limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+    }
+
+    if (addonDealQtyMap.size > 0) {
+      const addonIds = Array.from(addonDealQtyMap.keys())
+      const { data: addonRows, error: addonError } = await supabase
+        .from('addon_deals')
+        .select('id,max_uses,used_count')
+        .in('id', addonIds)
+      if (addonError) {
+        return {
+          success: false,
+          message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      if (!addonRows || addonRows.length === 0) {
+        return {
+          success: false,
+          message: 'Purchase failed: Unable to load add-on usage (check permissions).',
+          itemsPurchased: 0,
+          totalPaid: 0,
+          discountsSaved: 0,
+          voucherSaved: 0,
+        }
+      }
+      for (const row of addonRows) {
+        const qty = addonDealQtyMap.get(row.id) ?? 0
+        const limit = row.max_uses ?? null
+        const usedCount = row.used_count ?? 0
+        if (limit !== null && usedCount >= limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+        if (limit !== null && usedCount + qty > limit) {
+          return {
+            success: false,
+            message: 'Purchase failed: Quantity exceeds allowed limit or available stock.',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
+      }
+    }
+
     for (const item of items) {
       const itemTotal = item.price * item.quantity
       const originalTotal = item.originalPrice * item.quantity
@@ -756,17 +1159,6 @@ export async function simulateCheckout(
       }
     }
 
-    // Update flash deal sold_quantity
-    const flashDealQtyMap = new Map<string, number>()
-    for (const item of items) {
-      if (item.flashDealId) {
-        flashDealQtyMap.set(
-          item.flashDealId,
-          (flashDealQtyMap.get(item.flashDealId) ?? 0) + item.quantity,
-        )
-      }
-    }
-
     for (const [flashDealId, qty] of flashDealQtyMap) {
       const { data: fd } = await supabase
         .from('flash_deals')
@@ -785,17 +1177,6 @@ export async function simulateCheckout(
       }
     }
 
-    // Update product discount used_count
-    const discountQtyMap = new Map<string, number>()
-    for (const item of items) {
-      if (item.discountId) {
-        discountQtyMap.set(
-          item.discountId,
-          (discountQtyMap.get(item.discountId) ?? 0) + item.quantity,
-        )
-      }
-    }
-
     for (const [discountId, qty] of discountQtyMap) {
       const { data: disc } = await supabase
         .from('product_discounts')
@@ -811,6 +1192,86 @@ export async function simulateCheckout(
             updated_at: new Date().toISOString(),
           })
           .eq('id', discountId)
+      }
+    }
+
+    // Update bundle used_count
+    if (bundleIds.size > 0) {
+      const bundleIdList = Array.from(bundleIds)
+      const { data: bundleRows } = await supabase
+        .from('bundles')
+        .select('id,used_count,promotion_id,bundle_items(product_id,quantity)')
+        .in('id', bundleIdList)
+
+      const bundleCartQtyById = new Map<string, Map<string, number>>()
+      for (const item of items) {
+        if (!item.bundleId) continue
+        const map = bundleCartQtyById.get(item.bundleId) ?? new Map<string, number>()
+        map.set(item.productId, (map.get(item.productId) ?? 0) + item.quantity)
+        bundleCartQtyById.set(item.bundleId, map)
+      }
+
+      for (const bundle of bundleRows ?? []) {
+        const cartMap = bundleCartQtyById.get(bundle.id) ?? new Map<string, number>()
+        const itemsList = bundle.bundle_items ?? []
+        if (itemsList.length === 0) continue
+        let bundleCount = Infinity
+        for (const item of itemsList) {
+          const required = item.quantity ?? 1
+          const inCart = cartMap.get(item.product_id) ?? 0
+          const possible = required > 0 ? Math.floor(inCart / required) : 0
+          bundleCount = Math.min(bundleCount, possible)
+        }
+        if (bundleCount > 0) {
+          const { error: bundleUpdateError } = await supabase
+            .from('bundles')
+            .update({
+              used_count: (bundle.used_count ?? 0) + bundleCount,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', bundle.id)
+          if (bundleUpdateError) {
+            return {
+              success: false,
+              message: 'Purchase failed: Unable to update bundle usage (check permissions).',
+              itemsPurchased: 0,
+              totalPaid: 0,
+              discountsSaved: 0,
+              voucherSaved: 0,
+            }
+          }
+
+        }
+      }
+    }
+
+    if (addonDealQtyMap.size > 0) {
+      const addonIds = Array.from(addonDealQtyMap.keys())
+      const { data: addonRows } = await supabase
+        .from('addon_deals')
+        .select('id,used_count')
+        .in('id', addonIds)
+
+      for (const row of addonRows ?? []) {
+        const qty = addonDealQtyMap.get(row.id) ?? 0
+        if (qty <= 0) continue
+        const { error: addonUpdateError } = await supabase
+          .from('addon_deals')
+          .update({
+            used_count: (row.used_count ?? 0) + qty,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', row.id)
+        if (addonUpdateError) {
+          return {
+            success: false,
+            message: 'Purchase failed: Unable to update add-on usage (check permissions).',
+            itemsPurchased: 0,
+            totalPaid: 0,
+            discountsSaved: 0,
+            voucherSaved: 0,
+          }
+        }
       }
     }
 
