@@ -37,7 +37,6 @@ function VoucherDisplaySettingsSection({
   livestreamUrl,
   videoUrl,
   onDisplaySettingChange,
-  onProductScopeChange,
   onSelectedProductIdsChange,
   onLivestreamUrlChange,
   onVideoUrlChange,

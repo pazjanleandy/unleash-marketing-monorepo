@@ -308,7 +308,12 @@ export async function listBundleDeals(): Promise<BundleListResult> {
     throw toDatabaseError(error, 'Failed to load bundle deals')
   }
 
-  const rows = (data ?? []) as BundleDbRow[]
+  const rows = (data ?? []).map((row: any) => ({
+    ...row,
+    discount_section: Array.isArray(row?.discount_section)
+      ? row.discount_section[0] ?? null
+      : row?.discount_section ?? null,
+  })) as BundleDbRow[]
   const items: BundleDealRow[] = rows.map((row, rowIndex) => {
     const section = row.discount_section
     const children = row.bundle_items ?? []

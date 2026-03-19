@@ -25,7 +25,6 @@ type FlashDealProductsModalProps = {
   onConfirm: (productIds: string[]) => void
 }
 
-type PickerTab = 'select' | 'upload'
 type SearchField = 'Product Name' | 'Product ID'
 
 function ProductImage({
@@ -75,7 +74,6 @@ function FlashDealProductsModal({
   onConfirm,
 }: FlashDealProductsModalProps) {
   const selectAllRef = useRef<HTMLInputElement>(null)
-  const [activeTab, setActiveTab] = useState<PickerTab>('select')
   const [searchField, setSearchField] = useState<SearchField>('Product Name')
   const [searchInput, setSearchInput] = useState('')
   const [appliedQuery, setAppliedQuery] = useState('')
@@ -93,7 +91,6 @@ function FlashDealProductsModal({
       return
     }
 
-    setActiveTab('select')
     setDraftSelection(selectedProductIds)
   }, [isOpen, selectedProductIds])
 

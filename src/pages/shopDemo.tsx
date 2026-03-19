@@ -113,7 +113,6 @@ function FlashDealCard({
   const remaining = Math.max(deal.flashQuantity - deal.soldQuantity, 0)
   const pct = deal.flashQuantity > 0 ? (deal.soldQuantity / deal.flashQuantity) * 100 : 0
   const off = discountPercent(deal.originalPrice, deal.flashPrice)
-  const savings = Math.max(deal.originalPrice - deal.flashPrice, 0)
 
   return (
     <div className={`flex h-full flex-col rounded-2xl bg-white p-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,.4)] ring-1 ring-orange-100 ${isFeatured ? 'gap-3' : 'gap-2.5'}`}>
@@ -187,7 +186,6 @@ function ProductCard({
   const discPrice = computeDiscountedPrice(product)
   const hasDiscount = discPrice < product.price
   const off = hasDiscount ? discountPercent(product.price, discPrice) : 0
-  const savings = hasDiscount ? Math.max(product.price - discPrice, 0) : 0
 
   const promoTags: Array<{ label: string; tone: 'flash' | 'voucher' | 'bundle' | 'discount' }> = []
   if (product.flashDeal) promoTags.push({ label: 'Flash Deal', tone: 'flash' })
@@ -482,58 +480,6 @@ function BundleDealsSection({
   )
 }
 
-function VouchersSection({
-  vouchers,
-  onSelect,
-}: {
-  vouchers: MarketplaceVoucher[]
-  onSelect: (code: string) => void
-}) {
-  return (
-    <section className="mb-8 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Vouchers</h3>
-        <span className="text-xs font-semibold text-slate-500">{vouchers.length} available</span>
-      </div>
-
-      {vouchers.length === 0 ? (
-        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">No vouchers right now.</div>
-      ) : (
-        <div className="space-y-2">
-          {vouchers.map((voucher) => {
-            const discountLabel =
-              voucher.discountType === 'percentage'
-                ? `${voucher.discountValue}% off${voucher.maxDiscount ? ` (max ${formatPrice(voucher.maxDiscount)})` : ''}`
-                : `${formatPrice(voucher.discountValue)} off`
-            const remaining = voucher.usageLimit ? Math.max(voucher.usageLimit - voucher.usedCount, 0) : null
-
-            return (
-              <div
-                key={voucher.id}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,.4)] ring-1 ring-indigo-50"
-              >
-                <div className="min-w-0 space-y-1">
-                  <p className="truncate text-sm font-semibold text-slate-900">{voucher.name || voucher.code}</p>
-                  <p className="text-xs font-semibold text-indigo-600">{discountLabel}</p>
-                  <p className="text-[11px] text-slate-500">
-                    Min spend {formatPrice(voucher.minSpend)} {remaining !== null ? `• ${remaining} left` : '• Unlimited'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onSelect(voucher.code)}
-                  className="h-9 flex-shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(79,70,229,.55)] transition hover:brightness-110 active:scale-[.99]"
-                >
-                  Apply
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </section>
-  )
-}
 
 function ProductBrowseSection({
   title,
@@ -1530,11 +1476,6 @@ function ShopDemoPage() {
     const shop = products.find((p) => p.shopId === shopId)
     return shop?.shopName ?? shopId
   }, [preAddItems, products])
-
-  const handleVoucherPrefill = (code: string) => {
-    setVoucherCode(code)
-    setShowOrderDetails(true)
-  }
 
   const addonSuggestions = useMemo<AddonSuggestion[]>(() => {
     if (addonDeals.length === 0 || cart.length === 0) return []

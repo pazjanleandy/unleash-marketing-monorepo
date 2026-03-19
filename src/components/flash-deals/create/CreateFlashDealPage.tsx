@@ -515,6 +515,7 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
         name: catalogEntry.name,
         originalPrice: catalogEntry.originalPrice,
         stock: catalogEntry.stock,
+        image: catalogEntry.image,
       }
     })
   }, [productsById, selectedProductIds])

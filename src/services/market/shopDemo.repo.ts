@@ -1002,13 +1002,6 @@ export async function simulateCheckout(
           voucherSaved: 0,
         }
       }
-      const promotionIds = Array.from(
-        new Set(
-          (bundleRows ?? [])
-            .map((row: any) => row?.promotion_id)
-            .filter((value: string | null | undefined): value is string => Boolean(value)),
-        ),
-      )
       const resolvedBundleRows = (bundleRows ?? []) as Array<{
         id: string
         max_uses: number | null
