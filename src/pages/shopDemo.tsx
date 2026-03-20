@@ -2016,11 +2016,6 @@ function ShopDemoPage() {
       .sort()
       .join('|')
 
-    if (lastCartSignatureRef.current === '') {
-      lastCartSignatureRef.current = signature
-      return
-    }
-
     if (!appliedVoucherId || !shopId) {
       lastCartSignatureRef.current = signature
       return
@@ -2304,6 +2299,7 @@ function ShopDemoPage() {
           setShowOrderDetails(false)
           setPendingAddAction(null)
           setPendingAddItems([])
+          handleRemoveVoucher()
         }}
         onConfirm={() => {
           setShowOrderDetails(false)
