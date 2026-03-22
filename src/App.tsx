@@ -3,6 +3,7 @@ import MarketCentrePage from './pages/marketCentre'
 import LoginPage from './pages/login'
 import SignUpPage from './pages/signup'
 import ShopDemoPage from './pages/shopDemo'
+import AffiliateMarketplacePage from './pages/affiliateMarketplace'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/marketing-centre" element={<MarketCentrePage />} />
         <Route path="/market-centre" element={<MarketCentrePage />} />
+        <Route path="/affiliate-marketplace" element={<AffiliateMarketplacePage />} />
         <Route path="/shop-demo" element={<ShopDemoPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

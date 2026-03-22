@@ -11,6 +11,10 @@ type MarketingToolsPanelProps = {
 function MarketingToolsPanel({ sections, onToolSelect, isMobile = false }: MarketingToolsPanelProps) {
   if (isMobile) {
     const allTools = sections.flatMap((section) => section.tools)
+    const toMobileTool = (tool: ToolCard): ToolCard =>
+      tool.id === 'flash-deals'
+        ? { ...tool, title: 'Flash Deals' }
+        : tool
     const recommendedTools = allTools.filter(
       (tool) => tool.id === 'discount' || tool.id === 'flash-deals' || tool.id === 'vouchers',
     )
@@ -28,7 +32,7 @@ function MarketingToolsPanel({ sections, onToolSelect, isMobile = false }: Marke
             {recommendedTools.map((tool, index) => (
               <ToolCardItem
                 key={`rec-${tool.title}-${index}`}
-                tool={tool}
+                tool={toMobileTool(tool)}
                 animationDelay="0ms"
                 onToolSelect={onToolSelect}
                 compact
@@ -45,7 +49,7 @@ function MarketingToolsPanel({ sections, onToolSelect, isMobile = false }: Marke
             {allTools.map((tool, index) => (
               <ToolCardItem
                 key={`all-${tool.title}-${index}`}
-                tool={tool}
+                tool={toMobileTool(tool)}
                 animationDelay="0ms"
                 onToolSelect={onToolSelect}
                 compact

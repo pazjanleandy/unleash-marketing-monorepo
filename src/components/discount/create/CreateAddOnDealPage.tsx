@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import type { CreateAddOnDealForm, DiscountDateTimeField } from './types'
-import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
 import ProductPickerModal from './ProductPickerModal'
 import { listShopProducts, type ShopProduct } from '../../../services/market/products.repo'
 
@@ -561,13 +560,6 @@ function CreateAddOnDealPage({
       </div>
 
       <div className="hidden sm:block">
-        <CreateDiscountPromotionBreadcrumb
-          onBack={onBack}
-          mode={mode}
-          sectionLabel="Add-on Deal"
-          createTitle="Create Add-on Deal"
-          editTitle="Edit Add-on Deal"
-        />
         <header className="mt-2 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-4">
           <h1 className="text-3xl font-semibold text-[#33458F]">{desktopTitle}</h1>
           <p className="mt-1 text-sm text-[#3347A8]">{subtitle}</p>

@@ -60,28 +60,30 @@ function VoucherDisplaySettingsSection({
     }
 
     let cancelled = false
-    setProductsLoading(true)
 
-    getCurrentUserShopId()
-      .then(({ shopId }) => {
+    const loadProducts = async () => {
+      setProductsLoading(true)
+
+      try {
+        const { shopId } = await getCurrentUserShopId()
         if (!shopId || cancelled) {
           return
         }
-        return listShopProducts(shopId)
-      })
-      .then((products) => {
+
+        const products = await listShopProducts(shopId)
         if (!cancelled && products) {
           setShopProducts(products as ShopProduct[])
         }
-      })
-      .catch(() => {
+      } catch {
         // Silently fail, products will be empty
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setProductsLoading(false)
         }
-      })
+      }
+    }
+
+    void loadProducts()
 
     return () => {
       cancelled = true
@@ -126,7 +128,7 @@ function VoucherDisplaySettingsSection({
             </div>
 
             <div
-              className="mt-2 grid grid-cols-2 gap-2"
+              className="mt-2 grid gap-2 sm:grid-cols-2"
               role="radiogroup"
               aria-invalid={Boolean(displaySettingError)}
             >
@@ -140,7 +142,7 @@ function VoucherDisplaySettingsSection({
                   aria-invalid={Boolean(displaySettingError)}
                   className="peer sr-only"
                 />
-                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
+                <span className="inline-flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-3 text-center text-[13px] font-medium leading-snug text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
                   Display on all pages
                 </span>
               </label>
@@ -155,7 +157,7 @@ function VoucherDisplaySettingsSection({
                   aria-invalid={Boolean(displaySettingError)}
                   className="peer sr-only"
                 />
-                <span className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-center text-[13px] font-medium leading-tight text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
+                <span className="inline-flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-3 text-center text-[13px] font-medium leading-snug text-slate-700 shadow-sm transition duration-150 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#B1C2EC] peer-focus-visible:ring-offset-1">
                   Shared through voucher code
                 </span>
               </label>

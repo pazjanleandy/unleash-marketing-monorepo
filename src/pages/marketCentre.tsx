@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DesktopBreadcrumbBar from '../components/navigation/DesktopBreadcrumbBar'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
 import { toolSections } from '../components/marketing/data'
@@ -23,6 +24,9 @@ import CreateFlashDealPage from '../components/flash-deals/create/CreateFlashDea
 import type { CreateFlashDealForm } from '../components/flash-deals/create/CreateFlashDealPage'
 import VouchersPage from '../components/vouchers/VouchersPage'
 import CreateVoucherPage from '../components/vouchers/create/CreateVoucherPage'
+import CreateUnleashAdsPage from '../components/ads/CreateUnleashAdsPage'
+import UnleashAdsPage from '../components/ads/UnleashAdsPage'
+import LiveStreamingPage from '../components/live-streaming/LiveStreamingPage'
 import type { VoucherItem } from '../components/vouchers/types'
 import type { CreateVoucherForm, VoucherType } from '../components/vouchers/create/types'
 import type {
@@ -64,6 +68,10 @@ export type MarketCentreView =
   | 'inventory'
   | 'add-product'
   | 'categories'
+  | 'ads'
+  | 'live-streaming'
+  | 'create-search-ads'
+  | 'create-discovery-ads'
   | 'discount'
   | 'flash-deals'
   | 'create-flash-deal'
@@ -112,6 +120,10 @@ const navPlaceholders: Record<
 
 const marketingViews: Set<MarketCentreView> = new Set([
   'marketing',
+  'ads',
+  'live-streaming',
+  'create-search-ads',
+  'create-discovery-ads',
   'discount',
   'flash-deals',
   'create-flash-deal',
@@ -136,6 +148,111 @@ const productViews: Set<MarketCentreView> = new Set([
   'add-product',
   'categories',
 ])
+
+function getMarketCentreBreadcrumbs(activeView: MarketCentreView) {
+  const root = { label: 'Inventory Management System', view: 'dashboard' as MarketCentreView }
+
+  switch (activeView) {
+    case 'dashboard':
+      return [root, { label: 'Dashboard' }]
+    case 'marketing':
+      return [root, { label: 'Marketing Centre' }]
+    case 'discount':
+      return [root, { label: 'Marketing Centre', view: 'marketing' as MarketCentreView }, { label: 'Discount' }]
+    case 'ads':
+      return [root, { label: 'Marketing Centre', view: 'marketing' as MarketCentreView }, { label: 'Unleash Ads' }]
+    case 'live-streaming':
+      return [root, { label: 'Marketing Centre', view: 'marketing' as MarketCentreView }, { label: 'Live Streaming' }]
+    case 'create-search-ads':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Unleash Ads', view: 'ads' as MarketCentreView },
+        { label: 'Create Search Ads' },
+      ]
+    case 'create-discovery-ads':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Unleash Ads', view: 'ads' as MarketCentreView },
+        { label: 'Create Discovery Ads' },
+      ]
+    case 'create-discount-promotion':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Create Discount Promotion' },
+      ]
+    case 'create-bundle-deal':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Create Bundle Deal' },
+      ]
+    case 'create-add-on-deal':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Create Add-On Deal' },
+      ]
+    case 'view-discount-promotion':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Promotion Details' },
+      ]
+    case 'view-bundle-deal':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Bundle Deal Details' },
+      ]
+    case 'view-add-on-deal':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Discount', view: 'discount' as MarketCentreView },
+        { label: 'Add-On Deal Details' },
+      ]
+    case 'flash-deals':
+      return [root, { label: 'Marketing Centre', view: 'marketing' as MarketCentreView }, { label: 'Flash Deals' }]
+    case 'create-flash-deal':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Flash Deals', view: 'flash-deals' as MarketCentreView },
+        { label: 'Create Flash Deal' },
+      ]
+    case 'vouchers':
+      return [root, { label: 'Marketing Centre', view: 'marketing' as MarketCentreView }, { label: 'Vouchers' }]
+    case 'create-voucher':
+      return [
+        root,
+        { label: 'Marketing Centre', view: 'marketing' as MarketCentreView },
+        { label: 'Vouchers', view: 'vouchers' as MarketCentreView },
+        { label: 'Create Voucher' },
+      ]
+    case 'orders-all':
+      return [root, { label: 'Order Management', view: 'orders-all' as MarketCentreView }, { label: 'All Orders' }]
+    case 'orders-pending':
+      return [root, { label: 'Order Management', view: 'orders-all' as MarketCentreView }, { label: 'Pending Orders' }]
+    case 'orders-completed':
+      return [root, { label: 'Order Management', view: 'orders-all' as MarketCentreView }, { label: 'Completed Orders' }]
+    case 'inventory':
+      return [root, { label: 'Product Management', view: 'inventory' as MarketCentreView }, { label: 'Inventory' }]
+    case 'add-product':
+      return [root, { label: 'Product Management', view: 'inventory' as MarketCentreView }, { label: 'Add Product' }]
+    case 'categories':
+      return [root, { label: 'Product Management', view: 'inventory' as MarketCentreView }, { label: 'Categories' }]
+    default:
+      return [root]
+  }
+}
 
 const createVoucherDefaults: CreateVoucherForm = {
   voucherType: 'shop',
@@ -550,6 +667,21 @@ function MarketCentrePage() {
   }, [navigate])
 
   const handleToolSelect = (tool: ToolCard) => {
+    if (tool.id === 'affiliate') {
+      navigate('/affiliate-marketplace')
+      return
+    }
+
+    if (tool.id === 'ads') {
+      setActiveView('ads')
+      return
+    }
+
+    if (tool.id === 'live-streaming') {
+      setActiveView('live-streaming')
+      return
+    }
+
     if (tool.id === 'vouchers') {
       setActiveView('vouchers')
       return
@@ -563,6 +695,10 @@ function MarketCentrePage() {
     if (tool.id === 'flash-deals') {
       setActiveView('flash-deals')
     }
+  }
+
+  const handleOpenCreateAds = (type: 'search' | 'discovery') => {
+    setActiveView(type === 'search' ? 'create-search-ads' : 'create-discovery-ads')
   }
 
   const handleCreateVoucher = (voucherType: VoucherType) => {
@@ -807,6 +943,19 @@ function MarketCentrePage() {
   }> = [
       { label: 'Marketing Home', view: 'marketing', active: activeView === 'marketing' },
       {
+        label: 'Unleash Ads',
+        view: 'ads',
+        active:
+          activeView === 'ads' ||
+          activeView === 'create-search-ads' ||
+          activeView === 'create-discovery-ads',
+      },
+      {
+        label: 'Live Streaming',
+        view: 'live-streaming',
+        active: activeView === 'live-streaming',
+      },
+      {
         label: 'Discount',
         view: 'discount',
         active:
@@ -862,6 +1011,7 @@ function MarketCentrePage() {
       | 'categories'
       ]
       : null
+  const desktopBreadcrumbs = getMarketCentreBreadcrumbs(activeView)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
@@ -1306,6 +1456,14 @@ function MarketCentrePage() {
         </header>
         <div className={`mx-auto w-full max-w-[1600px] px-4 pb-12 pt-5 sm:px-6 lg:px-8 ${isMobileViewport && isMarketingOverview ? 'bg-[#f6f7fb]' : ''}`}>
           <main className="min-w-0">
+            <div className="mb-5 hidden md:block">
+              <DesktopBreadcrumbBar
+                items={desktopBreadcrumbs.map((item) => ({
+                  label: item.label,
+                  onClick: 'view' in item && item.view ? () => setActiveView(item.view) : undefined,
+                }))}
+              />
+            </div>
             {isMarketingOverview ? (
               isMobileViewport ? (
                 <section className="mx-auto max-w-[520px] space-y-5">
@@ -1339,6 +1497,14 @@ function MarketCentrePage() {
                 title={placeholderConfig.title}
                 description={placeholderConfig.description}
               />
+            ) : activeView === 'ads' ? (
+              <UnleashAdsPage onCreateAds={handleOpenCreateAds} />
+            ) : activeView === 'live-streaming' ? (
+              <LiveStreamingPage onBack={() => setActiveView('marketing')} />
+            ) : activeView === 'create-search-ads' ? (
+              <CreateUnleashAdsPage adType="search" onBack={() => setActiveView('ads')} />
+            ) : activeView === 'create-discovery-ads' ? (
+              <CreateUnleashAdsPage adType="discovery" onBack={() => setActiveView('ads')} />
             ) : activeView === 'discount' ? (
               <DiscountPage
                 onBack={() => setActiveView('marketing')}

@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DesktopBreadcrumbBar from '../components/navigation/DesktopBreadcrumbBar'
 import {
   getDemoShopId,
   listMarketplaceProducts,
@@ -1996,12 +1997,12 @@ function ShopDemoPage() {
     setIsApplyingVoucher(false)
   }
 
-  const handleRemoveVoucher = () => {
+  const handleRemoveVoucher = useCallback(() => {
     setVoucherCode('')
     setVoucherMessage(null)
     setVoucherDiscount(0)
     setAppliedVoucherId(null)
-  }
+  }, [])
 
   useEffect(() => {
     const signature = cart
@@ -2211,6 +2212,14 @@ function ShopDemoPage() {
       </header>
 
       <main className="mx-auto max-w-[720px] px-4 pb-24 pt-4 sm:px-5">
+        <div className="mb-5">
+          <DesktopBreadcrumbBar
+            items={[
+              { label: 'Inventory Management System', onClick: () => navigate('/market-centre') },
+              { label: 'Shop Demo' },
+            ]}
+          />
+        </div>
         <ShopPromotionsHeader
           flashDealsCount={flashDeals.length}
           bundlesCount={bundles.length}

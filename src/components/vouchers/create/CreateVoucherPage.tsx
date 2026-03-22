@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import CreateVoucherBreadcrumb from './CreateVoucherBreadcrumb'
 import RewardSettingsCard from './RewardSettingsCard'
 import VoucherDisplayCard from './VoucherDisplayCard'
 import VoucherPreviewPanel from './VoucherPreviewPanel'
@@ -269,7 +268,6 @@ function CreateVoucherPage({
       className="motion-rise rounded-3xl border border-slate-200/80 bg-[#f5f6f8] p-3 pb-28 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-6 sm:pb-6"
       style={{ animationDelay: '80ms' }}
     >
-      <CreateVoucherBreadcrumb onBack={onBack} currentLabel={pageLabel} />
       <header className="mt-1.5">
         <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
           {pageLabel}

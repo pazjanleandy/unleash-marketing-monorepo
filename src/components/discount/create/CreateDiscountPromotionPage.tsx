@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import type { DiscountToolType } from '../types'
-import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
 import DiscountPromotionBasicInformationCard from './DiscountPromotionBasicInformationCard'
 import DiscountPromotionProductsCard from './DiscountPromotionProductsCard'
 import type { CreateDiscountPromotionForm, DiscountDateTimeField } from './types'
@@ -506,13 +505,6 @@ function CreateDiscountPromotionPage({
       </div>
 
       <div className="hidden sm:block">
-        <CreateDiscountPromotionBreadcrumb
-          onBack={onBack}
-          mode={mode}
-          sectionLabel={copy.sectionLabel}
-          createTitle={copy.desktopCreateTitle}
-          editTitle={copy.editTitle}
-        />
         <header className="mt-2 rounded-2xl border border-[#dbeafe] bg-gradient-to-r from-[#eff6ff] via-[#dbeafe] to-white p-4">
           <h1 className="text-3xl font-semibold text-[#1E40AF]">{desktopTitle}</h1>
         </header>

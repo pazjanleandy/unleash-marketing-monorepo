@@ -3,7 +3,6 @@ import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import type { CreateBundleDealForm, DiscountDateTimeField } from './types'
 import BundleDealItemsCard from './BundleDealItemsCard'
 import BundleDealBasicInformationCard from './BundleDealBasicInformationCard'
-import CreateDiscountPromotionBreadcrumb from './CreateDiscountPromotionBreadcrumb'
 import { listShopProducts } from '../../../services/market/products.repo'
 
 type CreateBundleDealPageProps = {
@@ -438,13 +437,6 @@ function CreateBundleDealPage({
       </div>
 
       <div className="hidden sm:block">
-        <CreateDiscountPromotionBreadcrumb
-          onBack={onBack}
-          mode={mode}
-          sectionLabel="Bundle Deal"
-          createTitle="Create Bundle Deal"
-          editTitle="Edit Bundle Deal"
-        />
         <header className="mt-2 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-4">
           <h1 className="text-3xl font-semibold text-[#33458F]">{desktopTitle}</h1>
           <p className="mt-1 text-sm text-[#3347A8]">{subtitle}</p>

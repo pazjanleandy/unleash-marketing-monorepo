@@ -10,7 +10,6 @@ import {
   X,
 } from 'phosphor-react'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
-import CreateFlashDealBreadcrumb from './CreateFlashDealBreadcrumb'
 import FlashDealProductsModal, {
   type FlashDealSelectableProduct,
 } from './FlashDealProductsModal'
@@ -1013,7 +1012,6 @@ function CreateFlashDealPage({ onBack, onConfirm }: CreateFlashDealPageProps) {
       </div>
 
       <div className="relative hidden sm:block">
-        <CreateFlashDealBreadcrumb onBack={onBack} />
         <header className="mt-3 rounded-3xl border border-[#cfe2ff] bg-[linear-gradient(135deg,_#f4f8ff_0%,_#e9f3ff_50%,_#E6EBFF_100%)] p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#3347A8]">
             Launch workflow

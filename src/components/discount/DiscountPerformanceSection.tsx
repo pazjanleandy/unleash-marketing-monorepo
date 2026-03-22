@@ -18,18 +18,11 @@ function DiscountPerformanceSection({
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div>
         <div>
           <h2 className="text-lg font-semibold text-[#33458F]">Promotion Performance</h2>
           <p className="mt-1 text-xs text-slate-500">{dateLabel}</p>
         </div>
-        <a
-          href="#"
-          onClick={(event) => event.preventDefault()}
-          className="text-xs font-semibold uppercase tracking-wide text-[#3A56C5] transition hover:text-[#3347A8]"
-        >
-          View details -&gt;
-        </a>
       </div>
 
       <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">

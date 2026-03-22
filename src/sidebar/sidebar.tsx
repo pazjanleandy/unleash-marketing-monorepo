@@ -29,6 +29,10 @@ interface NavItemProps {
 
 const marketingViews: Set<SidebarView> = new Set([
   'marketing',
+  'ads',
+  'live-streaming',
+  'create-search-ads',
+  'create-discovery-ads',
   'discount',
   'flash-deals',
   'create-flash-deal',
@@ -36,6 +40,8 @@ const marketingViews: Set<SidebarView> = new Set([
   'create-bundle-deal',
   'create-add-on-deal',
   'view-discount-promotion',
+  'view-bundle-deal',
+  'view-add-on-deal',
   'vouchers',
   'create-voucher',
 ])
@@ -143,6 +149,19 @@ function Sidebar({
   }> = [
     { label: 'Marketing Home', view: 'marketing', active: activeView === 'marketing' },
     {
+      label: 'Unleash Ads',
+      view: 'ads',
+      active:
+        activeView === 'ads' ||
+        activeView === 'create-search-ads' ||
+        activeView === 'create-discovery-ads',
+    },
+    {
+      label: 'Live Streaming',
+      view: 'live-streaming',
+      active: activeView === 'live-streaming',
+    },
+    {
       label: 'Discount',
       view: 'discount',
       active:
@@ -150,7 +169,9 @@ function Sidebar({
         activeView === 'create-discount-promotion' ||
         activeView === 'create-bundle-deal' ||
         activeView === 'create-add-on-deal' ||
-        activeView === 'view-discount-promotion',
+        activeView === 'view-discount-promotion' ||
+        activeView === 'view-bundle-deal' ||
+        activeView === 'view-add-on-deal',
     },
     {
       label: 'Flash Deals',

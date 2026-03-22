@@ -45,6 +45,7 @@ export const toolSections: ToolSection[] = [
     description: 'Acquire traffic and increase visibility.',
     tools: [
       {
+        id: 'ads',
         title: 'Unleash Ads',
         description: 'Promote products in high-traffic spots.',
         icon: 'ads',
@@ -54,6 +55,7 @@ export const toolSections: ToolSection[] = [
         hasActiveCampaigns: false,
       },
       {
+        id: 'affiliate',
         title: 'Affiliate Marketing Solution',
         description: "Extend reach via affiliate partners.",
         icon: 'affiliate',
@@ -63,6 +65,7 @@ export const toolSections: ToolSection[] = [
         hasActiveCampaigns: false,
       },
       {
+        id: 'live-streaming',
         title: 'Live Streaming',
         description: 'Host live sessions and convert fast.',
         icon: 'live',
