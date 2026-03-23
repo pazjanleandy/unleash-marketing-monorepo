@@ -488,6 +488,7 @@ function ProductBrowseSection({
   products,
   onAdd,
   voucherEligibleShopIds,
+  voucherEligibleProductIds,
   bundleProductIds,
 }: {
   title: string
@@ -495,6 +496,7 @@ function ProductBrowseSection({
   products: MarketplaceProduct[]
   onAdd: (product: MarketplaceProduct) => void
   voucherEligibleShopIds: Set<string>
+  voucherEligibleProductIds: Set<string>
   bundleProductIds: Set<string>
 }) {
   return (
@@ -515,7 +517,9 @@ function ProductBrowseSection({
             key={product.id}
             product={product}
             onAdd={onAdd}
-            isVoucherEligible={voucherEligibleShopIds.has(product.shopId)}
+            isVoucherEligible={
+              voucherEligibleShopIds.has(product.shopId) || voucherEligibleProductIds.has(product.id)
+            }
             isBundleItem={bundleProductIds.has(product.id)}
           />
         ))}
@@ -787,10 +791,19 @@ function OrderDetailsModal({
   const discounts = items.reduce((s, i) => s + (i.originalPrice - i.price) * i.quantity, 0)
   const total = Math.max(subtotal - voucherDiscount, 0)
   const cartShopIds = Array.from(new Set(items.map((item) => item.shopId).filter(Boolean)))
+  const cartProductIds = new Set(items.map((item) => item.productId))
   const eligibleVouchers =
     items.length === 0 || cartShopIds.length !== 1
       ? []
-      : vouchers.filter((v) => v.shopId === cartShopIds[0] && subtotal >= v.minSpend)
+      : vouchers.filter((v) => {
+        if (v.shopId !== cartShopIds[0]) return false
+        if (subtotal < v.minSpend) return false
+        if (v.voucherType === 'product') {
+          if (v.productIds.length === 0) return false
+          return v.productIds.some((productId) => cartProductIds.has(productId))
+        }
+        return true
+      })
   const hasProductSavings = discounts > 0
   const hasVoucherSavings = voucherDiscount > 0
   const hasSavings = hasProductSavings || hasVoucherSavings
@@ -1243,7 +1256,21 @@ function ShopDemoPage() {
   }, [products, activeCategory, search])
 
   const secondaryFlashDeals = flashDeals
-  const voucherEligibleShopIds = useMemo(() => new Set(vouchers.map((voucher) => voucher.shopId)), [vouchers])
+  const { voucherEligibleShopIds, voucherEligibleProductIds } = useMemo(() => {
+    const shopIds = new Set<string>()
+    const productIds = new Set<string>()
+    for (const voucher of vouchers) {
+      const isProductVoucher = voucher.voucherType === 'product' && voucher.productIds.length > 0
+      if (isProductVoucher) {
+        for (const productId of voucher.productIds) {
+          productIds.add(productId)
+        }
+      } else if (voucher.shopId) {
+        shopIds.add(voucher.shopId)
+      }
+    }
+    return { voucherEligibleShopIds: shopIds, voucherEligibleProductIds: productIds }
+  }, [vouchers])
   const bundleProductIds = useMemo(() => {
     const ids = new Set<string>()
     for (const bundle of bundles) {
@@ -2270,6 +2297,7 @@ function ShopDemoPage() {
             products={filteredProducts}
             onAdd={handleInitiateAddProduct}
             voucherEligibleShopIds={voucherEligibleShopIds}
+            voucherEligibleProductIds={voucherEligibleProductIds}
             bundleProductIds={bundleProductIds}
           />
         )}

@@ -54,6 +54,8 @@ export type MarketplaceVoucher = {
   id: string
   code: string
   name: string | null
+  voucherType: string
+  productIds: string[]
   discountType: 'percentage' | 'fixed'
   discountValue: number
   minSpend: number
@@ -334,7 +336,7 @@ export async function listClaimableVouchers(shopId: string): Promise<Marketplace
   const query = supabase
     .from('vouchers')
     .select(
-      'id,code,name,voucher_type,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,shop_id,shops:shops!vouchers_shop_fkey(name,owner_id)',
+      'id,code,name,voucher_type,metadata,discount_type,discount_value,min_spend,max_discount,usage_limit,used_count,start_at,end_at,shop_id,shops:shops!vouchers_shop_fkey(name,owner_id),voucher_products(product_id)',
     )
     .eq('is_active', true)
     .or('voucher_type.is.null,voucher_type.neq.private')
@@ -346,25 +348,47 @@ export async function listClaimableVouchers(shopId: string): Promise<Marketplace
 
   if (error) throw error
 
-  return (data ?? []).filter((v: any) => {
-    if (v.usage_limit && v.used_count >= v.usage_limit) return false
-    return true
-  }).map((v: any) => ({
-    id: v.id,
-    code: v.code,
-    name: v.name,
-    discountType: v.discount_type as 'percentage' | 'fixed',
-    discountValue: v.discount_value,
-    minSpend: v.min_spend ?? 0,
-    maxDiscount: v.max_discount ?? null,
-    usageLimit: v.usage_limit,
-    usedCount: v.used_count ?? 0,
-    startAt: v.start_at,
-    endAt: v.end_at,
-    shopId: v.shop_id,
-    shopName: v.shops?.name?.trim() || 'Unknown Shop',
-    shopOwnerId: v.shops?.owner_id ?? null,
-  }))
+  return (data ?? [])
+    .map((v: any) => {
+      const metadata =
+        v && typeof v.metadata === 'object' && v.metadata !== null
+          ? (v.metadata as Record<string, unknown>)
+          : {}
+      const raw =
+        (v.voucher_type as string | null) ??
+        (metadata.voucher_type as string | undefined) ??
+        (metadata.voucherType as string | undefined) ??
+        (metadata.voucher_category as string | undefined) ??
+        ''
+      const voucherType = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+      const productIds = (v.voucher_products ?? [])
+        .map((row: { product_id?: string | null }) => row.product_id)
+        .filter((value: string | null | undefined): value is string => Boolean(value && value.trim()))
+
+      return {
+        id: v.id,
+        code: v.code,
+        name: v.name,
+        voucherType,
+        productIds,
+        discountType: v.discount_type as 'percentage' | 'fixed',
+        discountValue: v.discount_value,
+        minSpend: v.min_spend ?? 0,
+        maxDiscount: v.max_discount ?? null,
+        usageLimit: v.usage_limit,
+        usedCount: v.used_count ?? 0,
+        startAt: v.start_at,
+        endAt: v.end_at,
+        shopId: v.shop_id,
+        shopName: v.shops?.name?.trim() || 'Unknown Shop',
+        shopOwnerId: v.shops?.owner_id ?? null,
+      }
+    })
+    .filter((v: MarketplaceVoucher) => {
+      if (v.usageLimit && v.usedCount >= v.usageLimit) return false
+      if (v.voucherType === 'product' && v.productIds.length === 0) return false
+      return true
+    })
 }
 
 // ---------------------------------------------------------------------------
