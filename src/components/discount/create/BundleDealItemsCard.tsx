@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import type { BundleDealItem, CreateBundleDealForm } from './types'
 import { listShopProducts, type ShopProduct } from '../../../services/market/products.repo'
 import ProductPickerModal from './ProductPickerModal'
@@ -13,24 +14,6 @@ type DisplayProduct = ShopProduct
 
 function toCurrency(value: number) {
   return value.toFixed(2)
-}
-
-function ProductImagePlaceholder({
-  name,
-  compact = false,
-}: {
-  name: string
-  compact?: boolean
-}) {
-  return (
-    <div
-      className={`inline-flex flex-none items-center justify-center border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)] ${
-        compact ? 'h-9 w-9 rounded-md text-xs' : 'h-12 w-12 rounded-lg text-sm'
-      }`}
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleDealItemsCardProps) {
@@ -200,7 +183,7 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
                   className="rounded-xl border border-[#E6EBFF] bg-[#f8fbff] p-2.5"
                 >
                   <div className="flex items-start gap-2.5">
-                    <ProductImagePlaceholder name={product.name} />
+                    <ProductThumbnail name={product.name} image={product.image} />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {product.name}
@@ -325,7 +308,7 @@ function BundleDealItemsCard({ value, onChange, mobileVariant = false }: BundleD
                   className="grid grid-cols-[minmax(0,1fr)_120px_120px_78px] items-center gap-2 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2.5">
-                    <ProductImagePlaceholder name={product.name} compact />
+                    <ProductThumbnail name={product.name} image={product.image} size="sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
                       <p className="text-xs text-slate-500">

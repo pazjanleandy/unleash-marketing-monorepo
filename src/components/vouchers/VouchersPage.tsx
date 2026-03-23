@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { TouchEventHandler } from 'react'
+import { createPortal } from 'react-dom'
 import type {
   VoucherAction,
   VoucherIcon,
@@ -25,11 +26,12 @@ type VouchersPageProps = {
 const voucherTabs = ['All', 'Ongoing', 'Upcoming', 'Expired'] as const
 
 type MobileTab = (typeof voucherTabs)[number]
+type MobileVoucherViewMode = 'cards' | 'list'
 
-const statusPillClasses: Record<VoucherStatus, string> = {
-  Ongoing: 'bg-[#10B981] text-white',
-  Upcoming: 'bg-[#F59E0B] text-white',
-  Expired: 'bg-slate-300 text-slate-700',
+const mobileStatusBadgeClasses: Record<VoucherStatus, string> = {
+  Ongoing: 'border border-emerald-200 bg-emerald-50 text-emerald-700',
+  Upcoming: 'border border-amber-200 bg-amber-50 text-amber-700',
+  Expired: 'border border-slate-200 bg-slate-100 text-slate-600',
 }
 
 const statusBorderClasses: Record<VoucherStatus, string> = {
@@ -38,9 +40,313 @@ const statusBorderClasses: Record<VoucherStatus, string> = {
   Expired: 'border-l-slate-300',
 }
 
-const iconClasses: Record<VoucherIcon, string> = {
-  money: 'bg-gradient-to-br from-[#8adcca] to-[#66acf8]',
-  percent: 'bg-gradient-to-br from-[#ff9a4c] to-[#f36f2f]',
+const mobileVoucherStateStyles: Record<
+  VoucherStatus,
+  {
+    cardSurface: string
+    listSurface: string
+    title: string
+    amount: string
+    meta: string
+    detail: string
+    time: string
+    code: string
+    divider: string
+    icon: string
+    primaryAction: string
+    secondaryAction: string
+    dangerAction: string
+  }
+> = {
+  Ongoing: {
+    cardSurface:
+      'border-emerald-100 bg-white shadow-[0_18px_26px_-24px_rgba(16,185,129,0.22)]',
+    listSurface: 'bg-white',
+    title: 'text-slate-900',
+    amount: 'text-slate-950',
+    meta: 'text-slate-600',
+    detail: 'text-slate-500',
+    time: 'text-slate-700',
+    code: 'text-slate-400',
+    divider: 'border-slate-100',
+    icon: '',
+    primaryAction: 'bg-[#345DB8] text-white shadow-[0_10px_18px_-14px_rgba(52,93,184,0.55)]',
+    secondaryAction: 'text-slate-600',
+    dangerAction: 'text-[#c2410c]',
+  },
+  Upcoming: {
+    cardSurface:
+      'border-amber-100 bg-[#fffdfa] shadow-[0_18px_26px_-24px_rgba(245,158,11,0.16)]',
+    listSurface: 'bg-[#fffdfa]',
+    title: 'text-slate-800',
+    amount: 'text-slate-900',
+    meta: 'text-slate-600',
+    detail: 'text-slate-500',
+    time: 'text-[#9a6700]',
+    code: 'text-slate-400',
+    divider: 'border-amber-100/70',
+    icon: 'opacity-95',
+    primaryAction: 'border border-[#C9D7F8] bg-[#F3F7FF] text-[#335CBA]',
+    secondaryAction: 'text-slate-600',
+    dangerAction: 'text-[#c2410c]',
+  },
+  Expired: {
+    cardSurface:
+      'border-slate-200 bg-[#eef2f6] shadow-[0_12px_20px_-26px_rgba(15,23,42,0.12)]',
+    listSurface: 'bg-[#eef2f6]',
+    title: 'text-slate-600',
+    amount: 'text-slate-600',
+    meta: 'text-slate-500',
+    detail: 'text-slate-400',
+    time: 'text-slate-500',
+    code: 'text-slate-300',
+    divider: 'border-slate-200',
+    icon: 'opacity-50 saturate-[0.55]',
+    primaryAction: 'border border-slate-200 bg-[#f8fafc] text-slate-500',
+    secondaryAction: 'text-slate-500',
+    dangerAction: 'text-[#cb6f5f]',
+  },
+}
+
+const desktopVoucherStateStyles: Record<
+  VoucherStatus,
+  {
+    row: string
+    title: string
+    amount: string
+    meta: string
+    code: string
+    icon: string
+    typeBadge: string
+  }
+> = {
+  Ongoing: {
+    row: 'bg-white',
+    title: 'text-slate-900',
+    amount: 'text-slate-900',
+    meta: 'text-slate-600',
+    code: 'text-slate-500',
+    icon: '',
+    typeBadge: '',
+  },
+  Upcoming: {
+    row: 'bg-[#fffdfa]',
+    title: 'text-slate-900',
+    amount: 'text-slate-900',
+    meta: 'text-slate-600',
+    code: 'text-slate-500',
+    icon: '',
+    typeBadge: '',
+  },
+  Expired: {
+    row: 'bg-[#f3f5f8]',
+    title: 'text-slate-700',
+    amount: 'text-slate-700',
+    meta: 'text-slate-500',
+    code: 'text-slate-400',
+    icon: 'opacity-50 saturate-[0.55]',
+    typeBadge: 'opacity-80',
+  },
+}
+
+const voucherIconContainerClasses: Record<
+  VoucherType,
+  { money: string; percent: string }
+> = {
+  shop: {
+    money: 'bg-gradient-to-br from-[#99d5ff] to-[#67b8f6] text-white',
+    percent: 'bg-gradient-to-br from-[#ffb061] to-[#ff7f32] text-white',
+  },
+  product: {
+    money: 'bg-gradient-to-br from-[#98e7b3] to-[#43c17a] text-white',
+    percent: 'bg-gradient-to-br from-[#7dd3fc] to-[#0ea5e9] text-white',
+  },
+  private: {
+    money: 'bg-gradient-to-br from-[#d8c4ff] to-[#9b7cf7] text-white',
+    percent: 'bg-gradient-to-br from-[#d8c4ff] to-[#9b7cf7] text-white',
+  },
+  live: {
+    money: 'bg-gradient-to-br from-[#f9d48a] to-[#f59e0b] text-white',
+    percent: 'bg-gradient-to-br from-[#fbbf24] to-[#f97316] text-white',
+  },
+  video: {
+    money: 'bg-gradient-to-br from-[#f9a8d4] to-[#ec4899] text-white',
+    percent: 'bg-gradient-to-br from-[#fb7185] to-[#e11d48] text-white',
+  },
+}
+
+function VoucherVisualIcon({
+  voucherType,
+  icon,
+  size = 'sm',
+  className = '',
+}: {
+  voucherType: VoucherType
+  icon: VoucherIcon
+  size?: 'sm' | 'lg'
+  className?: string
+}) {
+  const classes = voucherIconContainerClasses[voucherType]?.[icon] ?? voucherIconContainerClasses.shop[icon]
+  const sizeClasses =
+    size === 'lg'
+      ? 'h-12 w-12 rounded-sm'
+      : 'h-8 w-8 rounded-md'
+  const iconSize = size === 'lg' ? 19 : 14
+
+  return (
+    <div
+      className={`flex flex-none items-center justify-center ${sizeClasses} ${classes} ${className}`}
+      aria-hidden="true"
+    >
+      {voucherType === 'private' ? (
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 10V7.75C8 5.68 9.68 4 11.75 4C13.82 4 15.5 5.68 15.5 7.75V10"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <rect
+            x="6.5"
+            y="10"
+            width="10.5"
+            height="9.5"
+            rx="2.4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M11.75 13.3V16.2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : voucherType === 'product' ? (
+        icon === 'percent' ? (
+          <svg
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 8.2L12 4L19 8.2V15.8L12 20L5 15.8V8.2Z"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9 15L15 9"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <circle cx="9" cy="9" r="1.2" fill="currentColor" />
+            <circle cx="15" cy="15" r="1.2" fill="currentColor" />
+          </svg>
+        ) : (
+          <svg
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 8.2L12 4L19 8.2V15.8L12 20L5 15.8V8.2Z"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M12 8V16"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <path
+              d="M8.7 12H15.3"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        )
+      ) : icon === 'percent' ? (
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M4.8 10.2L12 6L19.2 10.2V17.2H4.8V10.2Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.2 10.1L12 6.8L16.8 10.1"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.2 15L14.8 11"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <circle cx="9.1" cy="11.5" r="1" fill="currentColor" />
+          <circle cx="14.9" cy="14.5" r="1" fill="currentColor" />
+        </svg>
+      ) : (
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M4.8 10.2L12 6L19.2 10.2V17.2H4.8V10.2Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.2 10.1L12 6.8L16.8 10.1"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12 11V15.4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9.8 13.2H14.2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
+    </div>
+  )
 }
 
 type MobileCarouselTab = (typeof voucherTabs)[number]
@@ -145,6 +451,14 @@ function toCompactCurrency(value: string) {
   return `PHP ${parsed.toLocaleString('en-PH', { maximumFractionDigits: 2 })}`
 }
 
+function formatMobileDiscountValue(voucher: VoucherItem) {
+  if (voucher.icon === 'percent') {
+    return voucher.discountAmount
+  }
+
+  return toCompactCurrency(voucher.discountAmount)
+}
+
 function parseVoucherDate(value: string): ParsedVoucherDate | null {
   const [datePart = '', timePart = ''] = value.trim().split(/\s+/)
   const dateTokens = datePart.split('-')
@@ -234,13 +548,77 @@ function getMobileActions(actions: VoucherAction[]) {
         ? actions[actions.length - 1]
         : { label: 'Delete', danger: true }
 
+  const hasDistinctSecondary =
+    actions.length > 1 &&
+    (secondaryAction.label !== primaryAction.label ||
+      Boolean(secondaryAction.danger) !== Boolean(primaryAction.danger))
+
   return {
     primaryAction,
-    secondaryAction,
+    secondaryAction: hasDistinctSecondary ? secondaryAction : null,
   }
 }
 
-function MobileVoucherCard({
+function MobileVoucherViewToggle({
+  value,
+  onChange,
+}: {
+  value: MobileVoucherViewMode
+  onChange: (value: MobileVoucherViewMode) => void
+}) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-[0_8px_18px_-18px_rgba(15,23,42,0.45)]">
+      {(['cards', 'list'] as const).map((option) => {
+        const active = option === value
+
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold capitalize transition ${
+              active
+                ? 'bg-[#EAF1FF] text-[#335CBA] shadow-[inset_0_0_0_1px_rgba(96,126,196,0.18)]'
+                : 'text-slate-500'
+            }`}
+          >
+            {option === 'cards' ? (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <rect x="1.25" y="1.25" width="3.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="7.25" y="1.25" width="3.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="1.25" y="7.25" width="3.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="7.25" y="7.25" width="3.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+            ) : (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path d="M2 3H10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <path d="M2 6H10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <path d="M2 9H10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            )}
+            {option}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function MobileVoucherCardCompact({
   voucher,
   delayMs,
   onEdit,
@@ -255,9 +633,12 @@ function MobileVoucherCard({
 }) {
   const unusedCount = Math.max(voucher.quantity - voucher.usage, 0)
   const { primaryAction, secondaryAction } = getMobileActions(voucher.actions)
-  const discountValue = toCompactCurrency(voucher.discountAmount)
-  const minimumSpend = toCompactCurrency(`${(voucher.quantity * 10).toFixed(2)}`)
+  const discountValue = formatMobileDiscountValue(voucher)
+  const minimumSpend = voucher.minimumSpend
   const claimingLine = formatMobileClaimingLine(voucher.claimingPeriod)
+  const statsLine = `Claimed ${voucher.claimed} | Used ${voucher.usage} | ${unusedCount} left`
+  const hasDangerOnlyAction = Boolean(primaryAction.danger) && !secondaryAction
+  const stateStyles = mobileVoucherStateStyles[voucher.status]
 
   const [swipeOffset, setSwipeOffset] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -268,12 +649,9 @@ function MobileVoucherCard({
   const swipeAction =
     swipeOffset <= -swipeThreshold
       ? primaryAction.label
-      : swipeOffset >= swipeThreshold
+      : swipeOffset >= swipeThreshold && secondaryAction
         ? secondaryAction.label
         : null
-  const secondaryActionClasses = secondaryAction.danger
-    ? 'border-[#fca5a5] bg-white text-[#b91c1c] hover:bg-[#fef2f2]'
-    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
 
   const handleActionClick = (action: VoucherAction) => {
     const lowered = action.label.trim().toLowerCase()
@@ -313,11 +691,9 @@ function MobileVoucherCard({
 
   return (
     <article
-      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-xl border-l-[3px] bg-white px-3.5 py-3 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.35)] ${statusBorderClasses[voucher.status]}`}
+      className={`mobile-voucher-card motion-rise relative overflow-hidden rounded-lg border px-3 py-2.5 border-l-2 ${statusBorderClasses[voucher.status]} ${stateStyles.cardSurface}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-slate-100 to-transparent" />
-
       <div
         className="relative transition-transform duration-200 ease-out"
         onTouchStart={onTouchStart}
@@ -325,69 +701,184 @@ function MobileVoucherCard({
         onTouchEnd={onTouchEnd}
         style={{ transform: `translateX(${swipeOffset}px)` }}
       >
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="min-w-0">
-            <p className="text-[20px] font-bold leading-none tracking-tight text-slate-900">
-              <span>{discountValue}</span>
-              <span className="ml-1 align-middle text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                OFF
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <VoucherVisualIcon
+                voucherType={voucher.voucherType}
+                icon={voucher.icon}
+                className={stateStyles.icon}
+              />
+              <p className={`truncate text-[14px] font-semibold leading-tight ${stateStyles.title}`}>
+                {voucher.name}
+              </p>
+            </div>
+
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <p className={`text-[18px] font-bold leading-none tracking-tight ${stateStyles.amount}`}>
+                {discountValue}
+              </p>
+              <span className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${stateStyles.code}`}>
+                off
               </span>
-            </p>
-
-            <p className="mt-1.5 truncate text-[14px] font-semibold leading-tight text-slate-900">
-              {voucher.name}
-            </p>
-
-            <p className="mt-0.5 text-[12px] leading-snug text-slate-600">
-              <span className={`mr-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''}`}>{voucher.type}</span>
-              | Min spend {minimumSpend}
-            </p>
+            </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span
-              className={`inline-flex min-w-[70px] justify-center rounded-full px-2 py-1 text-[11px] font-semibold shadow ${statusPillClasses[voucher.status]}`}
+              className={`inline-flex min-w-[64px] justify-center rounded-md px-2 py-0.5 text-[10px] font-semibold ${mobileStatusBadgeClasses[voucher.status]}`}
             >
               {voucher.status}
             </span>
-            <code className="inline-flex min-h-[26px] items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 font-mono text-[11px] font-semibold tracking-wide text-slate-700">
-              {voucher.code}
-            </code>
           </div>
         </div>
 
-        <p className="mt-1.5 text-[12px] font-medium text-slate-600">{claimingLine}</p>
-
-        <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-[12px] text-slate-600">
-          Claimed {voucher.claimed} | Used {voucher.usage} | Unused{' '}
-          <span className="font-semibold text-slate-800">{unusedCount}</span>
-        </p>
-
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => handleActionClick(primaryAction)}
-            disabled={!canManage}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#3347A8] bg-[#3A56C5] px-3 text-[13px] font-semibold text-white transition hover:bg-[#3347A8] active:scale-[0.98]"
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span
+            className={`inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''} ${voucher.status === 'Expired' ? 'opacity-75' : ''}`}
           >
-            {primaryAction.label}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleActionClick(secondaryAction)}
-            disabled={!canManage}
-            className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-semibold transition active:scale-[0.98] ${secondaryActionClasses}`}
-          >
-            {secondaryAction.label}
-          </button>
+            {voucher.type}
+          </span>
+          <span className={`text-[11px] ${stateStyles.meta}`}>Min spend {minimumSpend}</span>
+        </div>
+
+        <p className={`mt-1.5 text-[11px] ${stateStyles.time}`}>{claimingLine}</p>
+
+        <div className={`mt-1.5 flex items-center justify-between gap-3 text-[10.5px] ${stateStyles.detail}`}>
+          <p className="min-w-0 truncate">{statsLine}</p>
+          <code className={`shrink-0 font-mono text-[10px] tracking-wide ${stateStyles.code}`}>
+            {voucher.code}
+          </code>
+        </div>
+
+        <div className={`mt-2 flex items-center justify-between gap-3 border-t pt-2 ${stateStyles.divider}`}>
+          {hasDangerOnlyAction ? <span /> : (
+            <button
+              type="button"
+              onClick={() => handleActionClick(primaryAction)}
+              disabled={!canManage}
+              className={`inline-flex h-8 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition active:scale-[0.98] disabled:opacity-45 ${stateStyles.primaryAction}`}
+            >
+              {primaryAction.label}
+            </button>
+          )}
+          {secondaryAction || hasDangerOnlyAction ? (
+            <button
+              type="button"
+              onClick={() => handleActionClick(hasDangerOnlyAction ? primaryAction : secondaryAction!)}
+              disabled={!canManage}
+              className={`inline-flex h-8 items-center justify-center px-1 text-[12px] font-medium transition active:scale-[0.98] disabled:opacity-45 ${
+                (hasDangerOnlyAction ? primaryAction : secondaryAction!).danger ? stateStyles.dangerAction : stateStyles.secondaryAction
+              }`}
+            >
+              {(hasDangerOnlyAction ? primaryAction : secondaryAction!).label}
+            </button>
+          ) : null}
         </div>
       </div>
 
       {isSwiping && swipeAction ? (
-        <div className="absolute bottom-2 right-2 rounded-full bg-slate-800 px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg">
+        <div className="absolute bottom-2 right-2 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-semibold text-white shadow-lg">
           {swipeAction}
         </div>
       ) : null}
+    </article>
+  )
+}
+
+function MobileVoucherListItem({
+  voucher,
+  delayMs,
+  onEdit,
+  onDelete,
+  canManage = true,
+}: {
+  voucher: VoucherItem
+  delayMs: number
+  onEdit: (voucher: VoucherItem) => void
+  onDelete?: (voucher: VoucherItem) => void
+  canManage?: boolean
+}) {
+  const unusedCount = Math.max(voucher.quantity - voucher.usage, 0)
+  const { primaryAction, secondaryAction } = getMobileActions(voucher.actions)
+  const discountValue = formatMobileDiscountValue(voucher)
+  const minimumSpend = voucher.minimumSpend
+  const claimingLine = formatMobileClaimingLine(voucher.claimingPeriod)
+  const hasDangerOnlyAction = Boolean(primaryAction.danger) && !secondaryAction
+  const stateStyles = mobileVoucherStateStyles[voucher.status]
+
+  const handleActionClick = (action: VoucherAction) => {
+    const lowered = action.label.trim().toLowerCase()
+    if (lowered === 'edit' && canManage) {
+      onEdit(voucher)
+      return
+    }
+
+    if (lowered === 'delete' && onDelete && canManage) {
+      onDelete(voucher)
+    }
+  }
+
+  return (
+    <article
+      className={`motion-rise border-b py-3 pl-3 last:border-b-0 border-l-2 ${statusBorderClasses[voucher.status]} ${stateStyles.listSurface} ${stateStyles.divider}`}
+      style={{ animationDelay: `${delayMs}ms` }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-1.5">
+            <p className={`text-[15px] font-bold leading-none ${stateStyles.amount}`}>{discountValue}</p>
+            <span className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${stateStyles.code}`}>
+              off
+            </span>
+          </div>
+          <p className={`mt-1 truncate text-[13px] font-semibold leading-tight ${stateStyles.title}`}>
+            {voucher.name}
+          </p>
+        </div>
+
+        <span
+          className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold ${mobileStatusBadgeClasses[voucher.status]}`}
+        >
+          {voucher.status}
+        </span>
+      </div>
+
+      <p className={`mt-1.5 text-[11px] leading-snug ${stateStyles.time}`}>
+        {voucher.type} | Min spend {minimumSpend} | {claimingLine}
+      </p>
+
+      <div className="mt-1.5 flex items-start justify-between gap-3">
+        <p className={`min-w-0 text-[10.5px] leading-snug ${stateStyles.detail}`}>
+          <span className={`font-mono tracking-wide ${stateStyles.code}`}>{voucher.code}</span>
+          <span> | Claimed {voucher.claimed} | Used {voucher.usage} | {unusedCount} left</span>
+        </p>
+
+        <div className="flex shrink-0 items-center gap-3">
+          {!hasDangerOnlyAction ? (
+            <button
+              type="button"
+              onClick={() => handleActionClick(primaryAction)}
+              disabled={!canManage}
+              className={`inline-flex h-7 items-center justify-center rounded-md px-2.5 text-[11px] font-semibold transition active:scale-[0.98] disabled:opacity-45 ${stateStyles.primaryAction}`}
+            >
+              {primaryAction.label}
+            </button>
+          ) : null}
+          {secondaryAction || hasDangerOnlyAction ? (
+            <button
+              type="button"
+              onClick={() => handleActionClick(hasDangerOnlyAction ? primaryAction : secondaryAction!)}
+              disabled={!canManage}
+              className={`inline-flex h-7 items-center justify-center text-[11px] font-medium transition active:scale-[0.98] disabled:opacity-45 ${
+                (hasDangerOnlyAction ? primaryAction : secondaryAction!).danger ? stateStyles.dangerAction : stateStyles.secondaryAction
+              }`}
+            >
+              {(hasDangerOnlyAction ? primaryAction : secondaryAction!).label}
+            </button>
+          ) : null}
+        </div>
+      </div>
     </article>
   )
 }
@@ -419,41 +910,43 @@ function VoucherRow({
         ? productList.join(', ')
         : `${productList.slice(0, 2).join(', ')} +${productList.length - 2} more`
       : null
+  const stateStyles = desktopVoucherStateStyles[voucher.status]
 
   return (
-    <tr className="align-top border-t border-slate-100 text-sm text-slate-700">
+    <tr className={`align-top border-t border-slate-100 text-sm text-slate-700 ${stateStyles.row}`}>
       <td className="px-4 py-4">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-12 w-12 flex-none items-center justify-center rounded-sm text-xl font-semibold text-white ${iconClasses[voucher.icon]}`}
-          >
-            {voucher.icon === 'percent' ? '%' : 'P'}
-          </div>
+          <VoucherVisualIcon
+            voucherType={voucher.voucherType}
+            icon={voucher.icon}
+            size="lg"
+            className={stateStyles.icon}
+          />
           <div className="min-w-[170px]">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className={`text-[11px] font-semibold uppercase tracking-wide ${stateStyles.code}`}>
               {voucher.status}
             </p>
-            <p className="font-semibold text-slate-900">{voucher.name}</p>
-            <p className="text-xs text-slate-500">Code: {voucher.code}</p>
+            <p className={`font-semibold ${stateStyles.title}`}>{voucher.name}</p>
+            <p className={`text-xs ${stateStyles.code}`}>Code: {voucher.code}</p>
           </div>
         </div>
       </td>
       <td className="px-4 py-4">
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''}`}>{voucher.type}</span>
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${voucherTypeBadgeColors[voucher.voucherType]?.bg ?? ''} ${voucherTypeBadgeColors[voucher.voucherType]?.text ?? ''} ${stateStyles.typeBadge}`}>{voucher.type}</span>
       </td>
-      <td className="px-4 py-4 text-slate-600">
-        <p className="font-medium text-slate-700">{productSummary}</p>
+      <td className={`px-4 py-4 ${stateStyles.meta}`}>
+        <p className={`font-medium ${stateStyles.meta}`}>{productSummary}</p>
         {productDetail ? (
-          <p className="mt-1 text-xs text-slate-500">{productDetail}</p>
+          <p className={`mt-1 text-xs ${stateStyles.code}`}>{productDetail}</p>
         ) : null}
       </td>
-      <td className="px-4 py-4 text-slate-600">{voucher.voucherType === 'private' ? 'Targeted' : 'All Buyers'}</td>
-      <td className="px-4 py-4 font-medium text-slate-900">{voucher.discountAmount}</td>
-      <td className="px-4 py-4">{voucher.quantity}</td>
-      <td className="px-4 py-4">{voucher.usage}</td>
+      <td className={`px-4 py-4 ${stateStyles.meta}`}>{voucher.voucherType === 'private' ? 'Targeted' : 'All Buyers'}</td>
+      <td className={`px-4 py-4 font-medium ${stateStyles.amount}`}>{voucher.discountAmount}</td>
+      <td className={`px-4 py-4 ${stateStyles.meta}`}>{voucher.quantity}</td>
+      <td className={`px-4 py-4 ${stateStyles.meta}`}>{voucher.usage}</td>
       <td className="px-4 py-4">
-        <p className="text-xs text-slate-500">{voucher.claimingPeriod.start}</p>
-        <p className="text-xs text-slate-500">{voucher.claimingPeriod.end}</p>
+        <p className={`text-xs ${stateStyles.code}`}>{voucher.claimingPeriod.start}</p>
+        <p className={`text-xs ${stateStyles.code}`}>{voucher.claimingPeriod.end}</p>
       </td>
       <td className="px-4 py-4">
         <ul className="min-w-[120px] space-y-1.5">
@@ -543,6 +1036,7 @@ function VouchersPage({
   canManage = true,
 }: VouchersPageProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('Upcoming')
+  const [mobileViewMode, setMobileViewMode] = useState<MobileVoucherViewMode>('cards')
   const [quickFilter, setQuickFilter] =
     useState<(typeof quickFilters)[number]>('All Products')
   const [desktopTab, setDesktopTab] = useState<(typeof voucherTabs)[number]>('All')
@@ -606,138 +1100,34 @@ function VouchersPage({
 
   const hasDataState = isLoading || Boolean(error) || isAuthRequired || hasNoShop
 
-  return (
-    <section
-      className="motion-rise rounded-3xl border border-slate-200/80 bg-white/95 p-3 pb-28 shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)] sm:p-8"
-      style={{ animationDelay: '80ms' }}
-    >
-      <div className="sm:hidden">
-        <div className="rounded-2xl bg-gradient-to-r from-[#f8fafc] via-[#f1f5f9] to-white p-3 shadow-[0_14px_30px_-26px_rgba(15,23,42,0.35)]">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-slate-700 shadow-sm transition active:scale-95"
-              aria-label="Back to Marketing Centre"
-            >
-              &larr;
-            </button>
-            <h1 className="text-[24px] font-bold leading-none text-slate-900">
-              Vouchers
-            </h1>
-          </div>
-          <p className="mt-1.5 text-[12px] text-slate-600">
-            Pull to refresh, tap cards, or swipe for quick actions.
-          </p>
-        </div>
-        {hasDataState ? (
-          <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-            {isLoading ? (
-              <p>Loading vouchers...</p>
-            ) : error ? (
-              <div className="space-y-2">
-                <p>{error}</p>
-                {onRetry ? (
-                  <button
-                    type="button"
-                    onClick={onRetry}
-                    className="inline-flex h-8 items-center rounded-md border border-[#3A56C5] px-3 text-xs font-semibold text-[#3A56C5]"
-                  >
-                    Retry
-                  </button>
-                ) : null}
-              </div>
-            ) : isAuthRequired ? (
-              <p>Sign in to view and manage vouchers.</p>
-            ) : hasNoShop ? (
-              <p>No shop found for this account.</p>
-            ) : null}
-          </div>
-        ) : null}
+  useEffect(() => {
+    if (!showMobileTypePicker) {
+      return
+    }
 
-        <div className="relative mt-3 rounded-full bg-slate-200 p-1 shadow-inner">
-          <div
-            className="absolute bottom-1 top-1 rounded-full bg-[#3A56C5] shadow-[0_8px_18px_-12px_rgba(51,69,143,0.9)] transition-all duration-300 ease-out"
-            style={{
-              left: `calc(${activeTabIndex * tabWidthPercent}% + 0.25rem)`,
-              width: `calc(${tabWidthPercent}% - 0.5rem)`,
-            }}
-          />
-          <div className="relative grid grid-cols-4">
-            {mobileCarouselTabs.map((tab) => {
-              const isActive = tab === mobileTab
+    const originalOverflow = document.body.style.overflow
+    const originalTouchAction = document.body.style.touchAction
 
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setMobileTab(tab)}
-                  className={`z-10 inline-flex h-11 items-center justify-center rounded-full px-2 text-[13px] font-semibold transition-colors ${isActive ? 'text-white' : 'text-slate-600'
-                    }`}
-                >
-                  {tab}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+    document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
 
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-          {quickFilters.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => setQuickFilter(chip)}
-              className={`inline-flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[12px] font-semibold transition ${quickFilter === chip
-                  ? 'bg-[#3A56C5] text-white shadow-[0_10px_18px_-12px_rgba(51,69,143,0.95)]'
-                  : 'border border-slate-200 bg-white text-slate-700'
-                }`}
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+    return () => {
+      document.body.style.overflow = originalOverflow
+      document.body.style.touchAction = originalTouchAction
+    }
+  }, [showMobileTypePicker])
 
-        <div className="mt-2 space-y-2 pb-20">
-          {cardEntries.length > 0 ? (
-            cardEntries.map((voucher, index) => (
-              <MobileVoucherCard
-                key={`mobile-${voucher.code}`}
-                voucher={voucher}
-                delayMs={90 + index * 70}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                canManage={canManage}
-              />
-            ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-8 text-center text-sm text-slate-600">
-              No vouchers in this tab.
-            </div>
-          )}
-        </div>
-
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto w-full max-w-6xl px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setShowMobileTypePicker(true)}
-              disabled={!canManage}
-              className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8]"
-              aria-label="Create new voucher"
-            >
-              Create Voucher
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Voucher Type Picker */}
-        {showMobileTypePicker ? (
+  const mobileTypePickerModal =
+    showMobileTypePicker && typeof document !== 'undefined'
+      ? createPortal(
           <div className="fixed inset-0 z-50 flex items-end justify-center">
-            <div
+            <button
+              type="button"
+              aria-label="Close voucher type picker"
               className="absolute inset-0 bg-black/40"
               onClick={() => setShowMobileTypePicker(false)}
             />
+
             <div className="relative w-full max-w-lg rounded-t-2xl border-t border-slate-200 bg-white p-4 pb-8 shadow-xl">
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300" />
               <h3 className="text-lg font-semibold text-slate-900">Choose Voucher Type</h3>
@@ -772,8 +1162,180 @@ function VouchersPage({
                 Cancel
               </button>
             </div>
+          </div>,
+          document.body,
+        )
+      : null
+
+  return (
+    <section
+      className="motion-rise pb-28 sm:rounded-3xl sm:border sm:border-slate-200/80 sm:bg-white/95 sm:p-8 sm:shadow-[0_24px_50px_-45px_rgba(15,23,42,0.65)]"
+      style={{ animationDelay: '80ms' }}
+    >
+      <div className="sm:hidden">
+        <div className="px-3 pt-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-[0_10px_18px_-18px_rgba(15,23,42,0.4)] transition active:scale-95"
+              aria-label="Back to Marketing Centre"
+            >
+              &larr;
+            </button>
+            <div>
+              <h1 className="text-[22px] font-bold leading-none text-slate-900">Vouchers</h1>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Manage shop and product offers faster on mobile.
+              </p>
+            </div>
+          </div>
+        </div>
+        {hasDataState ? (
+          <div className="mx-3 mt-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
+            {isLoading ? (
+              <p>Loading vouchers...</p>
+            ) : error ? (
+              <div className="space-y-2">
+                <p>{error}</p>
+                {onRetry ? (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex h-8 items-center rounded-md border border-[#3A56C5] px-3 text-xs font-semibold text-[#3A56C5]"
+                  >
+                    Retry
+                  </button>
+                ) : null}
+              </div>
+            ) : isAuthRequired ? (
+              <p>Sign in to view and manage vouchers.</p>
+            ) : hasNoShop ? (
+              <p>No shop found for this account.</p>
+            ) : null}
           </div>
         ) : null}
+
+        <div className="mx-3 mt-3 rounded-xl border border-slate-200 bg-white p-1 shadow-[0_14px_24px_-24px_rgba(15,23,42,0.45)]">
+          <div className="relative rounded-lg bg-slate-100 p-0.5">
+            <div
+              className="absolute bottom-0.5 top-0.5 rounded-md bg-white shadow-[0_10px_18px_-18px_rgba(15,23,42,0.55)] transition-all duration-300 ease-out"
+              style={{
+                left: `calc(${activeTabIndex * tabWidthPercent}% + 0.125rem)`,
+                width: `calc(${tabWidthPercent}% - 0.25rem)`,
+              }}
+            />
+            <div className="relative grid grid-cols-4">
+              {mobileCarouselTabs.map((tab) => {
+                const isActive = tab === mobileTab
+
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setMobileTab(tab)}
+                    className={`z-10 inline-flex h-8 items-center justify-center rounded-md px-1 text-[11px] font-semibold transition-colors ${
+                      isActive ? 'text-slate-900' : 'text-slate-500'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Filter voucher products</span>
+              <select
+                value={quickFilter}
+                onChange={(event) =>
+                  setQuickFilter(event.target.value as (typeof quickFilters)[number])
+                }
+                className="h-[30px] w-full appearance-none rounded-lg border border-slate-200 bg-[#F8FBFF] pl-2.5 pr-8 text-[11px] font-semibold text-[#49617F] outline-none transition focus:border-[#B7CAF2] focus:bg-white"
+              >
+                {quickFilters.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </label>
+
+            <MobileVoucherViewToggle value={mobileViewMode} onChange={setMobileViewMode} />
+          </div>
+        </div>
+
+        <div className="mx-3 mt-3 pb-20">
+          {cardEntries.length > 0 ? (
+            mobileViewMode === 'cards' ? (
+              <div className="space-y-2">
+                {cardEntries.map((voucher, index) => (
+                  <MobileVoucherCardCompact
+                    key={`mobile-card-${voucher.code}`}
+                    voucher={voucher}
+                    delayMs={80 + index * 50}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    canManage={canManage}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white px-3 shadow-[0_16px_24px_-24px_rgba(15,23,42,0.38)]">
+                {cardEntries.map((voucher, index) => (
+                  <MobileVoucherListItem
+                    key={`mobile-list-${voucher.code}`}
+                    voucher={voucher}
+                    delayMs={80 + index * 40}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    canManage={canManage}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-8 text-center text-sm text-slate-600">
+              No vouchers in this tab.
+            </div>
+          )}
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
+          <div className="mx-auto w-full max-w-6xl px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setShowMobileTypePicker(true)}
+              disabled={!canManage}
+              className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#3A56C5] px-4 text-sm font-semibold text-white transition hover:bg-[#3347A8]"
+              aria-label="Create new voucher"
+            >
+              Create Voucher
+            </button>
+          </div>
+        </div>
+
+        {mobileTypePickerModal}
       </div>
 
       <div className="hidden sm:block">
@@ -967,6 +1529,7 @@ function VouchersPage({
 }
 
 export default VouchersPage
+
 
 
 

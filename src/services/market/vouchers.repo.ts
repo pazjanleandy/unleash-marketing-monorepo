@@ -144,6 +144,7 @@ function toVoucherItem(row: VoucherRowWithRelations): VoucherItem {
     productNames,
     productCount: productLinks,
     discountAmount: isPercentage ? `${discountNumeric}%` : formatMoney(discountNumeric),
+    minimumSpend: formatMoney(row.min_spend ?? 0),
     quantity: usageQuantity,
     usageLimit: perUserLimit === null ? '-' : `${perUserLimit}`,
     claimed: usedCount,

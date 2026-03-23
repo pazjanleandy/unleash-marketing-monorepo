@@ -21,6 +21,8 @@ type AddOnItemDbRow = {
   max_addon_quantity: number | null
   products?: {
     prodname?: string | null
+    image?: string | null
+    image_url?: string | null
   } | null
 }
 
@@ -37,6 +39,8 @@ type AddOnDealDbRow = {
   is_active: boolean | null
   trigger_product?: {
     prodname?: string | null
+    image?: string | null
+    image_url?: string | null
   } | null
   addon_deal_items?: AddOnItemDbRow[] | null
 }
@@ -247,7 +251,7 @@ export async function listAddOnDeals(): Promise<AddOnListResult> {
   const { data, error } = await supabase
     .from('addon_deals')
     .select(
-      'id,shop_id,name,trigger_product_id,discount_type,discount_value,start_at,end_at,max_uses,is_active,trigger_product:products!addon_deals_trigger_product_id_fkey(prodname),addon_deal_items(id,product_id,required_quantity,max_addon_quantity,products:products!addon_deal_items_product_id_fkey(prodname))',
+      'id,shop_id,name,trigger_product_id,discount_type,discount_value,start_at,end_at,max_uses,is_active,trigger_product:products!addon_deals_trigger_product_id_fkey(prodname,image,image_url),addon_deal_items(id,product_id,required_quantity,max_addon_quantity,products:products!addon_deal_items_product_id_fkey(prodname,image,image_url))',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
@@ -261,6 +265,8 @@ export async function listAddOnDeals(): Promise<AddOnListResult> {
     const addOnItem = row.addon_deal_items?.[0]
     const triggerName = row.trigger_product?.prodname?.trim() || `Trigger Product ${rowIndex + 1}`
     const addonName = addOnItem?.products?.prodname?.trim() || `Add-on Product ${rowIndex + 1}`
+    const triggerImage = row.trigger_product?.image_url ?? row.trigger_product?.image ?? null
+    const addonImage = addOnItem?.products?.image_url ?? addOnItem?.products?.image ?? null
     const status = toPromotionStatus(row.start_at, row.end_at, row.is_active ?? true)
 
     return {
@@ -270,10 +276,16 @@ export async function listAddOnDeals(): Promise<AddOnListResult> {
       type: 'Add-on Deal',
       campaignType: 'add-on',
       products: [triggerName, addonName],
+      productPreviews: [
+        { id: row.trigger_product_id, name: triggerName, image: triggerImage },
+        { id: addOnItem?.product_id ?? `addon-${rowIndex + 1}`, name: addonName, image: addonImage },
+      ],
       triggerProductId: row.trigger_product_id,
       triggerProductName: triggerName,
+      triggerProductImage: triggerImage,
       addonProductId: addOnItem?.product_id ?? '',
       addonProductName: addonName,
+      addonProductImage: addonImage,
       discountValue:
         row.discount_value !== null && typeof row.discount_value === 'number'
           ? formatDecimal(row.discount_value)

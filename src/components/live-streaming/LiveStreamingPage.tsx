@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProductThumbnail from '../common/ProductThumbnail'
 import ProductPickerModal from '../discount/create/ProductPickerModal'
 import { listShopProducts, type ShopProduct } from '../../services/market/products.repo'
 
@@ -479,13 +480,7 @@ function MobileCommentsSection() {
 function SelectedStreamProduct({ product }: { product: ShopProduct }) {
   return (
     <div className="flex items-center gap-3 border-b border-slate-200 py-3 last:border-b-0">
-      {product.image ? (
-        <img src={product.image} alt={product.name} className="h-12 w-12 object-cover" />
-      ) : (
-        <div className="flex h-12 w-12 items-center justify-center border border-[#D6E3FB] bg-[#F3F6FE] text-sm font-semibold text-[#2A4DBD]">
-          {product.name.slice(0, 1).toUpperCase()}
-        </div>
-      )}
+      <ProductThumbnail name={product.name} image={product.image} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-[#0C1732]">{product.name}</p>
         <p className="mt-1 text-xs text-slate-500">{product.category}</p>

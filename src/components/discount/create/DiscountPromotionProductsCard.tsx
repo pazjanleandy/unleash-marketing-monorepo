@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import type { CreateDiscountPromotionForm } from './types'
 import { listShopProducts, type ShopProduct } from '../../../services/market/products.repo'
 import ProductPickerModal from './ProductPickerModal'
@@ -13,24 +14,6 @@ type DisplayProduct = ShopProduct
 
 function toCurrency(value: number) {
   return value.toFixed(2)
-}
-
-function ProductImagePlaceholder({
-  name,
-  compact = false,
-}: {
-  name: string
-  compact?: boolean
-}) {
-  return (
-    <div
-      className={`inline-flex flex-none items-center justify-center border border-[#bfdbfe] bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe] font-bold text-[#1d4ed8] shadow-[0_8px_14px_-12px_rgba(30,64,175,0.9)] ${
-        compact ? 'h-9 w-9 rounded-md text-xs' : 'h-12 w-12 rounded-lg text-sm'
-      }`}
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 function DiscountPromotionProductsCard({
@@ -223,7 +206,7 @@ function DiscountPromotionProductsCard({
                   className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-2.5"
                 >
                   <div className="flex items-start gap-2.5">
-                    <ProductImagePlaceholder name={product.name} />
+                    <ProductThumbnail name={product.name} image={product.image} />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {product.name}
@@ -344,7 +327,7 @@ function DiscountPromotionProductsCard({
                   className="grid grid-cols-[minmax(0,1fr)_130px_130px_130px_78px] items-center gap-2 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2.5">
-                    <ProductImagePlaceholder name={product.name} compact />
+                    <ProductThumbnail name={product.name} image={product.image} size="sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
                       <p className="text-xs text-slate-500">

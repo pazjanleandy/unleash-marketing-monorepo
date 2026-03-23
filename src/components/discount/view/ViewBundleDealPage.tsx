@@ -1,17 +1,10 @@
 import { useMemo } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import type { BundleDealRow } from '../types'
 
 type ViewBundleDealPageProps = {
   onBack: () => void
   bundle: BundleDealRow
-}
-
-function ProductPreviewShape({ label }: { label: string }) {
-  return (
-    <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] to-[#D0DBF7] text-xs font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
-      {label.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 function ViewBundleDealPage({ onBack, bundle }: ViewBundleDealPageProps) {
@@ -147,7 +140,7 @@ function ViewBundleDealPage({ onBack, bundle }: ViewBundleDealPageProps) {
                   className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3"
                 >
                   <div className="flex items-start gap-2.5">
-                    <ProductPreviewShape label={item.name} />
+                    <ProductThumbnail name={item.name} image={item.image} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {item.name}

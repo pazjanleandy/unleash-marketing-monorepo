@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { DiscountToolType, DiscountCampaignRow, PromotionStatus } from './types'
+import ProductThumbnail from '../common/ProductThumbnail'
+import type {
+  DiscountToolType,
+  DiscountCampaignRow,
+  DiscountProductPreview,
+  PromotionStatus,
+} from './types'
 
 type DiscountMobilePanelProps = {
   onBack: () => void
@@ -27,7 +33,7 @@ const statusTextClasses: Record<PromotionStatus, string> = {
   Expired: 'text-slate-900',
 }
 
-function ProductThumbnailGroup({ products }: { products: string[] }) {
+function ProductThumbnailGroup({ products }: { products: DiscountProductPreview[] }) {
   if (products.length === 0) {
     return null
   }
@@ -36,26 +42,25 @@ function ProductThumbnailGroup({ products }: { products: string[] }) {
   const overflow = Math.max(products.length - visible.length, 0)
   const single = products.length === 1
 
-  const thumbClass =
-    'flex items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-600';
-
   return (
     <div className="flex items-center gap-2">
       <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
         Products
       </span>
       <div className="flex items-center gap-1.5">
-        {visible.map((name, index) => (
-          <div
-            key={`${name}-${index}`}
-            className={`${thumbClass} ${single ? 'h-12 w-12' : 'h-9 w-9'}`}
-            title={name}
-          >
-            {name.trim().slice(0, 1).toUpperCase()}
-          </div>
+        {visible.map((product, index) => (
+          <ProductThumbnail
+            key={`${product.id}-${index}`}
+            name={product.name}
+            image={product.image}
+            size={single ? 'md' : 'sm'}
+            className="border-slate-200 bg-white shadow-none"
+          />
         ))}
         {overflow > 0 ? (
-          <div className={`${thumbClass} h-9 w-9`}>+{overflow}</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-600">
+            +{overflow}
+          </div>
         ) : null}
       </div>
     </div>
@@ -192,7 +197,7 @@ function DiscountMobilePanel({
                   </p>
 
                   <div className="mt-2">
-                    <ProductThumbnailGroup products={promotion.products} />
+                    <ProductThumbnailGroup products={promotion.productPreviews} />
                   </div>
 
                   <div className="mt-3 grid grid-cols-[1fr,auto] items-center gap-2">

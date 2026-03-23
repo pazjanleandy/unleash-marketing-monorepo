@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import MobileDateTimePicker from '../../common/MobileDateTimePicker'
 import type { CreateAddOnDealForm, DiscountDateTimeField } from './types'
 import ProductPickerModal from './ProductPickerModal'
@@ -85,24 +86,6 @@ function toSubmitErrorMessage(error: unknown) {
 
 function toCurrency(value: number) {
   return value.toFixed(2)
-}
-
-function ProductImagePlaceholder({
-  name,
-  compact = false,
-}: {
-  name: string
-  compact?: boolean
-}) {
-  return (
-    <div
-      className={`inline-flex flex-none items-center justify-center border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] via-[#E6EBFF] to-[#D0DBF7] font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)] ${
-        compact ? 'h-9 w-9 rounded-md text-xs' : 'h-12 w-12 rounded-lg text-sm'
-      }`}
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 const now = new Date()
@@ -411,7 +394,10 @@ function CreateAddOnDealPage({
             </div>
             {selectedTriggerProduct ? (
               <div className="flex items-start gap-2.5 rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-2.5">
-                <ProductImagePlaceholder name={selectedTriggerProduct.name} />
+                <ProductThumbnail
+                  name={selectedTriggerProduct.name}
+                  image={selectedTriggerProduct.image}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                     {selectedTriggerProduct.name}
@@ -444,7 +430,10 @@ function CreateAddOnDealPage({
             </div>
             {selectedAddonProduct ? (
               <div className="flex items-start gap-2.5 rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-2.5">
-                <ProductImagePlaceholder name={selectedAddonProduct.name} />
+                <ProductThumbnail
+                  name={selectedAddonProduct.name}
+                  image={selectedAddonProduct.image}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                     {selectedAddonProduct.name}
@@ -589,7 +578,11 @@ function CreateAddOnDealPage({
 
               {selectedTriggerProduct ? (
                 <div className="mt-3 flex items-start gap-2.5">
-                  <ProductImagePlaceholder name={selectedTriggerProduct.name} compact />
+                  <ProductThumbnail
+                    name={selectedTriggerProduct.name}
+                    image={selectedTriggerProduct.image}
+                    size="sm"
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{selectedTriggerProduct.name}</p>
                     <p className="text-xs text-slate-500">
@@ -620,7 +613,11 @@ function CreateAddOnDealPage({
 
               {selectedAddonProduct ? (
                 <div className="mt-3 flex items-start gap-2.5">
-                  <ProductImagePlaceholder name={selectedAddonProduct.name} compact />
+                  <ProductThumbnail
+                    name={selectedAddonProduct.name}
+                    image={selectedAddonProduct.image}
+                    size="sm"
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{selectedAddonProduct.name}</p>
                     <p className="text-xs text-slate-500">

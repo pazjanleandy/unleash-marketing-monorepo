@@ -1,17 +1,10 @@
 import { useMemo } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import type { PromotionRow } from '../types'
 
 type ViewDiscountPromotionPageProps = {
   onBack: () => void
   promotion: PromotionRow
-}
-
-function ProductPreviewShape({ label }: { label: string }) {
-  return (
-    <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] to-[#D0DBF7] text-xs font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
-      {label.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 function ViewDiscountPromotionPage({
@@ -23,7 +16,7 @@ function ViewDiscountPromotionPage({
 
     return [
       { label: 'Status', value: promotion.status },
-      { label: 'Products', value: `${promotion.products.length}` },
+      { label: 'Products', value: `${promotion.productPreviews.length}` },
       {
         label: 'Purchase Limit',
         value: promotion.maxUses === null ? 'No limit' : `${promotion.maxUses}`,
@@ -33,12 +26,10 @@ function ViewDiscountPromotionPage({
   }, [promotion])
 
   const productRows = useMemo(() => {
-    const discountValues = Object.values(promotion.productDiscounts)
-
-    return promotion.products.map((name, index) => ({
-      id: `${promotion.id}-${index}`,
-      name,
-      discountPercent: discountValues[index] ?? '',
+    return promotion.productPreviews.map((product, index) => ({
+      ...product,
+      discountPercent: promotion.productDiscounts[product.id] ?? '',
+      key: `${promotion.id}-${product.id}-${index}`,
     }))
   }, [promotion])
 
@@ -161,11 +152,11 @@ function ViewDiscountPromotionPage({
             <div className="mt-3 space-y-2.5">
               {productRows.map((product) => (
                 <div
-                  key={product.id}
+                  key={product.key}
                   className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3"
                 >
                   <div className="flex items-start gap-2.5">
-                    <ProductPreviewShape label={product.name} />
+                    <ProductThumbnail name={product.name} image={product.image} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {product.name}

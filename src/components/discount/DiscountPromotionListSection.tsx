@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import type { DiscountCampaignRow, PromotionStatus } from './types'
+import ProductThumbnail from '../common/ProductThumbnail'
+import type { DiscountCampaignRow, DiscountProductPreview, PromotionStatus } from './types'
 
 type DiscountPromotionListSectionProps = {
   promotions: DiscountCampaignRow[]
@@ -43,20 +44,20 @@ function parsePeriodDate(value: string) {
   return new Date(year, month, day, hour, minute, 0, 0).getTime()
 }
 
-function ProductThumbnails({ products }: { products: string[] }) {
+function ProductThumbnails({ products }: { products: DiscountProductPreview[] }) {
   const visibleProducts = products.slice(0, 4)
   const hiddenCount = Math.max(products.length - visibleProducts.length, 0)
 
   return (
     <div className="flex flex-wrap gap-1.5">
       {visibleProducts.map((product, index) => (
-        <span
-          key={`${product}-${index}`}
-          className={`inline-flex h-7 min-w-7 items-center justify-center rounded border border-white px-1.5 text-[10px] font-semibold shadow ${productThumbClasses[index % productThumbClasses.length]}`}
-          title={product}
-        >
-          {product.slice(0, 2).toUpperCase()}
-        </span>
+        <ProductThumbnail
+          key={`${product.id}-${index}`}
+          name={product.name}
+          image={product.image}
+          size="xs"
+          className={`border-white shadow-sm ${product.image ? 'bg-white' : productThumbClasses[index % productThumbClasses.length]}`}
+        />
       ))}
       {hiddenCount > 0 ? (
         <span className="inline-flex h-7 min-w-7 items-center justify-center rounded border border-white bg-slate-200 px-1.5 text-[10px] font-semibold text-slate-700 shadow">
@@ -67,7 +68,7 @@ function ProductThumbnails({ products }: { products: string[] }) {
   )
 }
 
-function ProductTagList({ products }: { products: string[] }) {
+function ProductTagList({ products }: { products: DiscountProductPreview[] }) {
   const visibleProducts = products.slice(0, 2)
   const hiddenCount = Math.max(products.length - visibleProducts.length, 0)
 
@@ -75,11 +76,12 @@ function ProductTagList({ products }: { products: string[] }) {
     <div className="flex flex-wrap gap-1.5">
       {visibleProducts.map((product, index) => (
         <span
-          key={`${product}-${index}`}
-          className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
-          title={product}
+          key={`${product.id}-${index}`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
+          title={product.name}
         >
-          {product}
+          <ProductThumbnail name={product.name} image={product.image} size="xs" className="shadow-none" />
+          <span>{product.name}</span>
         </span>
       ))}
       {hiddenCount > 0 ? (
@@ -249,7 +251,7 @@ function DiscountPromotionListSection({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{promotion.name}</p>
                   <p className="text-xs text-slate-600">{promotion.type}</p>
                 </div>
-                <ProductThumbnails products={promotion.products} />
+                <ProductThumbnails products={promotion.productPreviews} />
               </div>
 
               <div className="mt-2 text-xs text-slate-600">
@@ -308,7 +310,7 @@ function DiscountPromotionListSection({
                     </span>
                   </td>
                   <td className="border-t border-slate-100 px-4 py-3.5">
-                    <ProductTagList products={promotion.products} />
+                    <ProductTagList products={promotion.productPreviews} />
                   </td>
                   <td className="border-t border-slate-100 px-4 py-3.5 text-xs text-slate-600">
                     <p className="font-medium text-slate-700">{promotion.period.start}</p>

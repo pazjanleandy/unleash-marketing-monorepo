@@ -20,6 +20,8 @@ type BundleItemDbRow = {
   quantity: number | null
   products?: {
     prodname?: string | null
+    image?: string | null
+    image_url?: string | null
   } | null
 }
 
@@ -299,7 +301,7 @@ export async function listBundleDeals(): Promise<BundleListResult> {
   const { data, error } = await supabase
     .from('bundles')
     .select(
-      'id,promotion_id,name,price,currency,max_uses,is_active,discount_section:discount_section!bundles_promotion_id_fkey(id,name,start_at,end_at,max_uses,is_active),bundle_items(id,product_id,quantity,products:products!bundle_items_product_id_fkey(prodname))',
+      'id,promotion_id,name,price,currency,max_uses,is_active,discount_section:discount_section!bundles_promotion_id_fkey(id,name,start_at,end_at,max_uses,is_active),bundle_items(id,product_id,quantity,products:products!bundle_items_product_id_fkey(prodname,image,image_url))',
     )
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
@@ -321,10 +323,16 @@ export async function listBundleDeals(): Promise<BundleListResult> {
       const name = child.products?.prodname?.trim()
       return name && name.length > 0 ? name : `Product ${childIndex + 1}`
     })
+    const productPreviews = children.map((child, childIndex) => ({
+      id: child.product_id || `product-${childIndex + 1}`,
+      name: child.products?.prodname?.trim() || `Product ${childIndex + 1}`,
+      image: child.products?.image_url ?? child.products?.image ?? null,
+    }))
 
     const bundleItems = children.map((child, childIndex) => ({
       productId: child.product_id,
       name: child.products?.prodname?.trim() || `Product ${childIndex + 1}`,
+      image: child.products?.image_url ?? child.products?.image ?? null,
       quantity: typeof child.quantity === 'number' && child.quantity > 0 ? child.quantity : 1,
     }))
 
@@ -339,6 +347,7 @@ export async function listBundleDeals(): Promise<BundleListResult> {
       type: 'Bundle Deal',
       campaignType: 'bundle',
       products: names,
+      productPreviews,
       bundlePrice: row.price !== null && typeof row.price === 'number' ? formatDecimal(row.price) : '0',
       currency: row.currency?.trim() || 'USD',
       bundleItems,

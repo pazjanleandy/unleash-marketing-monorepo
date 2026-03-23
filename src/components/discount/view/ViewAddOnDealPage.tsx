@@ -1,17 +1,10 @@
 import { useMemo } from 'react'
+import ProductThumbnail from '../../common/ProductThumbnail'
 import type { AddOnDealRow } from '../types'
 
 type ViewAddOnDealPageProps = {
   onBack: () => void
   addon: AddOnDealRow
-}
-
-function ProductPreviewShape({ label }: { label: string }) {
-  return (
-    <div className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#D0DBF7] bg-gradient-to-br from-[#F2F4FF] to-[#D0DBF7] text-xs font-bold text-[#3347A8] shadow-[0_8px_14px_-12px_rgba(51,69,143,0.9)]">
-      {label.slice(0, 1).toUpperCase()}
-    </div>
-  )
 }
 
 function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
@@ -131,7 +124,11 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
           <div className="mt-3 space-y-2.5">
             <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-start gap-2.5">
-                <ProductPreviewShape label={addon.triggerProductName} />
+                <ProductThumbnail
+                  name={addon.triggerProductName}
+                  image={addon.triggerProductImage}
+                  size="sm"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                     {addon.triggerProductName}
@@ -164,7 +161,11 @@ function ViewAddOnDealPage({ onBack, addon }: ViewAddOnDealPageProps) {
 
             <div className="rounded-lg border border-[#E6EBFF] bg-[#f8fbff] p-3">
               <div className="flex items-start gap-2.5">
-                <ProductPreviewShape label={addon.addonProductName} />
+                <ProductThumbnail
+                  name={addon.addonProductName}
+                  image={addon.addonProductImage}
+                  size="sm"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                     {addon.addonProductName}

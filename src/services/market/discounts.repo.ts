@@ -25,6 +25,8 @@ type ProductDiscountDbRow = {
   discount_type: 'percentage' | 'fixed'
   products?: {
     prodname?: string | null
+    image?: string | null
+    image_url?: string | null
   } | null
 }
 
@@ -247,7 +249,7 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
   const { data, error } = await supabase
     .from('discount_section')
     .select(
-      'id,name,start_at,end_at,max_uses,is_active,product_discounts(id,product_id,discount_type,discount_value,products:products!product_discounts_product_fkey(prodname))',
+      'id,name,start_at,end_at,max_uses,is_active,product_discounts(id,product_id,discount_type,discount_value,products:products!product_discounts_product_fkey(prodname,image,image_url))',
     )
     .eq('shop_id', shopId)
     .eq('campaign_type', 'promotion')
@@ -264,6 +266,11 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
       const name = child.products?.prodname?.trim()
       return name && name.length > 0 ? name : `Product ${childIndex + 1}`
     })
+    const productPreviews = children.map((child, childIndex) => ({
+      id: child.product_id || `product-${childIndex + 1}`,
+      name: child.products?.prodname?.trim() || `Product ${childIndex + 1}`,
+      image: child.products?.image_url ?? child.products?.image ?? null,
+    }))
 
     const productDiscounts = children.reduce<Record<string, string>>((accumulator, child) => {
       accumulator[child.product_id] = formatDecimal(child.discount_value)
@@ -279,6 +286,7 @@ export async function listDiscountPromotions(): Promise<DiscountListResult> {
       type: 'Discount Promotions',
       campaignType: 'promotion',
       products: names,
+      productPreviews,
       productDiscounts,
       maxUses: row.max_uses ?? null,
       period: {
