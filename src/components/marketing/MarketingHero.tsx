@@ -21,7 +21,7 @@ function MarketingHero({ shopName, isMobile = false }: MarketingHeroProps) {
           href="#"
           className="mt-2 inline-flex text-[12px] font-semibold text-[#2A55D4] hover:text-[#1e47b4] sm:text-[14px]"
         >
-          View Products under Promotion →
+          {'View Products under Promotion ->'}
         </a>
       </div>
     </section>

@@ -13,7 +13,6 @@ export const toolSections: ToolSection[] = [
         tone: 'blue',
         status: '2 active',
         priority: 'primary',
-        badge: 'Primary',
         hasActiveCampaigns: true,
       },
       {
@@ -24,7 +23,6 @@ export const toolSections: ToolSection[] = [
         tone: 'blue',
         status: 'Ends soon',
         priority: 'primary',
-        badge: 'Primary',
         hasActiveCampaigns: true,
       },
       {
@@ -35,7 +33,6 @@ export const toolSections: ToolSection[] = [
         tone: 'blue',
         status: '1 active',
         priority: 'primary',
-        badge: 'Primary',
         hasActiveCampaigns: true,
       },
     ],
@@ -57,7 +54,7 @@ export const toolSections: ToolSection[] = [
       {
         id: 'affiliate',
         title: 'Affiliate Marketing Solution',
-        description: "Extend reach via affiliate partners.",
+        description: 'Extend reach via affiliate partners.',
         icon: 'affiliate',
         tone: 'amber',
         status: 'Ready to launch',
@@ -127,34 +124,37 @@ export const toneClasses: Record<
     focusRing: string
   }
 > = {
-  blue: { // Primary
-    icon: 'bg-blue-50 text-blue-700 ring-[#bfd3f8] shadow-none',
-    badge: 'border-[#bfd3f8] bg-blue-50 text-blue-800',
-    status: 'border-blue-100 bg-blue-50/50 text-blue-700',
+  blue: {
+    icon: 'bg-slate-100 text-[#335ab8] ring-[#dde7fb] shadow-none',
+    badge: 'border-[#dbe6fb] bg-[#f5f8ff] text-[#4765ad]',
+    status: 'border-[#e2e9f7] bg-[#f7f9fd] text-[#4765ad]',
     sectionMarker: 'bg-blue-100 text-blue-800',
     sectionLine: 'bg-[#bfd3f8]',
-    hoverTint: 'hover:bg-blue-50/30',
-    action: 'text-blue-700 group-hover:text-blue-800',
+    hoverTint:
+      'hover:border-[#cadbf4] hover:bg-[#fafcff] hover:shadow-[0_14px_26px_-24px_rgba(51,90,184,0.22)]',
+    action: 'text-slate-600 group-hover:text-slate-800',
     focusRing: 'focus-visible:ring-blue-600',
   },
-  amber: { // Secondary (Orange)
-    icon: 'bg-orange-50 text-orange-600 ring-orange-200 shadow-none',
-    badge: 'border-orange-200 bg-orange-50 text-orange-700',
-    status: 'border-orange-100 bg-orange-50/50 text-orange-600',
+  amber: {
+    icon: 'bg-[#fff5ea] text-[#c77422] ring-[#f8dfc5] shadow-none',
+    badge: 'border-[#f4deca] bg-[#fff8f1] text-[#b86a1f]',
+    status: 'border-[#f6e4d2] bg-[#fffaf4] text-[#b86a1f]',
     sectionMarker: 'bg-orange-100 text-orange-700',
     sectionLine: 'bg-orange-200',
-    hoverTint: 'hover:bg-orange-50/30',
-    action: 'text-orange-600 group-hover:text-orange-700',
+    hoverTint:
+      'hover:border-[#e7d6c3] hover:bg-[#fffdfa] hover:shadow-[0_14px_26px_-24px_rgba(199,116,34,0.18)]',
+    action: 'text-slate-600 group-hover:text-slate-800',
     focusRing: 'focus-visible:ring-orange-500',
   },
-  mint: { // Tertiary (Slate)
-    icon: 'bg-slate-50 text-slate-600 ring-slate-200 shadow-none',
-    badge: 'border-slate-200 bg-slate-50 text-slate-700',
-    status: 'border-slate-100 bg-slate-50/50 text-slate-600',
+  mint: {
+    icon: 'bg-slate-100 text-slate-600 ring-slate-200 shadow-none',
+    badge: 'border-slate-200 bg-slate-50 text-slate-600',
+    status: 'border-slate-200 bg-slate-50 text-slate-500',
     sectionMarker: 'bg-slate-100 text-slate-700',
     sectionLine: 'bg-slate-200',
-    hoverTint: 'hover:bg-slate-50/30',
-    action: 'text-slate-600 group-hover:text-slate-700',
+    hoverTint:
+      'hover:border-slate-200 hover:bg-slate-50/90 hover:shadow-[0_14px_26px_-24px_rgba(15,23,42,0.16)]',
+    action: 'text-slate-600 group-hover:text-slate-800',
     focusRing: 'focus-visible:ring-slate-500',
   },
 }

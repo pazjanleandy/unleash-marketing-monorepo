@@ -448,8 +448,9 @@ function PlaceholderView({
 
 type QuickAction = {
   title: string
-  description: string
-  cta: string
+  featured?: boolean
+  description?: string
+  cta?: string
   onClick: () => void
 }
 
@@ -567,6 +568,67 @@ function QuickActionsRow({ actions }: { actions: QuickAction[] }) {
             </div>
           </button>
         ))}
+      </div>
+    </section>
+  )
+}
+
+void QuickActionsRow
+
+function QuickActionsLaunchBar({ actions }: { actions: QuickAction[] }) {
+  return (
+    <section className="motion-rise mb-12">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
+        <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-slate-900 sm:text-[22px]">
+          Quick Actions
+        </h2>
+
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-1.5">
+          {actions.map((action, index) => {
+            const isFeatured = Boolean(action.featured)
+
+            return (
+              <button
+                key={action.title}
+                type="button"
+                onClick={action.onClick}
+                className={`group inline-flex h-[34px] items-center gap-1.5 rounded-md border px-2.5 text-left text-[13px] transition-[background-color,border-color,color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5e1f5] focus-visible:ring-offset-2 ${
+                  isFeatured
+                    ? 'border-[#dfe6f3] bg-[#fcf8f3] text-slate-800 hover:border-[#d7deeb] hover:bg-[#faf5ee]'
+                    : 'border-slate-200/80 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`inline-flex flex-none items-center justify-center transition-colors duration-200 ${
+                    isFeatured
+                      ? 'text-orange-600'
+                    : index === 1
+                        ? 'text-orange-600'
+                        : 'text-slate-500'
+                  }`}
+                >
+                  <QuickActionIcon index={index} />
+                </span>
+
+                <span className="block whitespace-nowrap font-medium text-slate-800">
+                  {action.title}
+                </span>
+
+                <span
+                  aria-hidden="true"
+                  className={`inline-flex flex-none items-center justify-center pl-0.5 text-[12px] transition-transform duration-200 group-hover:translate-x-0.5 ${
+                    isFeatured
+                      ? 'text-orange-600'
+                      : 'text-slate-400 group-hover:text-slate-600'
+                  }`}
+                >
+                  {'->'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
@@ -981,20 +1043,15 @@ function MarketCentrePage() {
   const quickActions: QuickAction[] = [
     {
       title: 'Create Discount',
-      description: 'Percentage or fixed discounts.',
-      cta: 'Create now',
       onClick: () => handleCreateDiscountTool('discount-promotions'),
     },
     {
       title: 'Create Flash Deal',
-      description: 'Limited-time offers for urgency.',
-      cta: 'Create now',
+      featured: true,
       onClick: handleCreateFlashDeal,
     },
     {
       title: 'Create Voucher',
-      description: 'Checkout savings and promo codes.',
-      cta: 'Create now',
       onClick: () => handleCreateVoucher('shop'),
     },
   ]
@@ -1354,6 +1411,7 @@ function MarketCentrePage() {
                     />
                   </svg>
                 </button>
+                <div aria-hidden="true" className="absolute right-0 top-full h-2 w-44" />
                 <div className="pointer-events-none absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1 opacity-0 shadow-[0_26px_48px_-30px_rgba(15,23,42,0.6)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                   <button
                     type="button"
@@ -1479,12 +1537,12 @@ function MarketCentrePage() {
                   </div>
                 </section>
               ) : (
-                <section className="mx-auto max-w-[1320px] space-y-8">
+                <section className="mx-auto max-w-[1320px] space-y-10">
                   <MarketingHero
                     shopName={shopName}
                   />
-                  <div className="space-y-8">
-                    <QuickActionsRow actions={quickActions} />
+                  <div className="space-y-10">
+                    <QuickActionsLaunchBar actions={quickActions} />
                     <MarketingToolsPanel
                       sections={toolSections}
                       onToolSelect={handleToolSelect}
