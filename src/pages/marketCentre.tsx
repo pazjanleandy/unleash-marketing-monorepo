@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import BackToMarketingCentreButton from '../components/navigation/BackToMarketingCentreButton'
 import DesktopBreadcrumbBar from '../components/navigation/DesktopBreadcrumbBar'
 import MarketingHero from '../components/marketing/MarketingHero'
 import MarketingToolsPanel from '../components/marketing/MarketingToolsPanel'
@@ -1069,6 +1070,7 @@ function MarketCentrePage() {
       ]
       : null
   const desktopBreadcrumbs = getMarketCentreBreadcrumbs(activeView)
+  const shouldShowSharedMarketingBack = !isMarketingOverview
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
@@ -1522,6 +1524,11 @@ function MarketCentrePage() {
                 }))}
               />
             </div>
+            {shouldShowSharedMarketingBack ? (
+              <div className="mb-4 hidden md:block">
+                <BackToMarketingCentreButton onClick={() => setActiveView('marketing')} />
+              </div>
+            ) : null}
             {isMarketingOverview ? (
               isMobileViewport ? (
                 <section className="mx-auto max-w-[520px] space-y-5">

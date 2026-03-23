@@ -777,14 +777,6 @@ function VouchersPage({
       </div>
 
       <div className="hidden sm:block">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center rounded-full bg-[#F2F4FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
-        >
-          &larr; Back to Marketing Centre
-        </button>
-
         {hasDataState ? (
           <div className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
             {isLoading ? (

@@ -275,14 +275,6 @@ function FlashDealsPage({ onBack, onCreate }: FlashDealsPageProps) {
         </div>
 
         <div className="hidden sm:block">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center rounded-full bg-[#F2F4FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#E6EBFF]"
-          >
-            &larr; Back to Marketing Centre
-          </button>
-
           <header className="mt-4 rounded-2xl border border-[#E6EBFF] bg-gradient-to-r from-[#F2F4FF] via-[#E6EBFF] to-white p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#3347A8]">
               Home &gt; Marketing Centre &gt; Flash Deals

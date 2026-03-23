@@ -199,14 +199,6 @@ function DiscountPage({
       ) : null}
 
       <div className="hidden sm:block">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center rounded-full border border-[#D0DBF7] bg-[#F7F9FF] px-3 py-1.5 text-sm font-semibold text-[#3347A8] transition hover:bg-[#EEF3FF]"
-        >
-          &larr; Back to Marketing Centre
-        </button>
-
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
           <div className="flex items-start justify-between gap-4">
             <div>

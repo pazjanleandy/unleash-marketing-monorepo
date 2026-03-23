@@ -598,7 +598,7 @@ function LiveStreamingPage({ onBack }: LiveStreamingPageProps) {
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-11 items-center justify-center border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex h-11 items-center justify-center border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:hidden"
             >
               Back to Marketing Centre
             </button>
